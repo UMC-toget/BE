@@ -2,7 +2,7 @@
 name: ♻️ Refactor
 about: 기존 코드를 개선해요
 title: "[Refactor] "
-labels: '♻️ Refactor'
+labels: "♻️ Refactor"
 ---
 
 ## ♻️ 리팩토링 제안에 앞서
@@ -35,6 +35,7 @@ labels: '♻️ Refactor'
 ## 📎 참고 자료
 
 <!-- 관련 문서, PR, 이슈 링크 등이 있다면 작성해주세요. -->
+<!-- 있으면 작성하고 없으면 제목까지 완전히 지워주세요! -->
 
 ## ✅ 제출 전 확인사항
 

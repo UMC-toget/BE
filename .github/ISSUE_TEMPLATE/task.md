@@ -2,7 +2,7 @@
 name: 👻 Task
 about: 하위 테스크를 포함하는 상위 이슈
 title: "[Task] "
-labels: '👻 Task'
+labels: "👻 Task"
 ---
 
 ## 👻 Task 이슈에 앞서
@@ -24,6 +24,7 @@ Feature, Bug, Refactor, Chore, Docs 중 **어느 태그로도 분류하기 어�
 ## 📎 참고 자료
 
 <!-- 관련 문서, PR, 이슈 링크 등이 있다면 작성해주세요. -->
+<!-- 있으면 작성하고 없으면 제목까지 완전히 지워주세요! -->
 
 ## ✅ 제출 전 확인사항
 

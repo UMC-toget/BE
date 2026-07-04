@@ -99,6 +99,9 @@ UMC 10기 프로젝트 '투겟 (Toget)'의 백엔드 저장소입니다.
 
 ### 4. 데이터베이스 및 JPA 엔티티 설계
 
+- **엔티티 클래스 명명 규칙**: PascalCase를 사용합니다. (ex. `UserEntity`)
+- **DB 테이블 및 컬럼 명명 규칙**: 소문자 `snake_case`를 사용합니다. (ex. `user_id`, `created_at`)
+- **Audit 필드 분리**: 생성일시(`createdAt`)와 수정일시(`updatedAt`) 필드는 `BaseEntity`로 분리하여 정의하고, 모든 Entity가 이를 상속받도록 설계합니다.
 - **PK 생성 전략**: PK 생성은 데이터베이스에 전적으로 위임하는 **IDENTITY 전략** (`@GeneratedValue(strategy = GenerationType.IDENTITY)`)을 사용합니다.
 - **엔티티 생성 및 데이터 수정**: 엔티티 객체 생성 시에는 **`@Builder` 패턴을 사용하여 객체를 생성**하며, 무분별한 데이터 변경 대신 비즈니스 의미가 담긴 명확한 메서드(수정용 메서드 등)를 엔티티에 별도로 정의하여 사용합니다. 기본 생성자는 지연 로딩을 위해 `access = AccessLevel.PROTECTED`로 제한합니다.
 - **지연 로딩**: 불필요한 조회 및 N+1 문제 방지를 위해 모든 연관 관계(ManyToOne, OneToOne 등)는 **지연 로딩 (`FetchType.LAZY`)을 기본으로 설정**합니다.
@@ -121,5 +124,11 @@ UMC 10기 프로젝트 '투겟 (Toget)'의 백엔드 저장소입니다.
 
 - `@RestControllerAdvice`와 `@ExceptionHandler`를 이용해 전역 예외 처리 체계를 구축합니다. 예외 발생 시 원시 예외 정보(500 에러, Stack Trace)가 외부로 유출되지 않도록 하며, 항상 정의된 공통 에러 포맷으로 가공하여 전달합니다.
 - 컨트롤러 단에서 `@Valid` 어노테이션을 사용하여 요청 바디를 검증하고, 검증 실패 시 발생하는 `MethodArgumentNotValidException`을 캐치하여 구체적인 예외 필드와 원인을 공통 응답 포맷으로 응답합니다.
+
+### 7. RESTful API URI 설계 규칙
+
+- **자원의 표현**: URI 경로에는 자원을 나타내는 **복수형 명사**를 사용하며, 단수형은 지양합니다. (ex. `/api/v1/wishlists`)
+- **동사 사용 배제**: 경로에 행위를 나타내는 동사(ex. `get`, `create`, `delete`, `update`)를 쓰지 않고, HTTP Method (`GET`, `POST`, `PUT/PATCH`, `DELETE`)로 행위를 명시합니다.
+- **표기법**: 경로 작성 시 소문자와 하이픈(-)을 사용하는 **kebab-case**를 사용합니다. (ex. `/api/v1/user-accounts`)
 
 ---
