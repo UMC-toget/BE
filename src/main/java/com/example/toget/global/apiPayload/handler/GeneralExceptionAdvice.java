@@ -4,6 +4,7 @@ import com.example.toget.global.apiPayload.ApiResponse;
 import com.example.toget.global.apiPayload.code.BaseErrorCode;
 import com.example.toget.global.apiPayload.code.GeneralErrorCode;
 import com.example.toget.global.apiPayload.exception.ProjectException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -23,6 +24,16 @@ public class GeneralExceptionAdvice {
         BaseErrorCode errorCode = e.getCode();
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.onFailure(errorCode, null));
+    }
+
+    // DB 유니크 제약 위반 등 데이터 충돌 — 동시 중복 요청(예: 소셜 로그인 동시 첫 가입)을 500이 아닌 409로 응답
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(
+            DataIntegrityViolationException e
+    ) {
+        BaseErrorCode code = GeneralErrorCode.CONFLICT;
+        return ResponseEntity.status(code.getStatus())
+                .body(ApiResponse.onFailure(code, null));
     }
 
     // 그 외의 정의되지 않은 모든 예외 처리
