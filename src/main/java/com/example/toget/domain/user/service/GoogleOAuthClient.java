@@ -1,7 +1,7 @@
 package com.example.toget.domain.user.service;
 
 import com.example.toget.domain.user.dto.OAuthUserInfo;
-import com.example.toget.domain.user.enums.OauthProvider;
+import com.example.toget.domain.user.enums.OAuthProvider;
 import com.example.toget.domain.user.exception.UserErrorCode;
 import com.example.toget.domain.user.exception.UserException;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,8 +32,8 @@ public class GoogleOAuthClient implements OAuthClient {
     }
 
     @Override
-    public OauthProvider provider() {
-        return OauthProvider.GOOGLE;
+    public OAuthProvider provider() {
+        return OAuthProvider.GOOGLE;
     }
 
     @Override

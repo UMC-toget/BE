@@ -1,7 +1,7 @@
 package com.example.toget.domain.user.service;
 
 import com.example.toget.domain.user.dto.OAuthUserInfo;
-import com.example.toget.domain.user.enums.OauthProvider;
+import com.example.toget.domain.user.enums.OAuthProvider;
 
 /**
  * 소셜 로그인 공급자별 토큰 검증을 추상화한 인터페이스 (전략 패턴).
@@ -11,7 +11,7 @@ import com.example.toget.domain.user.enums.OauthProvider;
 public interface OAuthClient {
 
     /** 이 구현체가 담당하는 공급자 — AuthService가 요청의 provider와 매칭할 때 사용 */
-    OauthProvider provider();
+    OAuthProvider provider();
 
     /**
      * 공급자에게 identityToken을 검증하고 사용자 정보를 가져온다.

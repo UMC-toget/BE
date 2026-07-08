@@ -35,6 +35,12 @@ public class UserController {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, userService.updateMyProfile(userId, request));
     }
 
+    /** 내 프로필 이미지 삭제 (초기화) */
+    @DeleteMapping("/profile-image")
+    public ApiResponse<UserProfileUpdateResponse> clearMyProfileImage(@LoginUserId Long userId) {
+        return ApiResponse.onSuccess(GeneralSuccessCode.OK, userService.clearMyProfileImage(userId));
+    }
+
     /** 회원 탈퇴 (Soft Delete) */
     @DeleteMapping
     public ApiResponse<Void> withdraw(@LoginUserId Long userId) {

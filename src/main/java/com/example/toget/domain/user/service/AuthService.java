@@ -5,7 +5,7 @@ import com.example.toget.domain.user.dto.OAuthUserInfo;
 import com.example.toget.domain.user.dto.SocialLoginResponse;
 import com.example.toget.domain.user.dto.TokenResponse;
 import com.example.toget.domain.user.entity.User;
-import com.example.toget.domain.user.enums.OauthProvider;
+import com.example.toget.domain.user.enums.OAuthProvider;
 import com.example.toget.domain.user.exception.UserErrorCode;
 import com.example.toget.domain.user.exception.UserException;
 import com.example.toget.domain.user.repository.UserRepository;
@@ -42,7 +42,7 @@ public class AuthService {
      */
     @Transactional // 메서드 전체가 하나의 DB 트랜잭션 — 도중 예외 시 롤백, 정상 종료 시 커밋
     public SocialLoginResponse socialLogin(String providerName, String identityToken) {
-        OauthProvider provider = OauthProvider.from(providerName);
+        OAuthProvider provider = OAuthProvider.from(providerName);
         // 주입받은 클라이언트 목록에서 이 공급자를 담당하는 구현체를 찾는다
         OAuthClient client = oauthClients.stream()
                 .filter(c -> c.provider() == provider)

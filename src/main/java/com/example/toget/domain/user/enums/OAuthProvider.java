@@ -4,7 +4,7 @@ import com.example.toget.domain.user.exception.UserErrorCode;
 import com.example.toget.domain.user.exception.UserException;
 
 /** 지원하는 소셜 로그인 공급자 */
-public enum OauthProvider {
+public enum OAuthProvider {
     KAKAO, GOOGLE;
 
     /**
@@ -12,9 +12,9 @@ public enum OauthProvider {
      * valueOf는 대문자만 인식하고 실패 시 IllegalArgumentException을 던지므로,
      * 대소문자를 정규화하고 미지원 값은 우리 표준 예외(400)로 감싸서 던진다.
      */
-    public static OauthProvider from(String value) {
+    public static OAuthProvider from(String value) {
         try {
-            return OauthProvider.valueOf(value.toUpperCase());
+            return OAuthProvider.valueOf(value.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new UserException(UserErrorCode.UNSUPPORTED_PROVIDER);
         }

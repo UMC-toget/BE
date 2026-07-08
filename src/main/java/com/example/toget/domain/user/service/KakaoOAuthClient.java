@@ -1,7 +1,7 @@
 package com.example.toget.domain.user.service;
 
 import com.example.toget.domain.user.dto.OAuthUserInfo;
-import com.example.toget.domain.user.enums.OauthProvider;
+import com.example.toget.domain.user.enums.OAuthProvider;
 import com.example.toget.domain.user.exception.UserErrorCode;
 import com.example.toget.domain.user.exception.UserException;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,8 +29,8 @@ public class KakaoOAuthClient implements OAuthClient {
 
     /** AuthService가 List<OAuthClient>에서 담당 구현체를 고를 때 사용하는 식별자 */
     @Override
-    public OauthProvider provider() {
-        return OauthProvider.KAKAO;
+    public OAuthProvider provider() {
+        return OAuthProvider.KAKAO;
     }
 
     @Override

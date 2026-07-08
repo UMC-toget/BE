@@ -1,6 +1,6 @@
 package com.example.toget.domain.user.entity;
 
-import com.example.toget.domain.user.enums.OauthProvider;
+import com.example.toget.domain.user.enums.OAuthProvider;
 import com.example.toget.domain.user.enums.UserStatus;
 import com.example.toget.global.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -38,7 +38,7 @@ public class User extends BaseEntity {
     // 상수 순서가 바뀌어도 기존 데이터가 깨지지 않아 항상 STRING을 쓴다
     @Enumerated(EnumType.STRING)
     @Column(name = "oauth_provider", nullable = false, length = 20)
-    private OauthProvider oauthProvider;
+    private OAuthProvider oauthProvider;
 
     /** 공급자가 발급한 사용자 고유 ID (카카오 회원번호, 구글 sub) */
     @Column(name = "oauth_id", nullable = false, length = 255)
@@ -67,7 +67,7 @@ public class User extends BaseEntity {
     // @Builder를 생성자에 붙이면 빌더가 이 파라미터들만 받는다.
     // id(자동 생성), status(아래에서 고정), refreshToken(로그인 시 별도 설정)은 빌더에서 제외됨.
     @Builder
-    private User(OauthProvider oauthProvider, String oauthId, String email, String name,
+    private User(OAuthProvider oauthProvider, String oauthId, String email, String name,
                  String nickname, String profileImageUrl) {
         this.oauthProvider = oauthProvider;
         this.oauthId = oauthId;
@@ -86,6 +86,11 @@ public class User extends BaseEntity {
         if (profileImageUrl != null) {
             this.profileImageUrl = profileImageUrl;
         }
+    }
+
+    /** 프로필 이미지 초기화 (기본 이미지 사용) */
+    public void clearProfileImage() {
+        this.profileImageUrl = null;
     }
 
     /** Soft Delete — 물리 삭제 대신 상태를 WITHDRAWN으로 전환 + 세션(refresh token) 만료 */

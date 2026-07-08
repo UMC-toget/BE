@@ -34,6 +34,14 @@ public class UserService {
         return UserConverter.toProfileUpdateResponse(user);
     }
 
+    /** 프로필 이미지 초기화 (기본 이미지로 변경) */
+    @Transactional
+    public UserProfileUpdateResponse clearMyProfileImage(Long userId) {
+        User user = activeUserReader.getActiveUser(userId);
+        user.clearProfileImage();
+        return UserConverter.toProfileUpdateResponse(user);
+    }
+
     /**
      * 회원 탈퇴 — Soft Delete(status=WITHDRAWN) + 세션(refresh_token) 만료.
      * 물리 삭제(DELETE) 대신 상태만 바꾸는 이유: 정산 이력 등 연관 데이터 보존, 실수 복구 여지 확보.
