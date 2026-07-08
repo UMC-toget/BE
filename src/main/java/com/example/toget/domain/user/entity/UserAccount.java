@@ -2,6 +2,7 @@ package com.example.toget.domain.user.entity;
 
 import com.example.toget.domain.user.enums.BankName;
 import com.example.toget.global.entity.BaseEntity;
+import com.example.toget.global.util.AesGcmConverter;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -39,7 +40,8 @@ public class UserAccount extends BaseEntity {
     private String accountOwner;
 
     /** 계좌번호 */
-    @Column(name = "account", nullable = false, length = 50)
+    @Convert(converter = AesGcmConverter.class)
+    @Column(name = "account", nullable = false, length = 255)
     private String account;
 
     @Builder

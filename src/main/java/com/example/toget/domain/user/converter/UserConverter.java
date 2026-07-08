@@ -23,7 +23,7 @@ public class UserConverter {
                 user.getNickname(),
                 user.getName(),
                 user.getProfileImageUrl(),
-                user.getOauthProvider().name() // enum → "KAKAO" 같은 문자열로
+                user.getOAuthProvider().name() // enum → "KAKAO" 같은 문자열로
         );
     }
 

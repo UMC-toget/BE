@@ -14,8 +14,8 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
 
     // 쿼리 메서드: 메서드 이름을 파싱해 쿼리를 자동 생성
-    // findBy + OauthProvider + And + OauthId
+    // findBy + OAuthProvider + And + OAuthId
     // → SELECT * FROM users WHERE oauth_provider = ? AND oauth_id = ?
     // 반환형 Optional: 결과가 없을 수 있음을 타입으로 강제 (null 체크 누락 방지)
-    Optional<User> findByOauthProviderAndOauthId(OAuthProvider oauthProvider, String oauthId);
+    Optional<User> findByOAuthProviderAndOAuthId(OAuthProvider oAuthProvider, String oAuthId);
 }

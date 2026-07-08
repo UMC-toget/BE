@@ -38,11 +38,11 @@ public class User extends BaseEntity {
     // 상수 순서가 바뀌어도 기존 데이터가 깨지지 않아 항상 STRING을 쓴다
     @Enumerated(EnumType.STRING)
     @Column(name = "oauth_provider", nullable = false, length = 20)
-    private OAuthProvider oauthProvider;
+    private OAuthProvider oAuthProvider;
 
     /** 공급자가 발급한 사용자 고유 ID (카카오 회원번호, 구글 sub) */
     @Column(name = "oauth_id", nullable = false, length = 255)
-    private String oauthId;
+    private String oAuthId;
 
     @Column(length = 320) // 이메일 최대 길이 표준(로컬 64 + @ + 도메인 255)
     private String email;
@@ -61,16 +61,16 @@ public class User extends BaseEntity {
     private UserStatus status;
 
     /** Refresh Token Rotation — 현재 유효한 refresh 토큰의 jti(UUID) 저장 */
-    @Column(name = "refresh_token", columnDefinition = "TEXT")
+    @Column(name = "refresh_token", length = 36)
     private String refreshToken;
 
     // @Builder를 생성자에 붙이면 빌더가 이 파라미터들만 받는다.
     // id(자동 생성), status(아래에서 고정), refreshToken(로그인 시 별도 설정)은 빌더에서 제외됨.
     @Builder
-    private User(OAuthProvider oauthProvider, String oauthId, String email, String name,
+    private User(OAuthProvider oAuthProvider, String oAuthId, String email, String name,
                  String nickname, String profileImageUrl) {
-        this.oauthProvider = oauthProvider;
-        this.oauthId = oauthId;
+        this.oAuthProvider = oAuthProvider;
+        this.oAuthId = oAuthId;
         this.email = email;
         this.name = name;
         this.nickname = nickname;
@@ -78,14 +78,22 @@ public class User extends BaseEntity {
         this.status = UserStatus.ACTIVE; // 신규 가입자는 항상 활성 상태로 시작
     }
 
-    /** null인 필드는 건드리지 않는 부분 수정(PATCH) 방식 */
+    /** null인 필드는 건드리지 않는 부분 수정(PATCH) 방식. 공백 문자열("") 입력 시 프로필 이미지 초기화 */
     public void updateProfile(String nickname, String profileImageUrl) {
         if (nickname != null) {
             this.nickname = nickname;
         }
         if (profileImageUrl != null) {
-            this.profileImageUrl = profileImageUrl;
+            this.profileImageUrl = profileImageUrl.isEmpty() ? null : profileImageUrl;
         }
+    }
+
+    public OAuthProvider getOAuthProvider() {
+        return this.oAuthProvider;
+    }
+
+    public String getOAuthId() {
+        return this.oAuthId;
     }
 
     /** 프로필 이미지 초기화 (기본 이미지 사용) */

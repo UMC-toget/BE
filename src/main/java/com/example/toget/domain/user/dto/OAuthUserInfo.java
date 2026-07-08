@@ -6,7 +6,7 @@ package com.example.toget.domain.user.dto;
  * AuthService는 공급자를 구분하지 않고 처리할 수 있다. oauthId 외에는 null 가능.
  */
 public record OAuthUserInfo(
-        String oauthId,
+        String oAuthId,
         String email,
         String name,
         String profileImageUrl

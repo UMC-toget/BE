@@ -50,14 +50,14 @@ public class AuthService {
                 .orElseThrow(() -> new UserException(UserErrorCode.UNSUPPORTED_PROVIDER));
         OAuthUserInfo info = client.verify(identityToken); // 공급자 서버에 실검증 (위조 토큰이면 여기서 401)
 
-        var existing = userRepository.findByOauthProviderAndOauthId(provider, info.oauthId());
+        var existing = userRepository.findByOAuthProviderAndOAuthId(provider, info.oAuthId());
         boolean isNewUser = existing.isEmpty();
         // orElseGet: Optional이 비어 있을 때만 람다 실행 → 기존 회원이면 조회 결과, 신규면 저장 후 반환
         // (동시에 같은 계정이 첫 로그인하면 유니크 제약 위반 → GeneralExceptionAdvice가 409로 변환)
         User user = existing
                 .orElseGet(() -> userRepository.save(User.builder()
-                        .oauthProvider(provider)
-                        .oauthId(info.oauthId())
+                        .oAuthProvider(provider)
+                        .oAuthId(info.oAuthId())
                         .email(info.email())
                         .name(info.name())
                         .nickname(info.name()) // 초기 닉네임은 소셜 프로필 이름으로

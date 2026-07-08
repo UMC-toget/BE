@@ -56,7 +56,7 @@ public class GoogleOAuthClient implements OAuthClient {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
         return new OAuthUserInfo(
-                body.path("sub").asText(), // 구글 계정 고유 ID → 우리 DB의 oauth_id
+                body.path("sub").asText(), // 구글 계정 고유 ID → 우리 DB의 oAuthId
                 body.path("email").asText(null),
                 body.path("name").asText(null),
                 body.path("picture").asText(null)
