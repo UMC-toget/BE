@@ -26,6 +26,9 @@ jwt:
   access-token-validity-seconds: ${JWT_ACCESS_TOKEN_VALIDITY_SECONDS:3600}
   refresh-token-validity-seconds: ${JWT_REFRESH_TOKEN_VALIDITY_SECONDS:1209600}
 
+encryption:
+  key: ${ENCRYPTION_KEY:default-encryption-key-32-chars-long!}
+
 oauth:
   google:
     token-info-uri: ${GOOGLE_TOKEN_INFO_URI:https://oauth2.googleapis.com/tokeninfo}
