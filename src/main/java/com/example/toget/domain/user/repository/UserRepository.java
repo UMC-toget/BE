@@ -3,6 +3,8 @@ package com.example.toget.domain.user.repository;
 import com.example.toget.domain.user.entity.User;
 import com.example.toget.domain.user.enums.OAuthProvider;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
@@ -17,5 +19,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // findBy + OAuthProvider + And + OAuthId
     // → SELECT * FROM users WHERE oauth_provider = ? AND oauth_id = ?
     // 반환형 Optional: 결과가 없을 수 있음을 타입으로 강제 (null 체크 누락 방지)
-    Optional<User> findByOAuthProviderAndOAuthId(OAuthProvider oAuthProvider, String oAuthId);
+    @Query("select u from User u where u.oAuthProvider = :oAuthProvider and u.oAuthId = :oAuthId")
+    Optional<User> findByOAuthProviderAndOAuthId(
+            @Param("oAuthProvider") OAuthProvider oAuthProvider,
+            @Param("oAuthId") String oAuthId
+    );
 }

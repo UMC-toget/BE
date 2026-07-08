@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
  * 정산 계좌 엔티티 — user_accounts 테이블 매핑. 한 회원이 계좌를 여러 개 등록할 수 있다(1:N).
  *
  * [연관관계 없이 Long userId를 쓰는 이유]
- * @ManyToOne User 대신 FK 값만 저장하면 계좌 조회 시 User까지 딸려 오는 문제(N+1 등)가 없고
+ * ManyToOne User 대신 FK 값만 저장하면 계좌 조회 시 User까지 딸려 오는 문제(N+1 등)가 없고
  * 도메인 간 결합도 낮아진다. User 정보가 필요하면 그때 UserRepository로 명시적으로 조회한다.
  */
 @Entity

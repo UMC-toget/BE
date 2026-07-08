@@ -38,10 +38,12 @@ public class User extends BaseEntity {
     // 상수 순서가 바뀌어도 기존 데이터가 깨지지 않아 항상 STRING을 쓴다
     @Enumerated(EnumType.STRING)
     @Column(name = "oauth_provider", nullable = false, length = 20)
+    @Getter(AccessLevel.NONE)
     private OAuthProvider oAuthProvider;
 
     /** 공급자가 발급한 사용자 고유 ID (카카오 회원번호, 구글 sub) */
     @Column(name = "oauth_id", nullable = false, length = 255)
+    @Getter(AccessLevel.NONE)
     private String oAuthId;
 
     @Column(length = 320) // 이메일 최대 길이 표준(로컬 64 + @ + 도메인 255)

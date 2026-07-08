@@ -53,11 +53,16 @@ public class KakaoOAuthClient implements OAuthClient {
         // 카카오 응답 구조: { id, kakao_account: { email, profile: { nickname, profile_image_url } } }
         JsonNode account = body.path("kakao_account");
         JsonNode profile = account.path("profile");
+
+        String idString = body.path("id").isNumber() 
+                ? String.valueOf(body.path("id").asLong()) 
+                : body.path("id").textValue();
+
         return new OAuthUserInfo(
-                body.path("id").asText(),                      // 카카오 회원번호 → 우리 DB의 oAuthId
-                account.path("email").asText(null),            // 동의 안 했으면 없을 수 있어 기본값 null
-                profile.path("nickname").asText(null),
-                profile.path("profile_image_url").asText(null)
+                idString,                                      // 카카오 회원번호 → 우리 DB의 oAuthId
+                account.path("email").textValue(),            // 동의 안 했으면 없을 수 있어 기본값 null
+                profile.path("nickname").textValue(),
+                profile.path("profile_image_url").textValue()
         );
     }
 }

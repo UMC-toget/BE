@@ -48,18 +48,20 @@ public class GoogleOAuthClient implements OAuthClient {
         } catch (Exception e) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
-        if (body == null || body.path("sub").isMissingNode()) {
+        String sub = body.path("sub").textValue();
+        if (body == null || sub == null) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
         // aud(발급 대상 클라이언트 ID) 검증 — 없으면 타 서비스용으로 발급된 구글 토큰으로도 로그인 가능
-        if (clientId.isBlank() || !clientId.equals(body.path("aud").asText(null))) {
+        String aud = body.path("aud").textValue();
+        if (clientId.isBlank() || !clientId.equals(aud)) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
         return new OAuthUserInfo(
-                body.path("sub").asText(), // 구글 계정 고유 ID → 우리 DB의 oAuthId
-                body.path("email").asText(null),
-                body.path("name").asText(null),
-                body.path("picture").asText(null)
+                sub, // 구글 계정 고유 ID → 우리 DB의 oAuthId
+                body.path("email").textValue(),
+                body.path("name").textValue(),
+                body.path("picture").textValue()
         );
     }
 }
