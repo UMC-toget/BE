@@ -5,6 +5,7 @@ import com.example.toget.domain.user.dto.UserProfileResponse;
 import com.example.toget.domain.user.dto.UserProfileUpdateRequest;
 import com.example.toget.domain.user.dto.UserProfileUpdateResponse;
 import com.example.toget.domain.user.entity.User;
+import com.example.toget.domain.user.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final ActiveUserReader activeUserReader;
+    private final UserAccountRepository userAccountRepository;
 
     // readOnly = true: 조회 전용 트랜잭션 — JPA가 변경 감지(dirty checking) 준비를 생략해 더 가볍다
     @Transactional(readOnly = true)
@@ -43,12 +45,15 @@ public class UserService {
     }
 
     /**
-     * 회원 탈퇴 — Soft Delete(status=WITHDRAWN) + 세션(refresh_token) 만료.
-     * 물리 삭제(DELETE) 대신 상태만 바꾸는 이유: 정산 이력 등 연관 데이터 보존, 실수 복구 여지 확보.
+     * 회원 탈퇴 — Soft Delete(status=WITHDRAWN) + 개인정보 익명화 + 세션(refresh_token) 만료.
+     * 레코드를 물리 삭제하지 않는 이유: 정산 이력 등 연관 데이터의 FK 보존.
+     * 대신 소셜 식별자(oauth_id)·이메일 등은 파기하므로 같은 소셜 계정으로 재가입할 수 있고(User.withdraw 참고),
+     * 등록 계좌는 계좌번호가 개인정보라 함께 삭제한다.
      */
     @Transactional
     public void withdraw(Long userId) {
         User user = activeUserReader.getActiveUser(userId);
+        userAccountRepository.deleteAllByUserId(userId);
         user.withdraw();
     }
 }

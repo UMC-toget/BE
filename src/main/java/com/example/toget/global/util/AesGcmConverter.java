@@ -27,7 +27,8 @@ public class AesGcmConverter implements AttributeConverter<String, String> {
 
     private static SecretKey staticSecretKey;
 
-    @Value("${encryption.key:default-encryption-key-32-chars-long!}")
+    // 기본값 없음 — application.yaml에서 ENCRYPTION_KEY 환경변수를 강제한다 (공개 저장소에 실키가 남지 않도록)
+    @Value("${encryption.key}")
     public void setKey(String keyString) {
         byte[] keyBytes;
         try {

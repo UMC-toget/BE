@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 /**
  * 회원 엔티티 — users 테이블과 1:1로 매핑되는 JPA 엔티티.
  *
@@ -103,10 +105,20 @@ public class User extends BaseEntity {
         this.profileImageUrl = null;
     }
 
-    /** Soft Delete — 물리 삭제 대신 상태를 WITHDRAWN으로 전환 + 세션(refresh token) 만료 */
+    /**
+     * Soft Delete + 개인정보 익명화 — 상태를 WITHDRAWN으로 전환하고 세션(refresh token)을 만료시킨다.
+     * oauth_id를 무작위 값으로 교체하므로 (oauth_provider, oauth_id) 유니크 제약에서 벗어나고,
+     * 같은 소셜 계정으로 다시 로그인하면 완전히 새 계정으로 가입된다.
+     * 레코드 자체는 남기므로 정산 이력 등 연관 데이터의 FK는 깨지지 않는다.
+     */
     public void withdraw() {
         this.status = UserStatus.WITHDRAWN;
         this.refreshToken = null;
+        this.oAuthId = "withdrawn:" + UUID.randomUUID(); // 원본 소셜 식별자 파기
+        this.email = null;
+        this.name = null;
+        this.nickname = null;
+        this.profileImageUrl = null;
     }
 
     /** 활성 사용자 판정 — 탈퇴 여부는 status(WITHDRAWN)로 판단한다 */

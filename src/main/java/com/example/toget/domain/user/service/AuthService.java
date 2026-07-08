@@ -64,7 +64,8 @@ public class AuthService {
                         .profileImageUrl(info.profileImageUrl())
                         .build()));
 
-        // 탈퇴한 계정은 재로그인 시 인증 오류로 처리
+        // 안전망 — 탈퇴 시 oauth_id가 익명화되므로 WITHDRAWN 계정이 여기서 조회될 일은 없지만,
+        // 익명화 이전 데이터나 SUSPENDED/PENDING 상태를 대비해 활성 상태를 한 번 더 확인한다
         if (!user.isActive()) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }

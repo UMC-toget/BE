@@ -45,6 +45,11 @@ public class JwtProvider {
                        @Value("${jwt.access-token-validity-seconds:3600}") long accessTokenValiditySeconds,
                        @Value("${jwt.refresh-token-validity-seconds:1209600}") long refreshTokenValiditySeconds) {
         this.secret = secret.getBytes(StandardCharsets.UTF_8);
+        // HS256은 해시 출력과 같은 32바이트(256비트) 이상의 키가 표준(RFC 7518) —
+        // 짧은 키는 무차별 대입으로 서명 키가 통째로 털릴 수 있어 기동 자체를 막는다
+        if (this.secret.length < 32) {
+            throw new IllegalStateException("jwt.secret은 32바이트(256비트) 이상이어야 합니다.");
+        }
         this.accessTokenValiditySeconds = accessTokenValiditySeconds;
         this.refreshTokenValiditySeconds = refreshTokenValiditySeconds;
     }
@@ -121,7 +126,8 @@ public class JwtProvider {
                     + base64UrlEncode(objectMapper.writeValueAsBytes(payload));
             return unsignedToken + "." + sign(unsignedToken);
         } catch (Exception e) {
-            throw new UserException(UserErrorCode.UNAUTHORIZED);
+            // 발급 실패는 클라이언트 잘못(401)이 아닌 서버 내부 오류 — 공통 핸들러가 500으로 응답
+            throw new IllegalStateException("JWT 생성에 실패했습니다.", e);
         }
     }
 

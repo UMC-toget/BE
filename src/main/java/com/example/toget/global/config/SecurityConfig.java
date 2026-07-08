@@ -3,6 +3,7 @@ package com.example.toget.global.config;
 import com.example.toget.global.apiPayload.ApiResponse;
 import com.example.toget.global.apiPayload.code.GeneralErrorCode;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -95,6 +96,16 @@ public class SecurityConfig {
         );
 
         return http.build();
+    }
+
+    // JwtAuthenticationFilter가 @Component라서 부트가 서블릿 컨테이너에도 자동 등록해 버리는데,
+    // 그러면 시큐리티 체인 밖에서 한 번 더 매핑된다. 등록을 꺼서 시큐리티 체인 안에서만 실행되게 한다.
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(
+            JwtAuthenticationFilter filter) {
+        FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 
     // 시큐리티 필터 단계는 GeneralExceptionAdvice가 닿지 않으므로 직접 ApiResponse JSON을 작성
