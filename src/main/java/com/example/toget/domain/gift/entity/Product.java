@@ -37,7 +37,4 @@ public class Product extends BaseEntity {
 
     @Column(name = "brand", length = 50)
     private String brand;
-
-    @Column(name = "stock_quantity")
-    private Integer stockQuantity;
 }
