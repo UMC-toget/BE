@@ -1,6 +1,6 @@
 package com.example.toget.domain.user.dto;
 
-import com.example.toget.global.enums.BankName;
+import com.example.toget.domain.user.enums.BankName;
 
 /** 계좌 단건 응답 — 목록 조회와 수정 응답에서 공용으로 사용 */
 public record UserAccountResponse(
