@@ -1,6 +1,6 @@
 package com.example.toget.domain.user.entity;
 
-import com.example.toget.domain.user.enums.BankName;
+import com.example.toget.global.enums.BankName;
 import com.example.toget.global.entity.BaseEntity;
 import com.example.toget.global.util.AesGcmConverter;
 import jakarta.persistence.*;
