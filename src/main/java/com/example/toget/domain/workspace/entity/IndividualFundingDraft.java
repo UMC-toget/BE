@@ -27,7 +27,7 @@ public class IndividualFundingDraft extends BaseEntity {
     @Column
     private Integer step;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String title;
 
     @Column(name = "anniversary_date")
@@ -36,10 +36,10 @@ public class IndividualFundingDraft extends BaseEntity {
     @Column(name = "end_date")
     private LocalDateTime endDate;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String greeting;
 
-    @Column(name = "thumbnail_url")
+    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
     private String thumbnailUrl;
 
     @Column(name = "is_progress_public")
@@ -62,20 +62,20 @@ public class IndividualFundingDraft extends BaseEntity {
     @Builder.Default
     private Boolean isMessagePublic = true;
 
-    @Column(name = "invitation_title")
+    @Column(name = "invitation_title", columnDefinition = "TEXT")
     private String invitationTitle;
 
-    @Column(name = "invitation_content")
+    @Column(name = "invitation_content", columnDefinition = "TEXT")
     private String invitationContent;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "bank_name")
+    @Column(name = "bank_name", length = 30)
     private BankName bankName;
 
-    @Column(name = "bank_account")
+    @Column(name = "bank_account", length = 50)
     private String bankAccount;
 
-    @Column(name = "account_owner")
+    @Column(name = "account_owner", length = 50)
     private String accountOwner;
 }
 

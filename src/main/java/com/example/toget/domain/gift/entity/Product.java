@@ -14,26 +14,30 @@ public class Product extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "product_id")
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "price", nullable = false)
     private Long price;
 
-    @Column
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "image_url")
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
-    @Column(name = "purchase_url", nullable = false)
+    @Column(name = "shop_url", nullable = false, columnDefinition = "TEXT")
     private String purchaseUrl;
 
-    @Column
+    @Column(name = "category", length = 50)
     private String category;
 
-    @Column
+    @Column(name = "brand", length = 50)
     private String brand;
+
+    @Column(name = "stock_quantity")
+    private Integer stockQuantity;
 }

@@ -14,20 +14,21 @@ public class WishlistItem extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "wishlist_item_id")
     private Long id;
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(nullable = false)
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "price", nullable = false)
     private Long price;
 
-    @Column(name = "purchase_url", nullable = true)
+    @Column(name = "purchase_url", nullable = false, columnDefinition = "TEXT")
     private String purchaseUrl;
 
-    @Column(name = "image_url", nullable = true)
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 }

@@ -15,18 +15,18 @@ public class IndividualFundingDraftGifts {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "my_draft_id", nullable = false)
+    @Column(name = "my_drafts_id", nullable = false)
     private Long myDraftId;
 
-    @Column
+    @Column(name = "gift_name", length = 50)
     private String name;
 
-    @Column
+    @Column(name = "gift_price")
     private Long price;
 
-    @Column(name = "purchase_url")
+    @Column(name = "gift_shop_url", columnDefinition = "TEXT")
     private String purchaseUrl;
 
-    @Column(name = "image_url")
+    @Column(name = "gift_image_url", columnDefinition = "TEXT")
     private String imageUrl;
 }

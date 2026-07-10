@@ -23,35 +23,35 @@ public class FundingTogetherDraft extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column
+    @Column(length = 50)
     private String title;
 
-    @Column
+    @Column(length = 50)
     private String receiver;
 
     @Column(name = "anniversary_date")
     private LocalDate anniversaryDate;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "thumbnail_image_url")
+    @Column(name = "thumbnail_image_url", columnDefinition = "TEXT")
     private String thumbnailImageUrl;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "bank_name")
+    @Column(name = "bank_name", length = 30)
     private BankName bankName;
 
-    @Column(name = "bank_account")
+    @Column(name = "bank_account", length = 50)
     private String bankAccount;
 
-    @Column(name = "account_owner")
+    @Column(name = "account_owner", length = 50)
     private String accountOwner;
 
-    @Column(name = "card_title")
+    @Column(name = "card_title", columnDefinition = "TEXT")
     private String cardTitle;
 
-    @Column(name = "card_content")
+    @Column(name = "card_content", columnDefinition = "TEXT")
     private String cardContent;
 }
 
