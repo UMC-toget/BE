@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
+@Table(name = "individual_funding_draft_gifts")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
