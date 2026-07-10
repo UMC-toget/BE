@@ -1,6 +1,7 @@
 package com.example.toget.domain.invitation.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -13,6 +14,8 @@ public record CharacterRequest(
         String name,
 
         @NotBlank(message = "imageUrl은 필수입니다.")
+        @Size(max = 2048) // 과도하게 긴 문자열(예: data URI) 저장 방지
+        @Pattern(regexp = "^https?://.+", message = "imageUrl은 http(s):// 로 시작하는 URL이어야 합니다.")
         String imageUrl
 ) {
 }
