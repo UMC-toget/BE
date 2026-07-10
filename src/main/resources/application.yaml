@@ -1,4 +1,7 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
+
   application:
     name: "투겟"
 
@@ -17,3 +20,20 @@ spring:
     properties:
       hibernate:
         format_sql: true # 출력되는 SQL 쿼리를 보기 좋게 포맷팅
+
+jwt:
+  secret: ${JWT_SECRET} # 기본값 없음 — 미설정 시 기동 실패 (공개된 기본 키로 토큰이 서명되는 사고 방지)
+  access-token-validity-seconds: ${JWT_ACCESS_TOKEN_VALIDITY_SECONDS:3600}
+  refresh-token-validity-seconds: ${JWT_REFRESH_TOKEN_VALIDITY_SECONDS:1209600}
+
+encryption:
+  key: ${ENCRYPTION_KEY} # 기본값 없음 — 미설정 시 기동 실패 (공개된 기본 키로 계좌번호가 암호화되는 사고 방지)
+
+oauth:
+  google:
+    token-info-uri: ${GOOGLE_TOKEN_INFO_URI:https://oauth2.googleapis.com/tokeninfo}
+    client-id: ${GOOGLE_CLIENT_ID:} # ID 토큰의 aud 검증용 — 미설정 시 구글 로그인 불가
+  kakao:
+    user-info-uri: ${KAKAO_USER_INFO_URI:https://kapi.kakao.com/v2/user/me}
+    token-info-uri: ${KAKAO_TOKEN_INFO_URI:https://kapi.kakao.com/v1/user/access_token_info}
+    app-id: ${KAKAO_APP_ID:} # access token의 발급 앱(app_id) 검증용 — 미설정 시 카카오 로그인 불가

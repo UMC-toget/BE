@@ -21,6 +21,9 @@ public enum GeneralErrorCode implements BaseErrorCode {
     // 404 Not Found
     NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON404_1", "해당 리소스를 찾을 수 없습니다."),
 
+    // 409 Conflict — 동시 요청 등으로 인한 데이터 중복/충돌
+    CONFLICT(HttpStatus.CONFLICT, "COMMON409_1", "요청이 기존 데이터와 충돌했습니다. 다시 시도해주세요."),
+
     // 405 Method Not Allowed
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "COMMON405_1", "지원하지 않는 HTTP 메소드입니다."),
 
