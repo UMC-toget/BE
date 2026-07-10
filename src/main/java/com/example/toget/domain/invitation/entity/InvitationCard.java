@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,12 +18,15 @@ import lombok.NoArgsConstructor;
 /**
  * 펀딩에 첨부되는 초대장 카드 엔티티
  *
- *  - fundingId: funding 도메인이 아직 구현되지 않아 엔티티 연관관계(@ManyToOne) 대신 FK 값(Long)만 저장.
+ *  - fundingId: funding 도메인이 아직 구현되지 않아 엔티티 연관관계(@OneToOne) 대신 FK 값(Long)만 저장.
  *  - url: 초대장 공유 링크.
  *    URL 생성 방식(UUID, 슬러그, id 기반 등)은 아직 확정되지 않아 현재는 Builder를 통해 외부에서 값을 주입받는다.
  */
 @Entity
-@Table(name = "invitation_cards")
+// funding_id에 UNIQUE 제약 추가 — 펀딩:초대장은 1:1 관계.
+@Table(name = "invitation_cards", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_invitation_cards_funding", columnNames = {"funding_id"})
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InvitationCard {
@@ -34,7 +38,7 @@ public class InvitationCard {
     private Long id;
 
     // 이 초대장이 속한 funding의 ID
-    // funding 도메인이 아직 구현되지 않아 FK 값(Long)만 저장하며, 추후 Funding 엔티티가 추가되면 @ManyToOne 연관관계로 변경 예정.
+    // funding 도메인이 아직 구현되지 않아 FK 값(Long)만 저장하며, 추후 Funding 엔티티가 추가되면 @OneToOne 연관관계로 변경 예정.
     @Column(name = "funding_id", nullable = false)
     private Long fundingId;
 
@@ -51,11 +55,13 @@ public class InvitationCard {
     private InvitationBackground background;
 
     // 초대장 제목
-    @Column(name = "title", nullable = false, length = 50)
+    // TODO: 초대장 수정 API 구현 시 InvitationCardRequest에 @Size(max = 15) 추가 필요
+    @Column(name = "title", nullable = false, length = 15)
     private String title;
 
     // 초대장 본문 내용
-    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
+    // TODO: 초대장 수정 API 구현 시 InvitationCardRequest에 @Size(max = 60) 추가 필요
+    @Column(name = "content", nullable = false, length = 60)
     private String content;
 
     // 초대장 공유 링크
