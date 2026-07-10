@@ -1,6 +1,5 @@
 package com.example.toget.domain.workspace.entity;
 
-import com.example.toget.global.enums.BankName;
 import com.example.toget.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -38,15 +37,8 @@ public class FundingTogetherDraft extends BaseEntity {
     @Column(name = "thumbnail_image_url", columnDefinition = "TEXT")
     private String thumbnailImageUrl;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "bank_name", length = 30)
-    private BankName bankName;
-
-    @Column(name = "bank_account", length = 50)
-    private String bankAccount;
-
-    @Column(name = "account_owner", length = 50)
-    private String accountOwner;
+    @Column(name = "user_account_id")
+    private Long userAccountId;
 
     @Column(name = "card_title", columnDefinition = "TEXT")
     private String cardTitle;
