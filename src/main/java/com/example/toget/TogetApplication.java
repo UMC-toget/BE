@@ -4,7 +4,9 @@ import jakarta.annotation.PostConstruct;
 import java.util.TimeZone;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
+@EnableJpaAuditing // BaseEntity의 @CreatedDate/@LastModifiedDate 자동 세팅 활성화 (누락 시 created_at NOT NULL 위반으로 INSERT 실패)
 @SpringBootApplication
 public class TogetApplication {
 
