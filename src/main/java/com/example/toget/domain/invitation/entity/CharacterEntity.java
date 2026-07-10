@@ -12,6 +12,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * 초대장 카드에 표시되는 캐릭터 엔티티
  *
@@ -44,5 +46,21 @@ public class CharacterEntity extends BaseEntity {
     private CharacterEntity(String name, String imageUrl) {
         this.name = name;
         this.imageUrl = imageUrl;
+    }
+
+    // 캐릭터 정보 전체 수정
+    public void update(String name, String imageUrl) {
+        this.name = name;
+        this.imageUrl = imageUrl;
+    }
+
+    /**
+     * soft delete — 레코드를 지우지 않고 deleted_at에 삭제 시각만 기록.
+     * hard delete를 쓰지 않는 이유: 이미 발행된 초대장(invitation_cards)이 이 캐릭터를 FK로
+     * 참조하고 있어, 실제 삭제 시 FK 제약 위반이나 기존 초대장 깨짐이 발생하기 때문.
+     * 조회 API에서는 deleted_at IS NULL 조건으로 걸러서 신규 선택지에서만 제외된다.
+     */
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
     }
 }

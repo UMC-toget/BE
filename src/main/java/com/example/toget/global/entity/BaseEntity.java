@@ -23,6 +23,9 @@ public abstract class BaseEntity {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    // private → protected: soft delete가 필요한 엔티티(캐릭터/초대장 배경 등)가
+    // 자신의 delete() 메서드에서 이 필드를 직접 기록할 수 있도록 접근만 열어둔다.
+    // BaseEntity에 공통 삭제 메서드를 두지 않는 이유: 모든 엔티티가 soft delete 대상인 것처럼 보이는 것을 방지.
     @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    protected LocalDateTime deletedAt;
 }

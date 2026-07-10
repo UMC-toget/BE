@@ -12,6 +12,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * 초대장 카드 배경(색상) 엔티티
  */
@@ -39,5 +41,20 @@ public class InvitationBackground extends BaseEntity {
     private InvitationBackground(String name, String hexCode) {
         this.name = name;
         this.hexCode = hexCode;
+    }
+
+    // 배경 색상 정보 전체 수정
+    public void update(String name, String hexCode) {
+        this.name = name;
+        this.hexCode = hexCode;
+    }
+
+    /**
+     * soft delete — 레코드를 지우지 않고 deleted_at에 삭제 시각만 기록.
+     * 이미 발행된 초대장(invitation_cards)이 이 배경을 FK로 참조하므로 hard delete 시
+     * FK 제약 위반/초대장 깨짐 방지 목적. 조회 API는 deleted_at IS NULL 조건으로 걸러낸다.
+     */
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
     }
 }
