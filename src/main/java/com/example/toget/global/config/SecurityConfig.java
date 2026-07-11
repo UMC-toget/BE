@@ -86,6 +86,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/fundings/*/contributions").permitAll()
 
                 // 공통 리소스 정보 조회는 인증 없이 가능하도록 설정
+                // (캐릭터/배경색의 POST·PUT·DELETE는 아래 anyRequest().authenticated()에 걸려 로그인만 요구)
+                // TODO: ADMIN 권한 도입 후 캐릭터/배경색의 생성·수정·삭제는 hasRole("ADMIN")으로 제한
+                //  전제조건: User 엔티티 role 필드 + JWT 클레임에 role 포함 + JwtAuthenticationFilter의
+                //  권한(GrantedAuthority) 매핑이 먼저 구현되어야 함. SecurityConfig만 바꾸면 항상 403이 남.
                 .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/characters/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/invitation-backgrounds/**").permitAll()
