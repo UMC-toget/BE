@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class IndividualFundingDraftGifts {
+public class IndividualFundingDraftGift {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
