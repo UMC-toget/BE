@@ -17,9 +17,10 @@ import java.time.LocalDate;
  * [설계 포인트]
  *  - fundingType(MY_GIFT/TOGETHER_GIFT)에 따라 생성 시점의 초기 상태와
  *    계좌 필수 여부가 달라진다 — createMyGift/createTogetherGift 두 정적 팩토리로
- *    그 차이를 명시적으로 드러낸다 (Contribution과 동일한 설계 철학).
+ *    그 차이를 명시적으로 드러낸다.
+ *  - "확정 선물"은 FundingGift.status(SELECTED)로 추적하고, Funding은 진행 단계(status)만 갖는다.
+ *  - TOGETHER_GIFT의 정산 인원/금액/입금상태는 FundingMember가 담당한다 (Funding은 관여하지 않음).
  *  - User/UserAccount와 마찬가지로 연관관계 없이 FK 값(userId, userAccountId)만 저장한다.
- *  - "확정 선물"을 추적하는 컬럼은 아직 스키마에 없기 때문에 추후 수정 필요.
  */
 @Entity
 @Table(name = "fundings")
@@ -32,7 +33,9 @@ public class Funding extends BaseEntity {
     @Column(name = "id")
     private Long id;
 
-    /** 개최자 FK */
+    /**
+     * 개최자 FK
+     */
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
@@ -69,7 +72,9 @@ public class Funding extends BaseEntity {
     @Column(name = "thumbnail_image_url", length = 512)
     private String thumbnailImageUrl;
 
-    /** 목표 금액 — 미입력 시 0 (목표 없이 자유롭게 모금하는 케이스 허용) */
+    /**
+     * 목표 금액 — 미입력 시 0 (목표 없이 자유롭게 모금하는 케이스 허용)
+     */
     @Column(name = "target_amount", nullable = false)
     private Long targetAmount;
 
@@ -98,7 +103,7 @@ public class Funding extends BaseEntity {
 
     /**
      * 내 선물 만들기(MY_GIFT) 펀딩 생성.
-     * 선물 후보 선정 단계가 없어 바로 ACTIVE로 시작하며, 본인이 직접 정산받으므로
+     * 선물 후보 선정 단계가 없어 바로 SETTLING으로 시작하며, 본인이 직접 정산받으므로
      * userAccountId는 필수.
      */
     public static Funding createMyGift(Long userId, Long userAccountId, String title,
@@ -121,14 +126,18 @@ public class Funding extends BaseEntity {
                 .introduction(introduction)
                 .thumbnailImageUrl(thumbnailImageUrl)
                 .targetAmount(targetAmount)
-                .status(FundingStatus.ACTIVE)
+                .status(FundingStatus.SETTLING)
                 .build();
     }
 
     /**
      * 함께 선물하기(TOGETHER_GIFT) 펀딩 생성.
-     * 개최자가 최종 선물을 확정하기 전까지는 GIFT_SELECTING 상태이며,
-     * 계좌는 아직 등록하지 않고도 펀딩을 열 수 있어 선택사항이다.
+     * 개최자가 정산(선물 확정 + 정산인원 확정 + 금액 확정)을 완료하기 전까지는
+     * SELECTING 상태이며, 계좌는 아직 등록하지 않고도 펀딩을 열 수 있어 선택사항이다.
+     * <p>
+     * 생성 시점에는 FundingMember(개설자=CREATOR) row가 함께 생성되어야 한다.
+     * 이 메서드는 Funding 자체만 생성하므로, 호출부(서비스 계층)에서
+     * FundingMember.createCreator(...)를 이어서 호출해 트랜잭션으로 묶어야 한다.
      */
     public static Funding createTogetherGift(Long userId, Long userAccountId, String title,
                                              String recipientName, LocalDate anniversaryDate,
@@ -147,35 +156,44 @@ public class Funding extends BaseEntity {
                 .introduction(introduction)
                 .thumbnailImageUrl(thumbnailImageUrl)
                 .targetAmount(targetAmount)
-                .status(FundingStatus.GIFT_SELECTING)
+                .status(FundingStatus.SELECTING)
                 .build();
     }
 
     /**
-     * 개최자가 최종 선물을 확정 — GIFT_SELECTING → ACTIVE (TOGETHER_GIFT 전용)
-     *
-     * TODO: 현재는 상태 전이만 수행하고 "어떤 선물이 확정됐는지"는 기록하지 않는다.
-     * 여러 선물을 동시에 확정할 수 있으므로, 추후 수정 필요.
+     * 정산 확정(4단계 "정산 시작하기") — SELECTING → SETTLING (TOGETHER_GIFT 전용)
+     * <p>
+     * 프론트에서 선물 확정/정산인원 확정/금액 확정을 한 번에 모아 저장하는 원자적 액션이므로,
+     * 이 메서드 호출 시점에 FundingGift.select(...), FundingMember.confirmSettlement(...)가
+     * 같은 트랜잭션 안에서 함께 처리되어야 한다.
      */
-    public void confirmGift() {
-        if (this.status != FundingStatus.GIFT_SELECTING) {
+    public void confirmSettlement() {
+        if (this.status != FundingStatus.SELECTING) {
+            // 예외처리 추가
         }
-        this.status = FundingStatus.ACTIVE;
+        this.status = FundingStatus.SETTLING;
     }
 
-    /** 펀딩 종료(조기 마감 또는 기간 만료) — ACTIVE → DELIVERED */
-    public void close() {
-        if (this.status != FundingStatus.ACTIVE) {
+    /**
+     * 선물 전달 완료 처리(펀딩 종료) — SETTLING → DELIVERED
+     */
+    public void complete() {
+        if (this.status != FundingStatus.SETTLING) {
+            // 예외처리 추가
         }
-        this.status = FundingStatus.ENDED;
+        this.status = FundingStatus.DELIVERED;
     }
 
-    /** 선물 리스트 갱신용 정산 계좌 등록/변경 — TOGETHER_GIFT가 나중에 계좌를 등록할 때 사용 */
+    /**
+     * 선물 리스트 갱신용 정산 계좌 등록/변경 — TOGETHER_GIFT가 나중에 계좌를 등록할 때 사용
+     */
     public void updateAccount(Long userAccountId) {
         this.userAccountId = userAccountId;
     }
 
-    /** 정산 계좌 소유권 검사 — 서비스 계층에서 남의 펀딩 접근을 막을 때 사용 */
+    /**
+     * 정산 계좌 소유권 검사 — 서비스 계층에서 남의 펀딩 접근을 막을 때 사용
+     */
     public boolean isOwnedBy(Long userId) {
         return this.userId.equals(userId);
     }
