@@ -74,7 +74,7 @@ public class FundingContribution extends BaseEntity {
     /** 비회원(guest) 후원 생성 — MY_GIFT에서 로그인 없이 참여하는 경우 */
     public static FundingContribution createForGuest(Long fundingId, Long backgroundId,
                                                      String guestName, Boolean isAnonymous,
-                                                     Long amount, String content) {
+                                                     Long amount, String content, Boolean isMessageVisible) {
         return FundingContribution.builder()
                 .fundingId(fundingId)
                 .backgroundId(backgroundId)
@@ -82,6 +82,7 @@ public class FundingContribution extends BaseEntity {
                 .isAnonymous(isAnonymous)
                 .amount(amount)
                 .content(content)
+                .isMessageVisible(isMessageVisible)
                 .build();
     }
 
