@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 /**
- * 펀딩(선물 준비) 엔티티 — fundings 테이블 매핑.
+ * 펀딩(선물 준비) 엔티티
  *
  * [설계 포인트]
  *  - fundingType(MY_GIFT/TOGETHER_GIFT)에 따라 생성 시점의 초기 상태와
