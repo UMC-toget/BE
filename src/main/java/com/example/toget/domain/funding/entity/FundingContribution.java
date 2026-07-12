@@ -88,7 +88,7 @@ public class FundingContribution extends BaseEntity {
     /** 로그인 유저 후원 생성 — MY_GIFT/TOGETHER_GIFT 공통 */
     public static FundingContribution createForLoggedInUser(Long fundingId, Long backgroundId,
                                                             Long userId, Boolean isAnonymous,
-                                                            Long amount, String content) {
+                                                            Long amount, String content, Boolean isMessageVisible) {
         return FundingContribution.builder()
                 .fundingId(fundingId)
                 .backgroundId(backgroundId)
@@ -96,6 +96,7 @@ public class FundingContribution extends BaseEntity {
                 .isAnonymous(isAnonymous)
                 .amount(amount)
                 .content(content)
+                .isMessageVisible(isMessageVisible)
                 .build();
     }
 
