@@ -1,5 +1,7 @@
 package com.example.toget.domain.funding.entity;
 
+import com.example.toget.domain.funding.exception.FundingErrorCode;
+import com.example.toget.global.apiPayload.exception.ProjectException;
 import com.example.toget.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -61,6 +63,7 @@ public class FundingContribution extends BaseEntity {
     private FundingContribution(Long fundingId, Long backgroundId, Long userId, String guestName,
                                 Boolean isAnonymous, Long amount, String content,
                                 Boolean isMessageVisible) {
+
         this.fundingId = fundingId;
         this.backgroundId = backgroundId;
         this.userId = userId;
@@ -70,6 +73,7 @@ public class FundingContribution extends BaseEntity {
         this.content = content;
         this.isMessageVisible = isMessageVisible != null ? isMessageVisible : true;
     }
+
 
     /** 비회원(guest) 후원 생성 — MY_GIFT에서 로그인 없이 참여하는 경우 */
     public static FundingContribution createForGuest(Long fundingId, Long backgroundId,

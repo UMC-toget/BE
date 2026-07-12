@@ -2,6 +2,8 @@ package com.example.toget.domain.funding.entity;
 
 import com.example.toget.domain.funding.enums.FundingStatus;
 import com.example.toget.domain.funding.enums.FundingType;
+import com.example.toget.domain.funding.exception.FundingErrorCode;
+import com.example.toget.global.apiPayload.exception.ProjectException;
 import com.example.toget.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -87,6 +89,8 @@ public class Funding extends BaseEntity {
                     String recipientName, LocalDate anniversaryDate, LocalDate startDate,
                     LocalDate endDate, String introduction, String thumbnailImageUrl,
                     Long targetAmount, FundingStatus status) {
+        validatePeriod(startDate, endDate);
+
         this.userId = userId;
         this.userAccountId = userAccountId;
         this.fundingType = fundingType;
@@ -101,6 +105,13 @@ public class Funding extends BaseEntity {
         this.status = status;
     }
 
+    private static void validatePeriod(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
+            throw new ProjectException(FundingErrorCode.INVALID_FUNDING_PERIOD);
+        }
+    }
+
+
     /**
      * 내 선물 만들기(MY_GIFT) 펀딩 생성.
      * 선물 후보 선정 단계가 없어 바로 SETTLING으로 시작하며, 본인이 직접 정산받으므로
@@ -112,7 +123,7 @@ public class Funding extends BaseEntity {
                                        String introduction, String thumbnailImageUrl,
                                        Long targetAmount) {
         if (userAccountId == null) {
-            // 예외처리 추가
+            throw new ProjectException(FundingErrorCode.ACCOUNT_REQUIRED_FOR_MY_GIFT);
         }
         return Funding.builder()
                 .userId(userId)
@@ -169,7 +180,7 @@ public class Funding extends BaseEntity {
      */
     public void confirmSettlement() {
         if (this.status != FundingStatus.SELECTING) {
-            // 예외처리 추가
+            throw new ProjectException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
         }
         this.status = FundingStatus.SETTLING;
     }
@@ -179,7 +190,7 @@ public class Funding extends BaseEntity {
      */
     public void complete() {
         if (this.status != FundingStatus.SETTLING) {
-            // 예외처리 추가
+            throw new ProjectException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
         }
         this.status = FundingStatus.DELIVERED;
     }

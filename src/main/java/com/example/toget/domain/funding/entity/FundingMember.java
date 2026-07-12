@@ -2,6 +2,8 @@ package com.example.toget.domain.funding.entity;
 
 import com.example.toget.domain.funding.enums.FundingRole;
 import com.example.toget.domain.funding.enums.SettlementStatus;
+import com.example.toget.domain.funding.exception.FundingErrorCode;
+import com.example.toget.global.apiPayload.exception.ProjectException;
 import com.example.toget.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -93,6 +95,7 @@ public class FundingMember extends BaseEntity {
     public void promoteToAdmin() {
         if (this.role == FundingRole.CREATOR) {
             // 개설자는 역할 변경 대상이 아님 — 예외처리 추가
+            throw new ProjectException(FundingErrorCode.CREATOR_ROLE_CANNOT_BE_CHANGED);
         }
         this.role = FundingRole.ADMIN;
     }
@@ -100,7 +103,7 @@ public class FundingMember extends BaseEntity {
     /** 일반 참여자로 강등 (현재 로직엔 없지만 추후에 필요시 사용) */
     public void demoteToParticipant() {
         if (this.role == FundingRole.CREATOR) {
-            // 예외처리 추가
+            throw new ProjectException(FundingErrorCode.CREATOR_ROLE_CANNOT_BE_CHANGED);
         }
         this.role = FundingRole.PARTICIPANT;
     }
@@ -119,7 +122,7 @@ public class FundingMember extends BaseEntity {
      */
     public void changeSettlementStatus(SettlementStatus settlementStatus) {
         if (this.amountDue == null) {
-            // 정산 대상이 아닌 멤버 — 예외처리 추가
+            throw new ProjectException(FundingErrorCode.NOT_SETTLEMENT_TARGET);
         }
         this.settlementStatus = settlementStatus;
     }
