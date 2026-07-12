@@ -23,7 +23,15 @@ import lombok.NoArgsConstructor;
  *  - 투표 자격(FundingGiftVote)은 이 row의 존재 여부만으로 판단하며, 정산 참여 여부와 무관하다.
  */
 @Entity
-@Table(name = "funding_members")
+@Table(
+    name = "funding_members",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_funding_member_user",
+            columnNames = {"funding_id", "user_id"}
+        )
+    }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class FundingMember extends BaseEntity {
