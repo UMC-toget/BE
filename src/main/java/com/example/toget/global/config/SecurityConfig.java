@@ -1,8 +1,13 @@
 package com.example.toget.global.config;
 
+import com.example.toget.global.apiPayload.ApiResponse;
+import com.example.toget.global.apiPayload.code.GeneralErrorCode;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -10,16 +15,27 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import tools.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
 @EnableWebSecurity // Spring Security 설정을 활성화, 직접 작성한 보안 설정이 Spring Security의 기본 설정보다 우선 적용
 @Configuration
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     // 인증 없이 모든 HTTP 메소드를 접근할 수 있는 Public API 경로 정의
     private final String[] allowAllUris = {
@@ -50,6 +66,15 @@ public class SecurityConfig {
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)
 
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+        // 시큐리티 단계에서 거부된 요청도 ApiResponse 포맷으로 응답 (기본값은 빈 본문 403)
+        .exceptionHandling(handling -> handling
+                .authenticationEntryPoint((request, response, e) ->
+                        writeErrorResponse(response, GeneralErrorCode.UNAUTHORIZED))
+                .accessDeniedHandler((request, response, e) ->
+                        writeErrorResponse(response, GeneralErrorCode.FORBIDDEN)))
+
         // HTTP 요청에 대한 접근 제어 설정
         .authorizeHttpRequests(requests -> requests
                 // Swagger 및 소셜 로그인 API 무조건 허용
@@ -61,6 +86,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/fundings/*/contributions").permitAll()
 
                 // 공통 리소스 정보 조회는 인증 없이 가능하도록 설정
+                // (캐릭터/배경색의 POST·PUT·DELETE는 아래 anyRequest().authenticated()에 걸려 로그인만 요구)
+                // TODO: ADMIN 권한 도입 후 캐릭터/배경색의 생성·수정·삭제는 hasRole("ADMIN")으로 제한
+                //  전제조건: User 엔티티 role 필드 + JWT 클레임에 role 포함 + JwtAuthenticationFilter의
+                //  권한(GrantedAuthority) 매핑이 먼저 구현되어야 함. SecurityConfig만 바꾸면 항상 403이 남.
                 .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/characters/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/invitation-backgrounds/**").permitAll()
@@ -71,6 +100,24 @@ public class SecurityConfig {
         );
 
         return http.build();
+    }
+
+    // JwtAuthenticationFilter가 @Component라서 부트가 서블릿 컨테이너에도 자동 등록해 버리는데,
+    // 그러면 시큐리티 체인 밖에서 한 번 더 매핑된다. 등록을 꺼서 시큐리티 체인 안에서만 실행되게 한다.
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(
+            JwtAuthenticationFilter filter) {
+        FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    // 시큐리티 필터 단계는 GeneralExceptionAdvice가 닿지 않으므로 직접 ApiResponse JSON을 작성
+    private void writeErrorResponse(HttpServletResponse response, GeneralErrorCode errorCode) throws IOException {
+        response.setStatus(errorCode.getStatus().value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.onFailure(errorCode, null)));
     }
 
     // CORS 설정을 처리하는 Bean 정의
