@@ -1,5 +1,6 @@
 package com.example.toget.domain.gift.entity;
 
+import com.example.toget.domain.funding.enums.FundingGiftStatus;
 import com.example.toget.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -31,4 +32,22 @@ public class FundingGift extends BaseEntity {
 
     @Column(name = "gift_image_url", columnDefinition = "TEXT")
     private String imageUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    @Builder.Default
+    private FundingGiftStatus status = FundingGiftStatus.CANDIDATE;
+
+    @Column(name = "note", nullable = false, length = 100)
+    private String note;
+
+    /** 최종 선물로 확정 */
+    public void select() {
+        this.status = FundingGiftStatus.SELECTED;
+    }
+
+    /** 확정 취소 (다시 후보로) */
+    public void unselect() {
+        this.status = FundingGiftStatus.CANDIDATE;
+    }
 }
