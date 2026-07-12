@@ -38,3 +38,7 @@ out/
 
 ### 민감 정보 ###
 .env
+
+### macOS ###
+.DS_Store
+**/.DS_Store
