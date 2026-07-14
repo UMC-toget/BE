@@ -13,5 +13,5 @@ package com.example.toget.domain.funding.enums;
 public enum FundingStatus {
     SELECTING,  // 선물 후보 선정 중
     SETTLING,   // 정산 중 (TOGETHER_GIFT: 정산 확정됨)
-    DELIVERED   // 선물 전달 완료
-}
+    ENDED,  // 종료 (준비완료든 조기종료든 통일)
+    }

@@ -208,4 +208,16 @@ public class Funding extends BaseEntity {
     public boolean isOwnedBy(Long userId) {
         return this.userId.equals(userId);
     }
+
+    private boolean isExpired() {
+        return LocalDate.now().isAfter(this.endDate);
+    }
+
+
+    /**
+     * SELECTING 상태에서 기간이 지나 개설자의 종료 결정이 필요한지
+     */
+    public boolean needsEndDecision() {
+        return this.status == FundingStatus.SELECTING && isExpired();
+    }
 }
