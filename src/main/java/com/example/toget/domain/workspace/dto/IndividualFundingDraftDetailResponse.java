@@ -1,7 +1,9 @@
 package com.example.toget.domain.workspace.dto;
 
+import lombok.Builder;
 import java.time.LocalDate;
 
+@Builder
 public record IndividualFundingDraftDetailResponse(
         Long id,
         Integer step,
@@ -15,6 +17,7 @@ public record IndividualFundingDraftDetailResponse(
         InvitationCardResponse invitationCard
 ) {
 
+    @Builder
     public record VisibilitySettingsResponse(
             Boolean isProgressPublic,
             Boolean isAmountPublic,
@@ -23,6 +26,7 @@ public record IndividualFundingDraftDetailResponse(
             Boolean isMessagePublic
     ) {}
 
+    @Builder
     public record InvitationCardResponse(
             Long characterId,
             Long backgroundId,
