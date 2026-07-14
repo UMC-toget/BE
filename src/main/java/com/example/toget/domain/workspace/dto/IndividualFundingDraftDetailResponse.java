@@ -2,6 +2,7 @@ package com.example.toget.domain.workspace.dto;
 
 import lombok.Builder;
 import java.time.LocalDate;
+import java.util.List;
 
 @Builder
 public record IndividualFundingDraftDetailResponse(
@@ -15,7 +16,8 @@ public record IndividualFundingDraftDetailResponse(
         String thumbnailUrl,
         Long userAccountId,
         VisibilitySettingsResponse visibilitySettings,
-        InvitationCardResponse invitationCard
+        InvitationCardResponse invitationCard,
+        List<DraftGiftResponse> gifts
 ) {
 
     @Builder
@@ -33,5 +35,13 @@ public record IndividualFundingDraftDetailResponse(
             Long backgroundId,
             String title,
             String content
+    ) {}
+
+    @Builder
+    public record DraftGiftResponse(
+            String giftName,
+            Long giftPrice,
+            String giftShopUrl,
+            String giftImageUrl
     ) {}
 }

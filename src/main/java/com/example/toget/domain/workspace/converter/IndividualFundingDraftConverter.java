@@ -1,11 +1,16 @@
 package com.example.toget.domain.workspace.converter;
 
+import com.example.toget.domain.gift.entity.IndividualFundingDraftGift;
 import com.example.toget.domain.workspace.dto.IndividualFundingDraftDetailResponse;
 import com.example.toget.domain.workspace.entity.IndividualFundingDraft;
+import java.util.List;
 
 public class IndividualFundingDraftConverter {
 
-    public static IndividualFundingDraftDetailResponse toDetailResponse(IndividualFundingDraft draft) {
+    public static IndividualFundingDraftDetailResponse toDetailResponse(
+            IndividualFundingDraft draft,
+            List<IndividualFundingDraftGift> gifts
+    ) {
         return IndividualFundingDraftDetailResponse.builder()
                 .id(draft.getId())
                 .step(draft.getStep())
@@ -29,6 +34,14 @@ public class IndividualFundingDraftConverter {
                         .title(draft.getInvitationTitle())
                         .content(draft.getInvitationContent())
                         .build())
+                .gifts(gifts.stream()
+                        .map(gift -> IndividualFundingDraftDetailResponse.DraftGiftResponse.builder()
+                                .giftName(gift.getName())
+                                .giftPrice(gift.getPrice())
+                                .giftShopUrl(gift.getPurchaseUrl())
+                                .giftImageUrl(gift.getImageUrl())
+                                .build())
+                        .toList())
                 .build();
     }
 }
