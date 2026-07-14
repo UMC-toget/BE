@@ -11,6 +11,7 @@ public class IndividualFundingDraftConverter {
                 .step(draft.getStep())
                 .title(draft.getTitle())
                 .anniversaryDate(draft.getAnniversaryDate())
+                .startDate(draft.getStartDate())
                 .endDate(draft.getEndDate())
                 .greeting(draft.getGreeting())
                 .thumbnailUrl(draft.getThumbnailUrl())

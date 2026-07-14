@@ -9,6 +9,7 @@ public record IndividualFundingDraftDetailResponse(
         Integer step,
         String title,
         LocalDate anniversaryDate,
+        LocalDate startDate,
         LocalDate endDate,
         String greeting,
         String thumbnailUrl,

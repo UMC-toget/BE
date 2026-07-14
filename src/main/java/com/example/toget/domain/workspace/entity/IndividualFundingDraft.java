@@ -33,6 +33,9 @@ public class IndividualFundingDraft extends BaseEntity {
     @Column(name = "anniversary_date")
     private LocalDate anniversaryDate;
 
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
     @Column(name = "end_date")
     private LocalDate endDate;
 
