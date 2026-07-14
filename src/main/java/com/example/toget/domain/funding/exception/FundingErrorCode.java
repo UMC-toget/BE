@@ -17,7 +17,9 @@ public enum FundingErrorCode implements BaseErrorCode {
     INVALID_TARGET_AMOUNT(HttpStatus.BAD_REQUEST, "FUNDING400_6", "목표 금액은 0원 이상 필수로 입력해야 합니다."),
 
 
-    INVALID_FUNDING_STATUS_TRANSITION(HttpStatus.CONFLICT, "FUNDING409_1", "현재 상태에서는 해당 작업을 수행할 수 없습니다.");
+    INVALID_FUNDING_STATUS_TRANSITION(HttpStatus.CONFLICT, "FUNDING409_1", "현재 상태에서는 해당 작업을 수행할 수 없습니다."),
+    INVALID_SETTLEMENT_STATUS_TRANSITION(HttpStatus.CONFLICT, "FUNDING409_2", "현재 입금 상태에서는 해당 작업을 수행할 수 없습니다."),
+    SETTLEMENT_LOCKED(HttpStatus.CONFLICT, "FUNDING409_3", "이미 입금 절차가 시작되어 정산 인원과 금액을 변경할 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;

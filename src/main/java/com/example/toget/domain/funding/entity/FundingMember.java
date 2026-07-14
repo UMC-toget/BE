@@ -117,18 +117,41 @@ public class FundingMember extends BaseEntity {
     }
 
     /**
-     * 정산 입금 상태 변경. 개설자가 언제든 자유롭게 호출 가능
-     * (순서를 강제하지 않음 — UNPAID/PAID/CONFIRMED 어느 값으로도 임의 변경 가능).
+     * 정산 입금 상태 변경. 개설자가 언제든 자유롭게 호출 가능 — UNPAID → PAID(확인 대기).
+     * 개설자가 아닌, 본인(userId 일치)만 호출 가능
      */
-    public void changeSettlementStatus(SettlementStatus settlementStatus) {
+    public void requestPaymentConfirmation() {
         if (this.amountDue == null) {
             throw new ProjectException(FundingErrorCode.NOT_SETTLEMENT_TARGET);
         }
-        this.settlementStatus = settlementStatus;
+        if (this.settlementStatus != SettlementStatus.UNPAID) {
+            throw new ProjectException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
+        }
+        this.settlementStatus = SettlementStatus.PAID;
+    }
+
+    /**
+     * 개설자가 실제 입금을 확인 — PAID → CONFIRMED.
+     * 개설자만 호출 가능하도록 검증 필요
+     */
+    public void confirmPayment() {
+        if (this.settlementStatus != SettlementStatus.PAID) {
+            throw new ProjectException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
+        }
+        this.settlementStatus = SettlementStatus.CONFIRMED;
     }
 
     /** 이 멤버가 정산 대상으로 확정됐는지 여부 */
     public boolean isSettlementTarget() {
         return this.amountDue != null;
+    }
+
+    /**
+     *  이 멤버가 이미 입금 완료 절차를 시작했는지
+     * (PAID 이상이면 정산 인원/총 정산 금액 변경이 펀딩 전체에서 잠긴다).
+     */
+    public boolean hasRequestedPayment() {
+        return this.settlementStatus == SettlementStatus.PAID
+                || this.settlementStatus == SettlementStatus.CONFIRMED;
     }
 }
