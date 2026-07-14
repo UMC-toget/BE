@@ -14,6 +14,7 @@ public enum FundingErrorCode implements BaseErrorCode {
     CREATOR_ROLE_CANNOT_BE_CHANGED(HttpStatus.BAD_REQUEST, "FUNDING400_3", "개설자의 역할은 변경할 수 없습니다."),
     NOT_SETTLEMENT_TARGET(HttpStatus.BAD_REQUEST, "FUNDING400_4", "정산 대상이 아닌 멤버입니다."),
     VOTE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "FUNDING400_5", "투표는 최대 3개까지 가능합니다."),
+    INVALID_TARGET_AMOUNT(HttpStatus.BAD_REQUEST, "FUNDING400_6", "목표 금액은 0원 이상 필수로 입력해야 합니다."),
 
 
     INVALID_FUNDING_STATUS_TRANSITION(HttpStatus.CONFLICT, "FUNDING409_1", "현재 상태에서는 해당 작업을 수행할 수 없습니다.");

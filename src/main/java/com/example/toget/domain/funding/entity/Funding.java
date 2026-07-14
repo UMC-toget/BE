@@ -23,6 +23,7 @@ import java.time.LocalDate;
  *  - "확정 선물"은 FundingGift.status(SELECTED)로 추적하고, Funding은 진행 단계(status)만 갖는다.
  *  - TOGETHER_GIFT의 정산 인원/금액/입금상태는 FundingMember가 담당한다 (Funding은 관여하지 않음).
  *  - User/UserAccount와 마찬가지로 연관관계 없이 FK 값(userId, userAccountId)만 저장한다.
+ *  - SETTLING 진입 이후에는 endDate와 무관하게 정산이 계속 진행된다.
  */
 @Entity
 @Table(name = "fundings")
@@ -74,9 +75,6 @@ public class Funding extends BaseEntity {
     @Column(name = "thumbnail_image_url", length = 512)
     private String thumbnailImageUrl;
 
-    /**
-     * 목표 금액 — 미입력 시 0 (목표 없이 자유롭게 모금하는 케이스 허용)
-     */
     @Column(name = "target_amount", nullable = false)
     private Long targetAmount;
 
@@ -90,6 +88,7 @@ public class Funding extends BaseEntity {
                     LocalDate endDate, String introduction, String thumbnailImageUrl,
                     Long targetAmount, FundingStatus status) {
         validatePeriod(startDate, endDate);
+        validateTargetAmount(targetAmount);
 
         this.userId = userId;
         this.userAccountId = userAccountId;
@@ -101,7 +100,7 @@ public class Funding extends BaseEntity {
         this.endDate = endDate;
         this.introduction = introduction;
         this.thumbnailImageUrl = thumbnailImageUrl;
-        this.targetAmount = targetAmount != null ? targetAmount : 0L;
+        this.targetAmount = targetAmount;
         this.status = status;
     }
 
@@ -111,6 +110,11 @@ public class Funding extends BaseEntity {
         }
     }
 
+    private static void validateTargetAmount(Long targetAmount) {
+        if (targetAmount == null || targetAmount < 0) {
+            throw new ProjectException(FundingErrorCode.INVALID_TARGET_AMOUNT);
+        }
+    }
 
     /**
      * 내 선물 만들기(MY_GIFT) 펀딩 생성.
@@ -178,21 +182,34 @@ public class Funding extends BaseEntity {
      * 이 메서드 호출 시점에 FundingGift.select(...), FundingMember.confirmSettlement(...)가
      * 같은 트랜잭션 안에서 함께 처리되어야 한다.
      */
-    public void confirmSettlement() {
+    public void confirmSettlement(Long targetAmount) {
         if (this.status != FundingStatus.SELECTING) {
             throw new ProjectException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
         }
+        validateTargetAmount(targetAmount);
+        this.targetAmount = targetAmount;
         this.status = FundingStatus.SETTLING;
     }
 
     /**
-     * 선물 전달 완료 처리(펀딩 종료) — SETTLING → DELIVERED
+     * 펀딩 종료 처리 — SELECTING 또는 SETTLING → ENDED
+     * 최종 선물이 확정된 채 종료(준비완료)든, 미확정 상태로 개설자가 종료를 선택했든
+     * 동일하게 ENDED로 귀결된다. "실제로 선물이 전달되었는지"는 FundingGift 조회로 구분한다.
      */
     public void complete() {
-        if (this.status != FundingStatus.SETTLING) {
+        if (this.status == FundingStatus.ENDED) {
             throw new ProjectException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
         }
-        this.status = FundingStatus.DELIVERED;
+        this.status = FundingStatus.ENDED;
+    }
+
+
+    /**
+     *  종료일 변경 — T종료 결정 필요 상태에서 개설자가 "종료일 변경하기" 선택 시 사용
+     */
+    public void updateEndDate(LocalDate newEndDate) {
+        validatePeriod(this.startDate, newEndDate);
+        this.endDate = newEndDate;
     }
 
     /**
