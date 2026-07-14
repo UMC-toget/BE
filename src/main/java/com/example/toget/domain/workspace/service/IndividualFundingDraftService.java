@@ -1,0 +1,50 @@
+package com.example.toget.domain.workspace.service;
+
+import com.example.toget.domain.gift.entity.IndividualFundingDraftGift;
+import com.example.toget.domain.gift.repository.IndividualFundingDraftGiftRepository;
+import com.example.toget.domain.user.service.ActiveUserReader;
+import com.example.toget.domain.workspace.converter.IndividualFundingDraftConverter;
+import com.example.toget.domain.workspace.dto.IndividualFundingDraftDetailResponse;
+import com.example.toget.domain.workspace.entity.IndividualFundingDraft;
+import com.example.toget.domain.workspace.exception.code.WorkspaceErrorCode;
+import com.example.toget.domain.workspace.exception.WorkspaceException;
+import com.example.toget.domain.workspace.repository.IndividualFundingDraftRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+/**
+ * 내 선물 준비 임시 작성 서비스 비즈니스 로직.
+ */
+@Service
+@RequiredArgsConstructor
+public class IndividualFundingDraftService {
+
+    private final IndividualFundingDraftRepository individualFundingDraftRepository;
+    private final IndividualFundingDraftGiftRepository individualFundingDraftGiftRepository;
+    private final ActiveUserReader activeUserReader;
+
+    /**
+     * 내 선물 준비 임시 저장 상세 정보 및 매핑된 선물 리스트 결합 조회
+     * @param userId 로그인한 사용자 ID
+     * @return 상세 조회 응답 DTO
+     * @throws WorkspaceException 임시 저장 데이터가 존재하지 않을 시 DRAFT404 예외 발생
+     */
+    @Transactional(readOnly = true)
+    public IndividualFundingDraftDetailResponse getDetail(Long userId) {
+        // 1. 활성 사용자 여부 검증 (보안 컨벤션)
+        activeUserReader.getActiveUser(userId);
+
+        // 2. 임시 저장 데이터 조회 (존재하지 않을 시 WorkspaceException(DRAFT404) 발생)
+        IndividualFundingDraft draft = individualFundingDraftRepository.findByUserId(userId)
+                .orElseThrow(() -> new WorkspaceException(WorkspaceErrorCode.DRAFT_NOT_FOUND));
+
+        // 3. 연동된 선물 리스트 조회
+        List<IndividualFundingDraftGift> gifts = individualFundingDraftGiftRepository.findAllByMyDraftId(draft.getId());
+
+        // 4. DTO 변환 및 반환
+        return IndividualFundingDraftConverter.toDetailResponse(draft, gifts);
+    }
+}
