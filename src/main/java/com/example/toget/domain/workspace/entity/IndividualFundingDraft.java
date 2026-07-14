@@ -1,11 +1,12 @@
 package com.example.toget.domain.workspace.entity;
 
+import com.example.toget.domain.invitation.entity.CharacterEntity;
+import com.example.toget.domain.invitation.entity.InvitationBackground;
 import com.example.toget.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "individual_funding_drafts")
@@ -33,7 +34,7 @@ public class IndividualFundingDraft extends BaseEntity {
     private LocalDate anniversaryDate;
 
     @Column(name = "end_date")
-    private LocalDateTime endDate;
+    private LocalDate endDate;
 
     @Column(columnDefinition = "TEXT")
     private String greeting;
@@ -60,6 +61,14 @@ public class IndividualFundingDraft extends BaseEntity {
     @Column(name = "is_message_public")
     @Builder.Default
     private Boolean isMessagePublic = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invitation_character_id", nullable = false)
+    private CharacterEntity invitationCharacterId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invitation_background_id", nullable = false)
+    private InvitationBackground invitationBackgroundId;
 
     @Column(name = "invitation_title", columnDefinition = "TEXT")
     private String invitationTitle;
