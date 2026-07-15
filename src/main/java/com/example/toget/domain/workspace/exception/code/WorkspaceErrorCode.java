@@ -14,7 +14,8 @@ import org.springframework.http.HttpStatus;
 public enum WorkspaceErrorCode implements BaseErrorCode {
 
     DRAFT_NOT_FOUND(HttpStatus.NOT_FOUND, "DRAFT404", "임시 저장 데이터가 존재하지 않습니다."),
-    INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "DRAFT400_1", "종료일은 시작일보다 빠를 수 없습니다.");
+    INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "DRAFT400_1", "종료일은 시작일보다 빠를 수 없습니다."),
+    INVALID_END_DATE(HttpStatus.BAD_REQUEST, "DRAFT400_2", "종료일은 선물 전달 날짜(기념일)보다 늦을 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;

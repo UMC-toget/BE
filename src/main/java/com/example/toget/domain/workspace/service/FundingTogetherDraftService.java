@@ -1,10 +1,14 @@
 package com.example.toget.domain.workspace.service;
 
 import com.example.toget.domain.user.entity.UserAccount;
+import com.example.toget.domain.user.exception.UserErrorCode;
+import com.example.toget.domain.user.exception.UserException;
 import com.example.toget.domain.user.repository.UserAccountRepository;
 import com.example.toget.domain.user.service.ActiveUserReader;
 import com.example.toget.domain.workspace.converter.FundingTogetherDraftConverter;
 import com.example.toget.domain.workspace.dto.FundingTogetherDraftDetailResponse;
+import com.example.toget.domain.workspace.dto.FundingTogetherDraftSaveRequest;
+import com.example.toget.domain.workspace.dto.FundingTogetherDraftSaveResponse;
 import com.example.toget.domain.workspace.entity.FundingTogetherDraft;
 import com.example.toget.domain.workspace.exception.WorkspaceException;
 import com.example.toget.domain.workspace.exception.code.WorkspaceErrorCode;
@@ -47,5 +51,68 @@ public class FundingTogetherDraftService {
 
         // 4. DTO 변환 및 반환
         return FundingTogetherDraftConverter.toDetailResponse(draft, userAccount);
+    }
+
+    /**
+     * 함께 선물 준비 임시 저장 (생성 또는 업데이트)
+     * @param userId 로그인한 사용자 ID
+     * @param request 임시 저장 요청 DTO
+     * @return 임시 저장 결과 DTO
+     */
+    @Transactional
+    public FundingTogetherDraftSaveResponse save(Long userId, FundingTogetherDraftSaveRequest request) {
+        // 1. 활성 사용자 여부 검증 (보안 컨벤션)
+        activeUserReader.getActiveUser(userId);
+
+        // 2. 날짜 순서 검증 (시작일이 종료일보다 늦을 수 없음)
+        if (request.startDate() != null && request.endDate() != null) {
+            if (request.startDate().isAfter(request.endDate())) {
+                throw new WorkspaceException(WorkspaceErrorCode.INVALID_DATE_RANGE);
+            }
+        }
+
+        // 3. 종료일과 전달일 순서 검증 (종료일이 선물 전달 날짜보다 늦을 수 없음)
+        if (request.endDate() != null && request.anniversaryDate() != null) {
+            if (request.endDate().isAfter(request.anniversaryDate())) {
+                throw new WorkspaceException(WorkspaceErrorCode.INVALID_END_DATE);
+            }
+        }
+
+        // 4. 계좌 처리 및 소유권 확인
+        Long userAccountId = null;
+        if (request.userAccountId() != null) {
+            UserAccount userAccount = userAccountRepository.findById(request.userAccountId())
+                    .orElseThrow(() -> new UserException(UserErrorCode.ACCOUNT_NOT_FOUND));
+            if (!userAccount.isOwnedBy(userId)) {
+                throw new UserException(UserErrorCode.ACCOUNT_FORBIDDEN);
+            }
+            userAccountId = userAccount.getId();
+        }
+
+        // 5. 기존 임시 저장 데이터가 있는지 조회
+        FundingTogetherDraft draft = fundingTogetherDraftRepository.findByUserId(userId).orElse(null);
+
+        if (draft == null) {
+            // 새로 생성 (Converter 적용)
+            draft = FundingTogetherDraftConverter.toEntity(userId, request, userAccountId);
+            draft = fundingTogetherDraftRepository.save(draft);
+        } else {
+            // 기존 객체 필드 업데이트 (Dirty checking)
+            draft.update(
+                    request.step(),
+                    request.startDate(),
+                    request.endDate(),
+                    request.title(),
+                    request.receiver(),
+                    request.anniversaryDate(),
+                    request.description(),
+                    request.thumbnailImageUrl(),
+                    userAccountId,
+                    request.cardTitle(),
+                    request.cardContent()
+            );
+        }
+
+        return new FundingTogetherDraftSaveResponse(draft.getId());
     }
 }
