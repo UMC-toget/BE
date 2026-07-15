@@ -2,13 +2,13 @@ package com.example.toget.domain.workspace.controller;
 
 import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.domain.workspace.dto.IndividualFundingDraftDetailResponse;
+import com.example.toget.domain.workspace.dto.IndividualFundingDraftSaveRequest;
+import com.example.toget.domain.workspace.dto.IndividualFundingDraftSaveResponse;
 import com.example.toget.domain.workspace.exception.code.WorkspaceSuccessCode;
 import com.example.toget.domain.workspace.service.IndividualFundingDraftService;
 import com.example.toget.global.apiPayload.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 내 선물 준비 임시 작성 API 컨트롤러.
@@ -25,5 +25,15 @@ public class IndividualFundingDraftController {
     public ApiResponse<IndividualFundingDraftDetailResponse> getDetail(@LoginUserId Long userId) {
         IndividualFundingDraftDetailResponse response = individualFundingDraftService.getDetail(userId);
         return ApiResponse.onSuccess(WorkspaceSuccessCode.DRAFT_DETAIL_OK, response);
+    }
+
+    /** 내 선물 준비 임시 저장 */
+    @PostMapping
+    public ApiResponse<IndividualFundingDraftSaveResponse> save(
+            @LoginUserId Long userId,
+            @RequestBody IndividualFundingDraftSaveRequest request
+    ) {
+        IndividualFundingDraftSaveResponse response = individualFundingDraftService.save(userId, request);
+        return ApiResponse.onSuccess(WorkspaceSuccessCode.DRAFT_SAVE_OK, response);
     }
 }
