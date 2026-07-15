@@ -22,6 +22,15 @@ public class FundingTogetherDraft extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column
+    private Integer step;
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
     @Column(length = 50)
     private String title;
 
