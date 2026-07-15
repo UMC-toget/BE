@@ -1,6 +1,7 @@
 package com.example.toget.domain.workspace.converter;
 
 import com.example.toget.domain.gift.entity.IndividualFundingDraftGift;
+import com.example.toget.domain.user.entity.UserAccount;
 import com.example.toget.domain.workspace.dto.IndividualFundingDraftDetailResponse;
 import com.example.toget.domain.workspace.entity.IndividualFundingDraft;
 import java.util.List;
@@ -9,7 +10,8 @@ public class IndividualFundingDraftConverter {
 
     public static IndividualFundingDraftDetailResponse toDetailResponse(
             IndividualFundingDraft draft,
-            List<IndividualFundingDraftGift> gifts
+            List<IndividualFundingDraftGift> gifts,
+            UserAccount userAccount
     ) {
         return IndividualFundingDraftDetailResponse.builder()
                 .id(draft.getId())
@@ -20,7 +22,12 @@ public class IndividualFundingDraftConverter {
                 .endDate(draft.getEndDate())
                 .greeting(draft.getGreeting())
                 .thumbnailUrl(draft.getThumbnailUrl())
-                .userAccountId(draft.getUserAccountId())
+                .account(userAccount != null ? IndividualFundingDraftDetailResponse.AccountResponse.builder()
+                        .userAccountId(userAccount.getId())
+                        .bankName(userAccount.getBankName())
+                        .bankAccount(userAccount.getAccount())
+                        .accountOwner(userAccount.getAccountOwner())
+                        .build() : null)
                 .visibilitySettings(IndividualFundingDraftDetailResponse.VisibilitySettingsResponse.builder()
                         .isProgressPublic(draft.getIsProgressPublic())
                         .isAmountPublic(draft.getIsAmountPublic())

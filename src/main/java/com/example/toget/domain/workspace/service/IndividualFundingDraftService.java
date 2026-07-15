@@ -2,6 +2,8 @@ package com.example.toget.domain.workspace.service;
 
 import com.example.toget.domain.gift.entity.IndividualFundingDraftGift;
 import com.example.toget.domain.gift.repository.IndividualFundingDraftGiftRepository;
+import com.example.toget.domain.user.entity.UserAccount;
+import com.example.toget.domain.user.repository.UserAccountRepository;
 import com.example.toget.domain.user.service.ActiveUserReader;
 import com.example.toget.domain.workspace.converter.IndividualFundingDraftConverter;
 import com.example.toget.domain.workspace.dto.IndividualFundingDraftDetailResponse;
@@ -24,6 +26,7 @@ public class IndividualFundingDraftService {
 
     private final IndividualFundingDraftRepository individualFundingDraftRepository;
     private final IndividualFundingDraftGiftRepository individualFundingDraftGiftRepository;
+    private final UserAccountRepository userAccountRepository;
     private final ActiveUserReader activeUserReader;
 
     /**
@@ -44,7 +47,13 @@ public class IndividualFundingDraftService {
         // 3. 연동된 선물 리스트 조회
         List<IndividualFundingDraftGift> gifts = individualFundingDraftGiftRepository.findAllByMyDraftId(draft.getId());
 
-        // 4. DTO 변환 및 반환
-        return IndividualFundingDraftConverter.toDetailResponse(draft, gifts);
+        // 4. 연동된 계좌 정보 조회 (있을 경우)
+        UserAccount userAccount = null;
+        if (draft.getUserAccountId() != null) {
+            userAccount = userAccountRepository.findById(draft.getUserAccountId()).orElse(null);
+        }
+
+        // 5. DTO 변환 및 반환
+        return IndividualFundingDraftConverter.toDetailResponse(draft, gifts, userAccount);
     }
 }

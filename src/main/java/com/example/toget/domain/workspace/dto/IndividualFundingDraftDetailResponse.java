@@ -1,5 +1,6 @@
 package com.example.toget.domain.workspace.dto;
 
+import com.example.toget.domain.user.enums.BankName;
 import lombok.Builder;
 import java.time.LocalDate;
 import java.util.List;
@@ -14,11 +15,19 @@ public record IndividualFundingDraftDetailResponse(
         LocalDate endDate,
         String greeting,
         String thumbnailUrl,
-        Long userAccountId,
+        AccountResponse account,
         VisibilitySettingsResponse visibilitySettings,
         InvitationCardResponse invitationCard,
         List<DraftGiftResponse> gifts
 ) {
+
+    @Builder
+    public record AccountResponse(
+            Long userAccountId,
+            BankName bankName,
+            String bankAccount,
+            String accountOwner
+    ) {}
 
     @Builder
     public record VisibilitySettingsResponse(
