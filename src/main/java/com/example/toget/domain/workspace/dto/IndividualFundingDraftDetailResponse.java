@@ -1,6 +1,6 @@
 package com.example.toget.domain.workspace.dto;
 
-import com.example.toget.domain.user.enums.BankName;
+import com.example.toget.global.enums.BankName;
 import lombok.Builder;
 import java.time.LocalDate;
 import java.util.List;
