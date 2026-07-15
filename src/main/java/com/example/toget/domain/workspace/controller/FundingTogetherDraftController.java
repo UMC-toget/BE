@@ -36,4 +36,14 @@ public class FundingTogetherDraftController {
           FundingTogetherDraftSaveResponse response = fundingTogetherDraftService.save(userId, request);
           return ApiResponse.onSuccess(WorkspaceSuccessCode.DRAFT_SAVE_OK, response);
       }
+
+    /**
+     * 함께 선물 준비 임시 저장 삭제
+     * JWT 토큰에서 로그인한 회원 ID를 파싱하므로 URL 상에 ID를 노출하지 않음
+     */
+    @DeleteMapping
+    public ApiResponse<Void> delete(@LoginUserId Long userId) {
+        fundingTogetherDraftService.delete(userId);
+        return ApiResponse.onSuccess(WorkspaceSuccessCode.DRAFT_DELETE_OK, null);
+    }
 }
