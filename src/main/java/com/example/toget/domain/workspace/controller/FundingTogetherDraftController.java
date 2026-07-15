@@ -2,13 +2,13 @@ package com.example.toget.domain.workspace.controller;
 
 import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.domain.workspace.dto.FundingTogetherDraftDetailResponse;
+import com.example.toget.domain.workspace.dto.FundingTogetherDraftSaveRequest;
+import com.example.toget.domain.workspace.dto.FundingTogetherDraftSaveResponse;
 import com.example.toget.domain.workspace.exception.code.WorkspaceSuccessCode;
 import com.example.toget.domain.workspace.service.FundingTogetherDraftService;
 import com.example.toget.global.apiPayload.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 함께 선물 준비 임시 작성 API 컨트롤러.
@@ -26,4 +26,14 @@ public class FundingTogetherDraftController {
         FundingTogetherDraftDetailResponse response = fundingTogetherDraftService.getDetail(userId);
         return ApiResponse.onSuccess(WorkspaceSuccessCode.DRAFT_DETAIL_OK, response);
     }
+
+    /** 함께 선물 준비 임시 저장 */
+    @PostMapping
+    public ApiResponse<FundingTogetherDraftSaveResponse> save(
+            @LoginUserId Long userId,
+            @RequestBody FundingTogetherDraftSaveRequest request
+      ) {
+          FundingTogetherDraftSaveResponse response = fundingTogetherDraftService.save(userId, request);
+          return ApiResponse.onSuccess(WorkspaceSuccessCode.DRAFT_SAVE_OK, response);
+      }
 }

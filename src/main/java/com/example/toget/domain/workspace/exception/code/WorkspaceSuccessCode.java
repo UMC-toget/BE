@@ -14,7 +14,7 @@ import org.springframework.http.HttpStatus;
 public enum WorkspaceSuccessCode implements BaseSuccessCode {
 
     DRAFT_DETAIL_OK(HttpStatus.OK, "DRAFT200", "임시 저장 상세 데이터를 성공적으로 조회했습니다."),
-    DRAFT_SAVE_OK(HttpStatus.OK, "DRAFT200_1", "내 선물 준비 작성을 임시 저장했습니다."),
+    DRAFT_SAVE_OK(HttpStatus.OK, "DRAFT200_1", "임시 저장 작성을 성공적으로 완료했습니다."),
     DRAFT_DELETE_OK(HttpStatus.OK, "DRAFT200_2", "임시 저장 데이터를 성공적으로 삭제했습니다.");
 
     private final HttpStatus status;
