@@ -8,4 +8,7 @@ public interface IndividualFundingDraftGiftRepository extends JpaRepository<Indi
 
     /** 임시 저장 ID에 매핑된 선물 후보 목록 전체 조회 */
     List<IndividualFundingDraftGift> findAllByMyDraftId(Long myDraftId);
+
+    /** 임시 저장 ID에 매핑된 선물 후보 목록 전체 삭제 */
+    void deleteByMyDraftId(Long myDraftId);
 }

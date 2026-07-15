@@ -66,11 +66,11 @@ public class IndividualFundingDraft extends BaseEntity {
     private Boolean isMessagePublic = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "invitation_character_id", nullable = false)
+    @JoinColumn(name = "invitation_character_id", nullable = true)
     private CharacterEntity invitationCharacterId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "invitation_background_id", nullable = false)
+    @JoinColumn(name = "invitation_background_id", nullable = true)
     private InvitationBackground invitationBackgroundId;
 
     @Column(name = "invitation_title", columnDefinition = "TEXT")
@@ -81,5 +81,43 @@ public class IndividualFundingDraft extends BaseEntity {
 
     @Column(name = "user_account_id")
     private Long userAccountId;
+
+    public void update(
+            Integer step,
+            String title,
+            LocalDate anniversaryDate,
+            LocalDate startDate,
+            LocalDate endDate,
+            String greeting,
+            String thumbnailUrl,
+            Long userAccountId,
+            Boolean isProgressPublic,
+            Boolean isAmountPublic,
+            Boolean isParticipantCountPublic,
+            Boolean isParticipantNamePublic,
+            Boolean isMessagePublic,
+            CharacterEntity invitationCharacter,
+            InvitationBackground invitationBackground,
+            String invitationTitle,
+            String invitationContent
+    ) {
+        this.step = step;
+        this.title = title;
+        this.anniversaryDate = anniversaryDate;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.greeting = greeting;
+        this.thumbnailUrl = thumbnailUrl;
+        this.userAccountId = userAccountId;
+        this.isProgressPublic = isProgressPublic;
+        this.isAmountPublic = isAmountPublic;
+        this.isParticipantCountPublic = isParticipantCountPublic;
+        this.isParticipantNamePublic = isParticipantNamePublic;
+        this.isMessagePublic = isMessagePublic;
+        this.invitationCharacterId = invitationCharacter;
+        this.invitationBackgroundId = invitationBackground;
+        this.invitationTitle = invitationTitle;
+        this.invitationContent = invitationContent;
+    }
 }
 
