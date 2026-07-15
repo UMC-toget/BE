@@ -164,4 +164,24 @@ public class IndividualFundingDraftService {
 
         return new IndividualFundingDraftSaveResponse(draft.getId());
     }
+
+    /**
+     * 내 선물 준비 임시 저장 삭제 및 연동 선물 리스트 cascade 삭제
+     * @param userId 로그인한 사용자 ID
+     */
+    @Transactional
+    public void delete(Long userId) {
+        // 1. 활성 사용자 여부 검증 (보안 컨벤션)
+        activeUserReader.getActiveUser(userId);
+
+        // 2. 삭제할 Draft 조회 (존재하지 않을 시 DRAFT404 예외 발생)
+        IndividualFundingDraft draft = individualFundingDraftRepository.findByUserId(userId)
+                .orElseThrow(() -> new WorkspaceException(WorkspaceErrorCode.DRAFT_NOT_FOUND));
+
+        // 3. 연동된 선물 리스트 일괄 삭제
+        individualFundingDraftGiftRepository.deleteByMyDraftId(draft.getId());
+
+        // 4. Draft 삭제
+        individualFundingDraftRepository.delete(draft);
+    }
 }
