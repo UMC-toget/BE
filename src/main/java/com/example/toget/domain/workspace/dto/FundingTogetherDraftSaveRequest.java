@@ -12,6 +12,10 @@ public record FundingTogetherDraftSaveRequest(
         String description,
         String thumbnailImageUrl,
         Long userAccountId,
-        String cardTitle,
-        String cardContent
-) {}
+        InvitationCardRequest invitationCard
+) {
+    public record InvitationCardRequest(
+            String title,
+            String content
+    ) {}
+}

@@ -37,6 +37,9 @@ public class FundingTogetherDraftConverter {
             FundingTogetherDraftSaveRequest request,
             Long userAccountId
     ) {
+        String cardTitle = request.invitationCard() != null ? request.invitationCard().title() : null;
+        String cardContent = request.invitationCard() != null ? request.invitationCard().content() : null;
+
         return FundingTogetherDraft.builder()
                 .userId(userId)
                 .step(request.step())
@@ -48,8 +51,8 @@ public class FundingTogetherDraftConverter {
                 .description(request.description())
                 .thumbnailImageUrl(request.thumbnailImageUrl())
                 .userAccountId(userAccountId)
-                .cardTitle(request.cardTitle())
-                .cardContent(request.cardContent())
+                .cardTitle(cardTitle)
+                .cardContent(cardContent)
                 .build();
     }
 }

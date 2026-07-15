@@ -98,6 +98,8 @@ public class FundingTogetherDraftService {
             draft = fundingTogetherDraftRepository.save(draft);
         } else {
             // 기존 객체 필드 업데이트 (Dirty checking)
+            String cardTitle = request.invitationCard() != null ? request.invitationCard().title() : null;
+            String cardContent = request.invitationCard() != null ? request.invitationCard().content() : null;
             draft.update(
                     request.step(),
                     request.startDate(),
@@ -108,8 +110,8 @@ public class FundingTogetherDraftService {
                     request.description(),
                     request.thumbnailImageUrl(),
                     userAccountId,
-                    request.cardTitle(),
-                    request.cardContent()
+                    cardTitle,
+                    cardContent
             );
         }
 
