@@ -141,6 +141,17 @@ public class FundingMember extends BaseEntity {
         this.settlementStatus = SettlementStatus.CONFIRMED;
     }
 
+    /**
+     * 개설자의 입금 확인 실수를 정정 — CONFIRMED → PAID.
+     * 개설자만 호출 가능하도록 검증 필요
+     */
+    public void revertPaymentConfirmation() {
+        if (this.settlementStatus != SettlementStatus.CONFIRMED) {
+            throw new ProjectException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
+        }
+        this.settlementStatus = SettlementStatus.PAID;
+    }
+
     /** 이 멤버가 정산 대상으로 확정됐는지 여부 */
     public boolean isSettlementTarget() {
         return this.amountDue != null;
