@@ -40,7 +40,7 @@ public class FundingMember extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "funding_member_id")
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "funding_id", nullable = false)
