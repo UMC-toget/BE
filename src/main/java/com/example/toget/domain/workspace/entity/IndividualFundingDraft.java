@@ -67,11 +67,11 @@ public class IndividualFundingDraft extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invitation_character_id", nullable = true)
-    private CharacterEntity invitationCharacterId;
+    private CharacterEntity invitationCharacter;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invitation_background_id", nullable = true)
-    private InvitationBackground invitationBackgroundId;
+    private InvitationBackground invitationBackground;
 
     @Column(name = "invitation_title", columnDefinition = "TEXT")
     private String invitationTitle;
@@ -114,8 +114,8 @@ public class IndividualFundingDraft extends BaseEntity {
         this.isParticipantCountPublic = isParticipantCountPublic;
         this.isParticipantNamePublic = isParticipantNamePublic;
         this.isMessagePublic = isMessagePublic;
-        this.invitationCharacterId = invitationCharacter;
-        this.invitationBackgroundId = invitationBackground;
+        this.invitationCharacter = invitationCharacter;
+        this.invitationBackground = invitationBackground;
         this.invitationTitle = invitationTitle;
         this.invitationContent = invitationContent;
     }
