@@ -1,6 +1,6 @@
 package com.example.toget.domain.funding.entity;
 
-import com.example.toget.domain.funding.exception.ContributionErrorCode;
+import com.example.toget.domain.funding.exception.code.ContributionErrorCode;
 import com.example.toget.global.apiPayload.exception.ProjectException;
 import com.example.toget.global.entity.BaseEntity;
 import jakarta.persistence.*;
