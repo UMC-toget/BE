@@ -6,6 +6,7 @@ import com.example.toget.domain.funding.dto.response.ContributionBackgroundCreat
 import com.example.toget.domain.funding.dto.response.ContributionBackgroundResponse;
 import com.example.toget.domain.funding.exception.code.ContributionSuccessCode;
 import com.example.toget.domain.funding.service.ContributionBackgroundService;
+import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.global.apiPayload.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,7 @@ public class ContributionBackgroundController {
 
     private final ContributionBackgroundService contributionBackgroundService;
 
-    /** 배경 색상 전체 조회 */
+    /** 배경 색상 전체 조회 — 비로그인도 조회 가능 (카드 작성 시 비회원도 접근) */
     @GetMapping
     public ApiResponse<List<ContributionBackgroundResponse>> getAll() {
         List<ContributionBackgroundResponse> result = contributionBackgroundService.getAll();
@@ -29,6 +30,7 @@ public class ContributionBackgroundController {
     /** 배경 색상 생성 (관리자용) */
     @PostMapping
     public ApiResponse<ContributionBackgroundCreateResponse> create(
+            @LoginUserId Long userId,
             @RequestBody ContributionBackgroundRequest request
     ) {
         ContributionBackgroundCreateResponse result = contributionBackgroundService.create(request);
@@ -38,6 +40,7 @@ public class ContributionBackgroundController {
     /** 배경 색상 수정 (관리자용) */
     @PutMapping("/{id}")
     public ApiResponse<ContributionBackgroundResponse> update(
+            @LoginUserId Long userId,
             @PathVariable Long id,
             @RequestBody ContributionBackgroundRequest request
     ) {
@@ -47,7 +50,10 @@ public class ContributionBackgroundController {
 
     /** 배경 색상 삭제 (관리자용) */
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> delete(@PathVariable Long id) {
+    public ApiResponse<Void> delete(
+            @LoginUserId Long userId,
+            @PathVariable Long id
+    ) {
         contributionBackgroundService.delete(id);
         return ApiResponse.onSuccess(ContributionSuccessCode.BACKGROUND_DELETE_OK, null);
     }
