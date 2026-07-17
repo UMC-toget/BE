@@ -1,5 +1,6 @@
 package com.example.toget.domain.workspace.dto;
 
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 
 public record FundingTogetherDraftSaveRequest(
@@ -12,7 +13,7 @@ public record FundingTogetherDraftSaveRequest(
         String description,
         String thumbnailImageUrl,
         Long userAccountId,
-        InvitationCardRequest invitationCard
+        @Valid InvitationCardRequest invitationCard
 ) {
     public record InvitationCardRequest(
             String title,

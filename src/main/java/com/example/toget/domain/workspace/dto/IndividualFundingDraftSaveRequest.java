@@ -1,5 +1,6 @@
 package com.example.toget.domain.workspace.dto;
 
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -12,9 +13,9 @@ public record IndividualFundingDraftSaveRequest(
         String greeting,
         String thumbnailUrl,
         Long userAccountId,
-        VisibilitySettingsRequest visibilitySettings,
-        InvitationCardRequest invitationCard,
-        List<DraftGiftRequest> gifts
+        @Valid VisibilitySettingsRequest visibilitySettings,
+        @Valid InvitationCardRequest invitationCard,
+        List<@Valid DraftGiftRequest> gifts
 ) {
 
     public record VisibilitySettingsRequest(

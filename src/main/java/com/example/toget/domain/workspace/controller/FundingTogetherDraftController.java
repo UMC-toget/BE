@@ -9,6 +9,7 @@ import com.example.toget.domain.workspace.service.FundingTogetherDraftService;
 import com.example.toget.global.apiPayload.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 /**
  * 함께 선물 준비 임시 작성 API 컨트롤러.
@@ -31,7 +32,7 @@ public class FundingTogetherDraftController {
     @PostMapping
     public ApiResponse<FundingTogetherDraftSaveResponse> save(
             @LoginUserId Long userId,
-            @RequestBody FundingTogetherDraftSaveRequest request
+            @Valid @RequestBody FundingTogetherDraftSaveRequest request
       ) {
           FundingTogetherDraftSaveResponse response = fundingTogetherDraftService.save(userId, request);
           return ApiResponse.onSuccess(WorkspaceSuccessCode.DRAFT_SAVE_OK, response);
