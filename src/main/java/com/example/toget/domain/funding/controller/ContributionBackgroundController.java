@@ -8,6 +8,7 @@ import com.example.toget.domain.funding.exception.code.ContributionSuccessCode;
 import com.example.toget.domain.funding.service.ContributionBackgroundService;
 import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.global.apiPayload.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,7 +32,7 @@ public class ContributionBackgroundController {
     @PostMapping
     public ApiResponse<ContributionBackgroundCreateResponse> create(
             @LoginUserId Long userId,
-            @RequestBody ContributionBackgroundRequest request
+            @Valid @RequestBody ContributionBackgroundRequest request
     ) {
         ContributionBackgroundCreateResponse result = contributionBackgroundService.create(request);
         return ApiResponse.onSuccess(ContributionSuccessCode.BACKGROUND_CREATE_OK, result);
@@ -42,7 +43,7 @@ public class ContributionBackgroundController {
     public ApiResponse<ContributionBackgroundResponse> update(
             @LoginUserId Long userId,
             @PathVariable Long id,
-            @RequestBody ContributionBackgroundRequest request
+            @Valid @RequestBody ContributionBackgroundRequest request
     ) {
         ContributionBackgroundResponse result = contributionBackgroundService.update(id, request);
         return ApiResponse.onSuccess(ContributionSuccessCode.BACKGROUND_UPDATE_OK, result);
