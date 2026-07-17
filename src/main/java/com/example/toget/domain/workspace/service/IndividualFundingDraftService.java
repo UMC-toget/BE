@@ -115,11 +115,11 @@ public class IndividualFundingDraftService {
         IndividualFundingDraft draft = individualFundingDraftRepository.findByUserId(userId).orElse(null);
 
         // 공개 범위 설정 매핑
-        Boolean isProgressPublic = request.visibilitySettings() != null ? request.visibilitySettings().isProgressPublic() : true;
-        Boolean isAmountPublic = request.visibilitySettings() != null ? request.visibilitySettings().isAmountPublic() : true;
-        Boolean isParticipantCountPublic = request.visibilitySettings() != null ? request.visibilitySettings().isParticipantCountPublic() : true;
-        Boolean isParticipantNamePublic = request.visibilitySettings() != null ? request.visibilitySettings().isParticipantNamePublic() : true;
-        Boolean isMessagePublic = request.visibilitySettings() != null ? request.visibilitySettings().isMessagePublic() : true;
+        Boolean isProgressPublic = (request.visibilitySettings() != null && request.visibilitySettings().isProgressPublic() != null) ? request.visibilitySettings().isProgressPublic() : true;
+        Boolean isAmountPublic = (request.visibilitySettings() != null && request.visibilitySettings().isAmountPublic() != null) ? request.visibilitySettings().isAmountPublic() : true;
+        Boolean isParticipantCountPublic = (request.visibilitySettings() != null && request.visibilitySettings().isParticipantCountPublic() != null) ? request.visibilitySettings().isParticipantCountPublic() : true;
+        Boolean isParticipantNamePublic = (request.visibilitySettings() != null && request.visibilitySettings().isParticipantNamePublic() != null) ? request.visibilitySettings().isParticipantNamePublic() : true;
+        Boolean isMessagePublic = (request.visibilitySettings() != null && request.visibilitySettings().isMessagePublic() != null) ? request.visibilitySettings().isMessagePublic() : true;
 
         String invitationTitle = request.invitationCard() != null ? request.invitationCard().title() : null;
         String invitationContent = request.invitationCard() != null ? request.invitationCard().content() : null;
