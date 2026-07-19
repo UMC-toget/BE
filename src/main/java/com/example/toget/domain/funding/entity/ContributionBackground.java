@@ -25,10 +25,10 @@ public class ContributionBackground extends BaseEntity {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "name", nullable = false, length = 50)
+    @Column(name = "name", nullable = false, unique = true, length = 50)
     private String name;
 
-    @Column(name = "hex_code", nullable = false, length = 10)
+    @Column(name = "hex_code", nullable = false, unique = true, length = 10)
     private String hexCode;
 
     @Builder
