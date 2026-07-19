@@ -57,7 +57,7 @@ class FundingQueryServiceTest {
     void mapsCollectedAmountPerFunding() {
         Funding withMoney = fundingWithId(12L);
         Funding noMoney = fundingWithId(13L);
-        given(fundingRepository.findMyFundings(eq(1L), any(Pageable.class)))
+        given(fundingRepository.findMyHostedFundings(eq(1L), any(Pageable.class)))
                 .willReturn(new SliceImpl<>(List.of(withMoney, noMoney), Pageable.ofSize(10), false));
         given(fundingContributionRepository.sumAmountsByFundingIds(anyList()))
                 .willReturn(List.of(new FundingCollectedAmount(12L, 650_000L)));
@@ -73,7 +73,7 @@ class FundingQueryServiceTest {
     @Test
     @DisplayName("Slice의 hasNext와 페이징 정보를 응답에 그대로 담는다")
     void mapsPagingInfo() {
-        given(fundingRepository.findMyFundings(eq(1L), any(Pageable.class)))
+        given(fundingRepository.findMyHostedFundings(eq(1L), any(Pageable.class)))
                 .willReturn(new SliceImpl<>(List.of(fundingWithId(12L)),
                         org.springframework.data.domain.PageRequest.of(2, 5), true));
         given(fundingContributionRepository.sumAmountsByFundingIds(anyList()))
@@ -89,7 +89,7 @@ class FundingQueryServiceTest {
     @Test
     @DisplayName("개최한 펀딩이 없으면 빈 목록을 반환하고 합계 쿼리는 호출하지 않는다")
     void emptyResultSkipsSumQuery() {
-        given(fundingRepository.findMyFundings(eq(1L), any(Pageable.class)))
+        given(fundingRepository.findMyHostedFundings(eq(1L), any(Pageable.class)))
                 .willReturn(new SliceImpl<>(List.of(), Pageable.ofSize(10), false));
 
         MyFundingListResponse response = fundingQueryService.getMyFundings(1L, 0, 10);
@@ -102,13 +102,13 @@ class FundingQueryServiceTest {
     @Test
     @DisplayName("음수 page는 0으로, 0 이하 size는 10으로 보정해 조회한다")
     void normalizesInvalidPaging() {
-        given(fundingRepository.findMyFundings(eq(1L), any(Pageable.class)))
+        given(fundingRepository.findMyHostedFundings(eq(1L), any(Pageable.class)))
                 .willReturn(new SliceImpl<>(List.of(), Pageable.ofSize(10), false));
 
         fundingQueryService.getMyFundings(1L, -3, 0);
 
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        verify(fundingRepository).findMyFundings(eq(1L), captor.capture());
+        verify(fundingRepository).findMyHostedFundings(eq(1L), captor.capture());
         assertThat(captor.getValue().getPageNumber()).isZero();
         assertThat(captor.getValue().getPageSize()).isEqualTo(10);
     }
