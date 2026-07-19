@@ -14,7 +14,7 @@ public record ContributionBackgroundRequest(
         String name,
 
         @Schema(description = "배경 색상 HEX 코드", example = "#FFB6C1")
-        @NotBlank
+        @NotBlank(message = "HEX 코드는 필수입니다.")
         @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "올바른 HEX 코드 형식이 아닙니다. (예: #FFB6C1)")
         String hexCode
 ) {}
