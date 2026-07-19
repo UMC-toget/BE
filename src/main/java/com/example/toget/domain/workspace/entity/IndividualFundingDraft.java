@@ -1,11 +1,12 @@
 package com.example.toget.domain.workspace.entity;
 
+import com.example.toget.domain.invitation.entity.CharacterEntity;
+import com.example.toget.domain.invitation.entity.InvitationBackground;
 import com.example.toget.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "individual_funding_drafts")
@@ -32,8 +33,11 @@ public class IndividualFundingDraft extends BaseEntity {
     @Column(name = "anniversary_date")
     private LocalDate anniversaryDate;
 
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
     @Column(name = "end_date")
-    private LocalDateTime endDate;
+    private LocalDate endDate;
 
     @Column(columnDefinition = "TEXT")
     private String greeting;
@@ -61,6 +65,14 @@ public class IndividualFundingDraft extends BaseEntity {
     @Builder.Default
     private Boolean isMessagePublic = true;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invitation_character_id", nullable = true)
+    private CharacterEntity invitationCharacter;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invitation_background_id", nullable = true)
+    private InvitationBackground invitationBackground;
+
     @Column(name = "invitation_title", columnDefinition = "TEXT")
     private String invitationTitle;
 
@@ -69,5 +81,43 @@ public class IndividualFundingDraft extends BaseEntity {
 
     @Column(name = "user_account_id")
     private Long userAccountId;
+
+    public void update(
+            Integer step,
+            String title,
+            LocalDate anniversaryDate,
+            LocalDate startDate,
+            LocalDate endDate,
+            String greeting,
+            String thumbnailUrl,
+            Long userAccountId,
+            Boolean isProgressPublic,
+            Boolean isAmountPublic,
+            Boolean isParticipantCountPublic,
+            Boolean isParticipantNamePublic,
+            Boolean isMessagePublic,
+            CharacterEntity invitationCharacter,
+            InvitationBackground invitationBackground,
+            String invitationTitle,
+            String invitationContent
+    ) {
+        this.step = step;
+        this.title = title;
+        this.anniversaryDate = anniversaryDate;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.greeting = greeting;
+        this.thumbnailUrl = thumbnailUrl;
+        this.userAccountId = userAccountId;
+        this.isProgressPublic = isProgressPublic;
+        this.isAmountPublic = isAmountPublic;
+        this.isParticipantCountPublic = isParticipantCountPublic;
+        this.isParticipantNamePublic = isParticipantNamePublic;
+        this.isMessagePublic = isMessagePublic;
+        this.invitationCharacter = invitationCharacter;
+        this.invitationBackground = invitationBackground;
+        this.invitationTitle = invitationTitle;
+        this.invitationContent = invitationContent;
+    }
 }
 
