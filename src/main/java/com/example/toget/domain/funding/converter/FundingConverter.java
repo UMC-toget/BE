@@ -15,6 +15,8 @@ import java.util.Map;
  */
 public class FundingConverter {
 
+    private static final int PERCENT = 100;
+
     private FundingConverter() {
     }
 
@@ -42,10 +44,22 @@ public class FundingConverter {
                 funding.getRecipientName(),
                 funding.getTargetAmount(),
                 collectedAmount,
+                calculateProgressRate(collectedAmount, funding.getTargetAmount()),
                 funding.getStatus().name(),
                 funding.getEndDate(),
                 funding.getThumbnailImageUrl(),
                 funding.getCreatedAt()
         );
+    }
+
+    /**
+     * 소수점 내림(정수%), 100 초과 허용(초과 달성 그대로 노출)
+     * targetAmount는 0 허용 -> 0 나눗셈을 방어
+     */
+    private static int calculateProgressRate(Long collectedAmount, Long targetAmount) {
+        if (targetAmount == null || targetAmount == 0) {
+            return 0; // targetAmount는 0허용
+        }
+        return (int) (collectedAmount * PERCENT / targetAmount);
     }
 }

@@ -40,7 +40,7 @@ public class FundingQueryService {
         int safePage = Math.max(page, FIRST_PAGE);            // 음수 페이지 방어
         int safeSize = size <= 0 ? DEFAULT_PAGE_SIZE : size;  // 0 이하 크기 방어
 
-        Slice<Funding> fundings = fundingRepository.findMyFundings(userId, PageRequest.of(safePage, safeSize));
+        Slice<Funding> fundings = fundingRepository.findMyHostedFundings(userId, PageRequest.of(safePage, safeSize));
         return FundingConverter.toMyFundingListResponse(fundings, collectAmountsByFundingId(fundings.getContent()));
     }
 
