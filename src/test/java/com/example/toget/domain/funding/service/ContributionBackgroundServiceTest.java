@@ -7,6 +7,7 @@ import com.example.toget.domain.funding.entity.ContributionBackground;
 import com.example.toget.domain.funding.exception.ContributionException;
 import com.example.toget.domain.funding.exception.code.ContributionErrorCode;
 import com.example.toget.domain.funding.repository.ContributionBackgroundRepository;
+import com.example.toget.domain.funding.repository.FundingContributionRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class ContributionBackgroundServiceTest {
 
     @Mock
     private ContributionBackgroundRepository contributionBackgroundRepository;
+
+    @Mock
+    private FundingContributionRepository fundingContributionRepository;
 
     @InjectMocks
     private ContributionBackgroundService contributionBackgroundService;
@@ -145,6 +149,7 @@ class ContributionBackgroundServiceTest {
             ContributionBackground existing = ContributionBackground.create("파스텔 핑크", "#FFB6C1");
             ReflectionTestUtils.setField(existing, "id", id);
             given(contributionBackgroundRepository.findById(id)).willReturn(Optional.of(existing));
+            given(fundingContributionRepository.existsByBackgroundId(id)).willReturn(false);
 
             // when
             contributionBackgroundService.delete(id);
@@ -153,18 +158,22 @@ class ContributionBackgroundServiceTest {
             verify(contributionBackgroundRepository).delete(existing);
         }
 
+
         @Test
-        @DisplayName("존재하지 않는 ID면 BACKGROUND_NOT_FOUND 예외가 발생하고 delete는 호출되지 않는다")
-        void delete_fail_notFound() {
+        @DisplayName("이미 사용 중인 배경이면 BACKGROUND_IN_USE 예외가 발생하고 delete는 호출되지 않는다")
+        void delete_fail_inUse() {
             // given
-            Long id = 999L;
-            given(contributionBackgroundRepository.findById(id)).willReturn(Optional.empty());
+            Long id = 1L;
+            ContributionBackground existing = ContributionBackground.create("파스텔 핑크", "#FFB6C1");
+            ReflectionTestUtils.setField(existing, "id", id);
+            given(contributionBackgroundRepository.findById(id)).willReturn(Optional.of(existing));
+            given(fundingContributionRepository.existsByBackgroundId(id)).willReturn(true);
 
             // when & then
             assertThatThrownBy(() -> contributionBackgroundService.delete(id))
                     .isInstanceOf(ContributionException.class)
                     .extracting(e -> ((ContributionException) e).getCode())
-                    .isEqualTo(ContributionErrorCode.BACKGROUND_NOT_FOUND);
+                    .isEqualTo(ContributionErrorCode.BACKGROUND_IN_USE);
 
             verify(contributionBackgroundRepository, never()).delete(any());
         }

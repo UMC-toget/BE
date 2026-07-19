@@ -9,6 +9,10 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
+import java.time.LocalDateTime;
 
 /**
  * 축하 메시지 카드용 배경 색상 — contribution_backgrounds 테이블 매핑.
@@ -16,6 +20,8 @@ import lombok.NoArgsConstructor;
  */
 @Entity
 @Table(name = "contribution_backgrounds")
+@SQLDelete(sql = "UPDATE contribution_backgrounds SET deleted_at = NOW() WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ContributionBackground extends BaseEntity {
@@ -49,6 +55,15 @@ public class ContributionBackground extends BaseEntity {
         validate(name, hexCode);
         this.name = name;
         this.hexCode = hexCode;
+    }
+
+    /** Soft delete — 삭제 시점을 기록한다. 실제 row는 남기고 FK 참조 무결성을 보존한다. */
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isDeleted() {
+        return this.deletedAt != null;
     }
 
     private static void validate(String name, String hexCode) {
