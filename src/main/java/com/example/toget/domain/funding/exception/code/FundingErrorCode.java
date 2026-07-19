@@ -1,4 +1,4 @@
-package com.example.toget.domain.funding.exception;
+package com.example.toget.domain.funding.exception.code;
 
 import com.example.toget.global.apiPayload.code.BaseErrorCode;
 import lombok.Getter;
