@@ -1,4 +1,4 @@
-package com.example.toget.domain.user.enums;
+package com.example.toget.global.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
