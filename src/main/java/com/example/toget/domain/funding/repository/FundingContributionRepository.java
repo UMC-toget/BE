@@ -13,6 +13,8 @@ import java.util.List;
  */
 public interface FundingContributionRepository extends JpaRepository<FundingContribution, Long> {
 
+    boolean existsByBackgroundId(Long backgroundId);
+
     /**
      * 여러 펀딩의 참여금 합계를 한 번에 조회 (목록 화면 N+1 방지용 배치 쿼리).
      * 참여금이 하나도 없는 펀딩은 결과에 아예 등장하지 않으므로,

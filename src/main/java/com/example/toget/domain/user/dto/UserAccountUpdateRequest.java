@@ -1,6 +1,6 @@
 package com.example.toget.domain.user.dto;
 
-import com.example.toget.domain.user.enums.BankName;
+import com.example.toget.global.enums.BankName;
 import jakarta.validation.constraints.Size;
 
 /**

@@ -22,6 +22,15 @@ public class FundingTogetherDraft extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column
+    private Integer step;
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
     @Column(length = 50)
     private String title;
 
@@ -45,5 +54,31 @@ public class FundingTogetherDraft extends BaseEntity {
 
     @Column(name = "card_content", columnDefinition = "TEXT")
     private String cardContent;
+
+    public void update(
+            Integer step,
+            LocalDate startDate,
+            LocalDate endDate,
+            String title,
+            String receiver,
+            LocalDate anniversaryDate,
+            String description,
+            String thumbnailImageUrl,
+            Long userAccountId,
+            String cardTitle,
+            String cardContent
+    ) {
+        this.step = step;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.title = title;
+        this.receiver = receiver;
+        this.anniversaryDate = anniversaryDate;
+        this.description = description;
+        this.thumbnailImageUrl = thumbnailImageUrl;
+        this.userAccountId = userAccountId;
+        this.cardTitle = cardTitle;
+        this.cardContent = cardContent;
+    }
 }
 
