@@ -1,5 +1,7 @@
 package com.example.toget.domain.user.controller;
 
+import com.example.toget.domain.funding.dto.MyFundingListResponse;
+import com.example.toget.domain.funding.service.FundingQueryService;
 import com.example.toget.domain.user.dto.UserProfileResponse;
 import com.example.toget.domain.user.dto.UserProfileUpdateRequest;
 import com.example.toget.domain.user.dto.UserProfileUpdateResponse;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final FundingQueryService fundingQueryService;
 
     /** 내 프로필 정보 조회 — @LoginUserId: JWT에서 추출된 사용자 ID가 리졸버를 통해 주입됨 */
     @GetMapping
@@ -48,5 +51,14 @@ public class UserController {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, null);
     }
 
-    // GET /fundings (내가 개최한 선물 준비 목록)는 Funding 엔티티(#9 담당 파트) 머지 후 추가 예정
+    /**
+     * 내가 개최한 선물 준비(펀딩) 목록 조회 — 등록일 최신순 페이징.
+     * status 필터는 확정 명세에 없어 받지 않는다. (issue #19)
+     */
+    @GetMapping("/fundings")
+    public ApiResponse<MyFundingListResponse> getMyFundings(@LoginUserId Long userId,
+                                                            @RequestParam(defaultValue = "0") int page,
+                                                            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.onSuccess(GeneralSuccessCode.OK, fundingQueryService.getMyFundings(userId, page, size));
+    }
 }
