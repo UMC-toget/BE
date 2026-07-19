@@ -11,7 +11,8 @@ public enum ContributionErrorCode implements BaseErrorCode {
 
     BACKGROUND_NOT_FOUND(HttpStatus.NOT_FOUND, "METADATA404", "해당 배경 색상을 찾을 수 없습니다."),
     INVALID_BACKGROUND_NAME(HttpStatus.BAD_REQUEST, "METADATA400_1", "배경 색상 이름은 필수입니다."),
-    INVALID_HEX_CODE(HttpStatus.BAD_REQUEST, "METADATA400_2", "HEX 코드 형식이 올바르지 않습니다. (예: #FFB6C1)");
+    INVALID_HEX_CODE(HttpStatus.BAD_REQUEST, "METADATA400_2", "HEX 코드 형식이 올바르지 않습니다. (예: #FFB6C1)"),
+    BACKGROUND_IN_USE(HttpStatus.CONFLICT, "METADATA409_1", "이미 사용 중인 배경 색상은 삭제할 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;

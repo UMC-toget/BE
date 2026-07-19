@@ -1,5 +1,6 @@
 package com.example.toget.domain.funding.entity;
 
+import com.example.toget.domain.funding.exception.ContributionException;
 import com.example.toget.domain.funding.exception.code.ContributionErrorCode;
 import com.example.toget.global.apiPayload.exception.ProjectException;
 import com.example.toget.global.entity.BaseEntity;
@@ -52,10 +53,10 @@ public class ContributionBackground extends BaseEntity {
 
     private static void validate(String name, String hexCode) {
         if (name == null || name.isBlank()) {
-            throw new ProjectException(ContributionErrorCode.INVALID_BACKGROUND_NAME);
+            throw new ContributionException(ContributionErrorCode.INVALID_BACKGROUND_NAME);
         }
         if (hexCode == null || !hexCode.matches("^#[0-9A-Fa-f]{6}$")) {
-            throw new ProjectException(ContributionErrorCode.INVALID_HEX_CODE);
+            throw new ContributionException(ContributionErrorCode.INVALID_HEX_CODE);
         }
     }
 }
