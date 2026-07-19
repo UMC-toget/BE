@@ -26,6 +26,7 @@ public record MyFundingListResponse(
             String recipientName,
             Long targetAmount,
             Long collectedAmount, // 참여금 합계, 없으면 0
+            int progressRate, // 달성률(%), 내림, targetAmount 0 이면 0
             String status,        // "SELECTING" / "SETTLING" / "ENDED"
             LocalDate endDate,
             String thumbnailImageUrl,
