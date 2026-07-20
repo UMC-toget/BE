@@ -25,7 +25,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: gradle 빌드
-        run: ./gradlew clean build -x test
+        run: ./gradlew clean build
 
       - name: Docker Hub 로그인
         uses: docker/login-action@v2
@@ -58,9 +58,9 @@ jobs:
           port: 22
           timeout: 60s
           script: |
-            sudo docker stop ${{ secrets.DOCKER_IMAGENAME }}
-            sudo docker rm ${{ secrets.DOCKER_IMAGENAME }}
+            sudo docker stop ${{ secrets.DOCKER_IMAGENAME }} || true
+            sudo docker rm ${{ secrets.DOCKER_IMAGENAME }} || true
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGENAME }}
             echo "${{ secrets.ENV }}" > .env
-            sudo docker run -it -d --network host --name ${{ secrets.DOCKER_IMAGENAME }} --env-file .env ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGENAME }}
+            sudo docker run -d --network host --name ${{ secrets.DOCKER_IMAGENAME }} --env-file .env ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGENAME }}
             rm .env

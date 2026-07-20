@@ -25,7 +25,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: gradle 빌드
-        run: ./gradlew clean build -x test
+        run: ./gradlew clean build
 
       - name: Docker Hub 로그인
         uses: docker/login-action@v2
@@ -62,5 +62,5 @@ jobs:
             sudo docker rm ${{ secrets.DOCKER_IMAGENAME }}-dev || true
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGENAME }}:dev
             echo "${{ secrets.DEV_ENV }}" > .env
-            sudo docker run -it -d --network host --name ${{ secrets.DOCKER_IMAGENAME }}-dev --env-file .env ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGENAME }}:dev
+            sudo docker run -d --network host --name ${{ secrets.DOCKER_IMAGENAME }}-dev --env-file .env ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGENAME }}:dev
             rm .env
