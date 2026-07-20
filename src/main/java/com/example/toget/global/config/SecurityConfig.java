@@ -92,8 +92,8 @@ public class SecurityConfig {
                 //  권한(GrantedAuthority) 매핑이 먼저 구현되어야 함. SecurityConfig만 바꾸면 항상 403이 남.
                 .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/characters/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/invitation-backgrounds/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/contribution-backgrounds/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/invitation-backgrounds", "/api/v1/invitation-backgrounds/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/contribution-backgrounds", "/api/v1/contribution-backgrounds/**").permitAll()
 
                 // 그 외의 API 및 리소스 요청은 로그인 필요
                 .anyRequest().authenticated()
