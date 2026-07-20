@@ -7,6 +7,7 @@ import com.example.toget.domain.user.dto.TokenResponse;
 import com.example.toget.domain.user.service.AuthService;
 import com.example.toget.global.apiPayload.ApiResponse;
 import com.example.toget.global.apiPayload.code.GeneralSuccessCode;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class AuthController {
      * @PathVariable: URL 경로의 {provider} 값("kakao"/"google")을 파라미터로 바인딩
      * @Valid: 요청 본문(@RequestBody로 역직렬화된 DTO)의 @NotBlank 등 검증 실행 — 실패 시 400
      */
+    @Operation(summary = "소셜 로그인 및 회원가입", description = "소셜 제공자(kakao, google)의 identityToken을 사용해 로그인 및 회원가입을 수행합니다.")
     @PostMapping("/tokens/{provider}")
     public ApiResponse<SocialLoginResponse> socialLogin(@PathVariable String provider,
                                                         @Valid @RequestBody SocialLoginRequest request) {
@@ -37,6 +39,7 @@ public class AuthController {
     }
 
     /** access token 재발급 (Refresh Token Rotation) — refresh token은 헤더가 아닌 본문으로 받는다 */
+    @Operation(summary = "토큰 재발급", description = "만료된 Access Token을 Refresh Token을 사용해 재발급합니다.")
     @PostMapping("/tokens/refresh")
     public ApiResponse<TokenResponse> refresh(@Valid @RequestBody TokenRefreshRequest request) {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, authService.refresh(request.refreshToken()));

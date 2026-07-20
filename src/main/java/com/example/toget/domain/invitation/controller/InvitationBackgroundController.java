@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,12 +36,14 @@ public class InvitationBackgroundController {
     private final InvitationBackgroundService invitationBackgroundService;
 
     // 배경 색상 전체 조회 — 초대장 꾸미기 화면의 배경 선택지 목록
+    @Operation(summary = "초대장 배경 색상 전체 조회", description = "초대장 꾸미기 화면의 배경 선택지 목록을 조회합니다.")
     @GetMapping
     public ApiResponse<List<InvitationBackgroundResponse>> getAllBackgrounds() {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, invitationBackgroundService.getAllBackgrounds());
     }
 
     // 배경 색상 생성
+    @Operation(summary = "초대장 배경 색상 생성", description = "초대장에 사용할 새로운 배경 색상 정보를 생성합니다.")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED) // 응답 본문 코드(COMMON201_1)와 실제 HTTP 상태를 201로 일치시킨다
     public ApiResponse<InvitationBackgroundCreateResponse> create(
@@ -49,6 +52,7 @@ public class InvitationBackgroundController {
     }
 
     // 배경 색상 수정
+    @Operation(summary = "초대장 배경 색상 수정", description = "특정 배경 색상 정보를 수정합니다.")
     @PutMapping("/{id}")
     public ApiResponse<InvitationBackgroundResponse> update(@PathVariable Long id,
                                                             @Valid @RequestBody InvitationBackgroundRequest request) {
@@ -56,6 +60,7 @@ public class InvitationBackgroundController {
     }
 
     // 배경 색상 삭제 — soft delete (엔티티 InvitationBackground.delete() 주석 참고)
+    @Operation(summary = "초대장 배경 색상 삭제", description = "지정된 배경 색상 정보를 삭제합니다 (Soft Delete).")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         invitationBackgroundService.delete(id);

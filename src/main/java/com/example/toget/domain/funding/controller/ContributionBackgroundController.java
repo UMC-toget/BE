@@ -25,6 +25,7 @@ public class ContributionBackgroundController {
     private final ContributionBackgroundService contributionBackgroundService;
 
     /** 배경 색상 전체 조회 — 비로그인도 조회 가능 (카드 작성 시 비회원도 접근) */
+    @Operation(summary = "배경 색상 전체 조회", description = "비로그인도 조회 가능 (카드 작성 시 비회원도 접근)")
     @GetMapping
     public ApiResponse<List<ContributionBackgroundResponse>> getAll() {
         List<ContributionBackgroundResponse> result = contributionBackgroundService.getAll();

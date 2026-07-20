@@ -8,6 +8,7 @@ import com.example.toget.domain.user.dto.UserProfileUpdateResponse;
 import com.example.toget.domain.user.service.UserService;
 import com.example.toget.global.apiPayload.ApiResponse;
 import com.example.toget.global.apiPayload.code.GeneralSuccessCode;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,12 +29,14 @@ public class UserController {
     private final FundingQueryService fundingQueryService;
 
     /** 내 프로필 정보 조회 — @LoginUserId: JWT에서 추출된 사용자 ID가 리졸버를 통해 주입됨 */
+    @Operation(summary = "내 프로필 정보 조회", description = "로그인한 사용자의 프로필 정보를 조회합니다.")
     @GetMapping
     public ApiResponse<UserProfileResponse> getMyProfile(@LoginUserId Long userId) {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, userService.getMyProfile(userId));
     }
 
     /** 내 프로필 정보 수정 — PATCH: 보낸 필드만 갱신하는 부분 수정 의미론 */
+    @Operation(summary = "내 프로필 정보 수정", description = "프로필 정보 중 닉네임 등을 수정합니다.")
     @PatchMapping
     public ApiResponse<UserProfileUpdateResponse> updateMyProfile(@LoginUserId Long userId,
                                                                   @Valid @RequestBody UserProfileUpdateRequest request) {
@@ -41,12 +44,14 @@ public class UserController {
     }
 
     /** 내 프로필 이미지 삭제 (초기화) */
+    @Operation(summary = "내 프로필 이미지 삭제 (초기화)", description = "등록된 프로필 이미지를 삭제하여 기본 이미지로 초기화합니다.")
     @DeleteMapping("/profile-image")
     public ApiResponse<UserProfileUpdateResponse> clearMyProfileImage(@LoginUserId Long userId) {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, userService.clearMyProfileImage(userId));
     }
 
     /** 회원 탈퇴 (Soft Delete) */
+    @Operation(summary = "회원 탈퇴", description = "서비스에서 탈퇴하며, 사용자 데이터를 soft delete 처리합니다.")
     @DeleteMapping
     public ApiResponse<Void> withdraw(@LoginUserId Long userId) {
         userService.withdraw(userId);
@@ -57,6 +62,7 @@ public class UserController {
      * 내가 개최한 선물 준비(펀딩) 목록 조회 — 등록일 최신순 페이징.
      * status 필터는 확정 명세에 없어 받지 않는다. (issue #19)
      */
+    @Operation(summary = "내가 개최한 선물 준비(펀딩) 목록 조회", description = "로그인한 사용자가 직접 개최한 선물 준비 목록을 최신순으로 페이징 조회합니다.")
     @GetMapping("/fundings")
     public ApiResponse<MyFundingListResponse> getMyFundings(@LoginUserId Long userId,
                                                             @RequestParam(defaultValue = "0") int page,

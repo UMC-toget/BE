@@ -8,6 +8,7 @@ import com.example.toget.domain.workspace.exception.code.WorkspaceSuccessCode;
 import com.example.toget.domain.workspace.service.IndividualFundingDraftService;
 import com.example.toget.global.apiPayload.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -24,6 +25,7 @@ public class IndividualFundingDraftController {
     private final IndividualFundingDraftService individualFundingDraftService;
 
     /** 내 선물 준비 임시 저장 상세 조회 */
+    @Operation(summary = "내 선물 준비 임시 저장 상세 조회", description = "작성 중이던 내 선물 준비의 임시 저장 데이터를 조회합니다.")
     @GetMapping
     public ApiResponse<IndividualFundingDraftDetailResponse> getDetail(@LoginUserId Long userId) {
         IndividualFundingDraftDetailResponse response = individualFundingDraftService.getDetail(userId);
@@ -31,6 +33,7 @@ public class IndividualFundingDraftController {
     }
 
     /** 내 선물 준비 임시 저장 */
+    @Operation(summary = "내 선물 준비 임시 저장", description = "작성 중인 내 선물 준비의 진행 상태 및 설정을 임시 저장합니다.")
     @PostMapping
     public ApiResponse<IndividualFundingDraftSaveResponse> save(
             @LoginUserId Long userId,
@@ -44,6 +47,7 @@ public class IndividualFundingDraftController {
      * 내 선물 준비 임시 저장 삭제
      * JWT 토큰에서 로그인한 회원 ID를 파싱하므로 URL 상에 ID를 노출하지 않음
      */
+    @Operation(summary = "내 선물 준비 임시 저장 삭제", description = "저장된 내 선물 준비 임시 저장 데이터를 영구 삭제합니다.")
     @DeleteMapping
     public ApiResponse<Void> delete(@LoginUserId Long userId) {
         individualFundingDraftService.delete(userId);
