@@ -7,6 +7,7 @@ import com.example.toget.domain.user.dto.TokenResponse;
 import com.example.toget.domain.user.service.AuthService;
 import com.example.toget.global.apiPayload.ApiResponse;
 import com.example.toget.global.apiPayload.code.GeneralSuccessCode;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
  * 이 경로(/api/v1/auth/tokens/**)는 SecurityConfig에서 permitAll — 로그인 전이므로 토큰 없이 호출 가능.
  * 컨트롤러는 "HTTP ↔ 서비스" 변환만 담당하고 비즈니스 로직은 전부 AuthService에 있다.
  */
+@Tag(name = "유저 API", description = "유저 관련 API (인증, 사용자 정보 및 계좌 관리)")
 @RestController // @Controller + @ResponseBody: 반환 객체를 뷰가 아닌 JSON으로 직렬화
 @RequestMapping("/api/v1/auth") // 클래스 공통 URL 접두사
 @RequiredArgsConstructor

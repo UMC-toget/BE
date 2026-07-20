@@ -8,6 +8,7 @@ import com.example.toget.domain.user.dto.UserProfileUpdateResponse;
 import com.example.toget.domain.user.service.UserService;
 import com.example.toget.global.apiPayload.ApiResponse;
 import com.example.toget.global.apiPayload.code.GeneralSuccessCode;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
  * URL이 /users/{id}가 아니라 /users/me인 이유: "누구의" 정보인지를 클라이언트가 아닌
  * 토큰(@LoginUserId)이 결정하게 해서, URL의 ID를 바꿔 남의 정보에 접근하는 것 자체가 불가능하다.
  */
+@Tag(name = "유저 API", description = "유저 관련 API (인증, 사용자 정보 및 계좌 관리)")
 @RestController
 @RequestMapping("/api/v1/users/me")
 @RequiredArgsConstructor

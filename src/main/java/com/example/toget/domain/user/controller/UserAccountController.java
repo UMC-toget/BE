@@ -7,6 +7,7 @@ import com.example.toget.domain.user.dto.UserAccountUpdateRequest;
 import com.example.toget.domain.user.service.UserAccountService;
 import com.example.toget.global.apiPayload.ApiResponse;
 import com.example.toget.global.apiPayload.code.GeneralSuccessCode;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ import java.util.List;
  * 목록·생성은 /user-accounts, 수정·삭제는 /user-accounts/{id}로 대상 자원을 URL로 지정하는 REST 관례.
  * 소유권 검사(남의 계좌 ID를 넣은 경우 403)는 서비스 계층에서 수행한다.
  */
+@Tag(name = "유저 API", description = "유저 관련 API (인증, 사용자 정보 및 계좌 관리)")
 @RestController
 @RequestMapping("/api/v1/user-accounts")
 @RequiredArgsConstructor

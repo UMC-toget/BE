@@ -9,12 +9,14 @@ import com.example.toget.domain.funding.service.ContributionBackgroundService;
 import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "펀딩 API", description = "선물 준비/펀딩 및 참여 관련 API")
 @RestController
 @RequestMapping("/api/v1/contribution-backgrounds")
 @RequiredArgsConstructor

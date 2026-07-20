@@ -8,12 +8,14 @@ import com.example.toget.domain.workspace.exception.code.WorkspaceSuccessCode;
 import com.example.toget.domain.workspace.service.FundingTogetherDraftService;
 import com.example.toget.global.apiPayload.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 /**
  * 함께 선물 준비 임시 작성 API 컨트롤러.
  */
+@Tag(name = "임시 저장 API", description = "선물 준비 임시저장 API (내 선물 및 함께 선물)")
 @RestController
 @RequestMapping("/api/v1/together-drafts")
 @RequiredArgsConstructor
