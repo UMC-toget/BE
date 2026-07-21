@@ -7,6 +7,8 @@ import com.example.toget.domain.user.dto.TokenResponse;
 import com.example.toget.domain.user.service.AuthService;
 import com.example.toget.global.apiPayload.ApiResponse;
 import com.example.toget.global.apiPayload.code.GeneralSuccessCode;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
  * 이 경로(/api/v1/auth/tokens/**)는 SecurityConfig에서 permitAll — 로그인 전이므로 토큰 없이 호출 가능.
  * 컨트롤러는 "HTTP ↔ 서비스" 변환만 담당하고 비즈니스 로직은 전부 AuthService에 있다.
  */
+@Tag(name = "유저 API", description = "유저 관련 API (인증, 사용자 정보 및 계좌 관리)")
 @RestController // @Controller + @ResponseBody: 반환 객체를 뷰가 아닌 JSON으로 직렬화
 @RequestMapping("/api/v1/auth") // 클래스 공통 URL 접두사
 @RequiredArgsConstructor
@@ -28,6 +31,7 @@ public class AuthController {
      * @PathVariable: URL 경로의 {provider} 값("kakao"/"google")을 파라미터로 바인딩
      * @Valid: 요청 본문(@RequestBody로 역직렬화된 DTO)의 @NotBlank 등 검증 실행 — 실패 시 400
      */
+    @Operation(summary = "소셜 로그인 및 회원가입", description = "소셜 제공자(kakao, google)의 identityToken을 사용해 로그인 및 회원가입을 수행합니다.")
     @PostMapping("/tokens/{provider}")
     public ApiResponse<SocialLoginResponse> socialLogin(@PathVariable String provider,
                                                         @Valid @RequestBody SocialLoginRequest request) {
@@ -35,6 +39,7 @@ public class AuthController {
     }
 
     /** access token 재발급 (Refresh Token Rotation) — refresh token은 헤더가 아닌 본문으로 받는다 */
+    @Operation(summary = "토큰 재발급", description = "만료된 Access Token을 Refresh Token을 사용해 재발급합니다.")
     @PostMapping("/tokens/refresh")
     public ApiResponse<TokenResponse> refresh(@Valid @RequestBody TokenRefreshRequest request) {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, authService.refresh(request.refreshToken()));

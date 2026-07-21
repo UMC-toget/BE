@@ -9,12 +9,14 @@ import com.example.toget.domain.funding.service.ContributionBackgroundService;
 import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "펀딩 API", description = "선물 준비/펀딩 및 참여 관련 API")
 @RestController
 @RequestMapping("/api/v1/contribution-backgrounds")
 @RequiredArgsConstructor
@@ -23,6 +25,7 @@ public class ContributionBackgroundController {
     private final ContributionBackgroundService contributionBackgroundService;
 
     /** 배경 색상 전체 조회 — 비로그인도 조회 가능 (카드 작성 시 비회원도 접근) */
+    @Operation(summary = "배경 색상 전체 조회", description = "비로그인도 조회 가능 (카드 작성 시 비회원도 접근)")
     @GetMapping
     public ApiResponse<List<ContributionBackgroundResponse>> getAll() {
         List<ContributionBackgroundResponse> result = contributionBackgroundService.getAll();
