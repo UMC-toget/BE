@@ -16,10 +16,14 @@ public enum FundingErrorCode implements BaseErrorCode {
     VOTE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "FUNDING400_5", "투표는 최대 3개까지 가능합니다."),
     INVALID_TARGET_AMOUNT(HttpStatus.BAD_REQUEST, "FUNDING400_6", "목표 금액은 0원 이상 필수로 입력해야 합니다."),
 
+    FUNDING_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404", "해당 펀딩을 찾을 수 없습니다."),
+    NOT_FUNDING_OWNER(HttpStatus.FORBIDDEN, "FUNDING403", "펀딩 개설자만 가능한 작업입니다."),
+
 
     INVALID_FUNDING_STATUS_TRANSITION(HttpStatus.CONFLICT, "FUNDING409_1", "현재 상태에서는 해당 작업을 수행할 수 없습니다."),
     INVALID_SETTLEMENT_STATUS_TRANSITION(HttpStatus.CONFLICT, "FUNDING409_2", "현재 입금 상태에서는 해당 작업을 수행할 수 없습니다."),
-    SETTLEMENT_LOCKED(HttpStatus.CONFLICT, "FUNDING409_3", "이미 입금 절차가 시작되어 정산 인원과 금액을 변경할 수 없습니다.");
+    SETTLEMENT_LOCKED(HttpStatus.CONFLICT, "FUNDING409_3", "이미 입금 절차가 시작되어 정산 인원과 금액을 변경할 수 없습니다."),
+    GIFT_UPDATE_NOT_ALLOWED(HttpStatus.CONFLICT, "FUNDING409_4", "최종 선물이 확정되었거나 수정 가능 기간이 아니어서 후보 선물을 변경할 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;
