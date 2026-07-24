@@ -10,13 +10,18 @@ import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
 import com.example.toget.domain.gift.entity.FundingGift;
+import com.example.toget.domain.gift.repository.FundingGiftRepository;
+import com.example.toget.domain.invitation.entity.CharacterEntity;
 import com.example.toget.domain.invitation.entity.InvitationBackground;
+import com.example.toget.domain.invitation.entity.InvitationCard;
 import com.example.toget.domain.invitation.repository.CharacterRepository;
 import com.example.toget.domain.invitation.repository.InvitationBackgroundRepository;
 import com.example.toget.domain.invitation.repository.InvitationCardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -65,7 +70,7 @@ public class FundingService {
         CharacterEntity character = characterRepository.findById(request.characterId())
                 .orElseThrow(() -> new FundingException(FundingErrorCode.CHARACTER_NOT_FOUND));
         InvitationBackground background = invitationBackgroundRepository.findById(request.backgroundId())
-                .orElseThrow(() -> new ProjectException(FundingErrorCode.INVITATION_BACKGROUND_NOT_FOUND));
+                .orElseThrow(() -> new FundingException(FundingErrorCode.INVITATION_BACKGROUND_NOT_FOUND));
 
         // TODO: URL 생성 정책 확정 전까지의 임시 방식
         String url = "https://toget.com/funding/" + fundingId + "/invitation";
