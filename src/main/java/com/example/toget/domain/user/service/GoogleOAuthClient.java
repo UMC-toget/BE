@@ -48,8 +48,12 @@ public class GoogleOAuthClient implements OAuthClient {
         } catch (Exception e) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
+        // 응답 자체가 비어 있을 수 있으므로 사용 전에 먼저 검사한다 (NPE → 500 방지)
+        if (body == null) {
+            throw new UserException(UserErrorCode.UNAUTHORIZED);
+        }
         String sub = body.path("sub").textValue();
-        if (body == null || sub == null) {
+        if (sub == null) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
         // aud(발급 대상 클라이언트 ID) 검증 — 없으면 타 서비스용으로 발급된 구글 토큰으로도 로그인 가능
