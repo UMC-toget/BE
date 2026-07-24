@@ -4,11 +4,13 @@ import com.example.toget.domain.funding.dto.request.FundingCreateRequest;
 import com.example.toget.domain.funding.dto.response.FundingCreateResponse;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingMember;
+import com.example.toget.domain.funding.entity.FundingVisibilitySettings;
 import com.example.toget.domain.funding.enums.FundingType;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
+import com.example.toget.domain.funding.repository.FundingVisibilitySettingsRepository;
 import com.example.toget.domain.gift.entity.FundingGift;
 import com.example.toget.domain.gift.repository.FundingGiftRepository;
 import com.example.toget.domain.invitation.entity.CharacterEntity;
@@ -33,10 +35,12 @@ public class FundingService {
     private final InvitationCardRepository invitationCardRepository;
     private final CharacterRepository characterRepository;
     private final InvitationBackgroundRepository invitationBackgroundRepository;
+    private final FundingVisibilitySettingsRepository fundingVisibilitySettingsRepository;
 
     @Transactional
     public FundingCreateResponse create(Long userId, FundingCreateRequest request) {
         validateGifts(request);
+        validateVisibility(request);
 
         Funding funding = switch (request.fundingType()) {
             case MY_GIFT -> createMyGift(userId, request);
@@ -48,6 +52,10 @@ public class FundingService {
         if (saved.getFundingType() == FundingType.TOGETHER_GIFT) {
             FundingMember creator = FundingMember.createCreator(saved.getId(), userId);
             fundingMemberRepository.save(creator);
+        }
+
+        if (saved.getFundingType() == FundingType.MY_GIFT) {
+            saveVisibilitySettings(saved.getId(), request.visibility());
         }
 
         if (request.gifts() != null && !request.gifts().isEmpty()) {
@@ -78,6 +86,24 @@ public class FundingService {
         if (request.fundingType() == FundingType.MY_GIFT && giftsEmpty) {
             throw new FundingException(FundingErrorCode.GIFT_REQUIRED_FOR_MY_GIFT);
         }
+    }
+
+    private void validateVisibility(FundingCreateRequest request) {
+        if (request.fundingType() == FundingType.MY_GIFT && request.visibility() == null) {
+            throw new FundingException(FundingErrorCode.VISIBILITY_REQUIRED_FOR_MY_GIFT);
+        }
+    }
+
+    private void saveVisibilitySettings(Long fundingId, FundingCreateRequest.VisibilityRequest v) {
+        FundingVisibilitySettings settings = FundingVisibilitySettings.create(
+                fundingId,
+                v.isProgressVisible(),
+                v.isParticipantCountVisible(),
+                v.isParticipantNameVisible(),
+                v.isMessageVisible(),
+                v.isCollectedAmountVisible()
+        );
+        fundingVisibilitySettingsRepository.save(settings);
     }
 
 

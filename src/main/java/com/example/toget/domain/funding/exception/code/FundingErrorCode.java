@@ -16,6 +16,7 @@ public enum FundingErrorCode implements BaseErrorCode {
     VOTE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "FUNDING400_5", "투표는 최대 3개까지 가능합니다."),
     INVALID_TARGET_AMOUNT(HttpStatus.BAD_REQUEST, "FUNDING400_6", "목표 금액은 0원 이상 필수로 입력해야 합니다."),
     GIFT_REQUIRED_FOR_MY_GIFT(HttpStatus.BAD_REQUEST, "FUNDING400_7", "내 선물 만들기는 선물을 최소 1개 이상 등록해야 합니다."),
+    VISIBILITY_REQUIRED_FOR_MY_GIFT(HttpStatus.BAD_REQUEST, "FUNDING400_8", "내 선물 만들기는 공개 여부를 설정해야 합니다."),
 
     FUNDING_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_1", "해당 펀딩을 찾을 수 없습니다."),
     // TODO: 추후 수정 필요
