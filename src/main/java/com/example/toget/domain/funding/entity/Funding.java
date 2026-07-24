@@ -82,6 +82,8 @@ public class Funding extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     private FundingStatus status;
 
+
+
     @Builder
     private Funding(Long userId, Long userAccountId, FundingType fundingType, String title,
                     String recipientName, LocalDate anniversaryDate, LocalDate startDate,
