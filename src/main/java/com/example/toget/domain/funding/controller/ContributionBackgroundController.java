@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "펀딩 API", description = "선물 준비/펀딩 및 참여 관련 API")
+@Tag(name = "관리자 API", description = "카드 배경/캐릭터 등 꾸미기 리소스 관련 API")
 @RestController
 @RequestMapping("/api/v1/contribution-backgrounds")
 @RequiredArgsConstructor
