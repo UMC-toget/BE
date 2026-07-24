@@ -97,11 +97,11 @@ public class FundingService {
     private void saveVisibilitySettings(Long fundingId, FundingCreateRequest.VisibilityRequest v) {
         FundingVisibilitySettings settings = FundingVisibilitySettings.create(
                 fundingId,
-                v.isProgressVisible(),
-                v.isParticipantCountVisible(),
-                v.isParticipantNameVisible(),
-                v.isMessageVisible(),
-                v.isCollectedAmountVisible()
+                v.showProgress(),
+                v.showParticipantCount(),
+                v.showParticipantNames(),
+                v.showParticipantCount(),
+                v.showAmount()
         );
         fundingVisibilitySettingsRepository.save(settings);
     }

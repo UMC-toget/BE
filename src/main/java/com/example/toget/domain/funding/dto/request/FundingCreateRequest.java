@@ -93,11 +93,11 @@ public record FundingCreateRequest(
         ) {}
 
         public record VisibilityRequest(
-                @Schema(description = "진행률 공개 여부") Boolean isProgressVisible,
-                @Schema(description = "참여자 수 공개 여부") Boolean isParticipantCountVisible,
-                @Schema(description = "참여자 이름 공개 여부") Boolean isParticipantNameVisible,
-                @Schema(description = "축하 메시지 공개 여부") Boolean isMessageVisible,
-                @Schema(description = "모금액 공개 여부") Boolean isCollectedAmountVisible
+                @Schema(description = "진행률 공개 여부") Boolean showProgress,
+                @Schema(description = "참여자 수 공개 여부") Boolean showParticipantCount,
+                @Schema(description = "참여자 이름 공개 여부") Boolean showParticipantNames,
+                @Schema(description = "축하 메시지 공개 여부") Boolean showMessages,
+                @Schema(description = "모금액 공개 여부") Boolean showAmount
         ) {}
 
         public record GiftRequest(
