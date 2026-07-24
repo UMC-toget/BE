@@ -5,8 +5,15 @@ import com.example.toget.domain.funding.dto.response.FundingCreateResponse;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.enums.FundingType;
+import com.example.toget.domain.funding.exception.FundingException;
+import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
+import com.example.toget.domain.gift.entity.FundingGift;
+import com.example.toget.domain.invitation.entity.InvitationBackground;
+import com.example.toget.domain.invitation.repository.CharacterRepository;
+import com.example.toget.domain.invitation.repository.InvitationBackgroundRepository;
+import com.example.toget.domain.invitation.repository.InvitationCardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +24,10 @@ public class FundingService {
 
     private final FundingRepository fundingRepository;
     private final FundingMemberRepository fundingMemberRepository;
+    private final FundingGiftRepository fundingGiftRepository;
+    private final InvitationCardRepository invitationCardRepository;
+    private final CharacterRepository characterRepository;
+    private final InvitationBackgroundRepository invitationBackgroundRepository;
 
     @Transactional
     public FundingCreateResponse create(Long userId, FundingCreateRequest request) {
@@ -33,6 +44,42 @@ public class FundingService {
         }
 
         return new FundingCreateResponse(saved.getId());
+    }
+
+
+    private void saveGifts(Long fundingId, List<FundingCreateRequest.GiftRequest> giftRequests) {
+        List<FundingGift> gifts = giftRequests.stream()
+                .map(g -> FundingGift.builder()
+                        .fundingId(fundingId)
+                        .name(g.giftName())
+                        .price(g.giftPrice())
+                        .purchaseUrl(g.giftPurchaseUrl())
+                        .imageUrl(g.giftImageUrl())
+                        .note("")  // note 필드 처리 방식 확인 필요 — 임시로 빈 문자열
+                        .build())
+                .toList();
+        fundingGiftRepository.saveAll(gifts);
+    }
+
+    private void saveInvitationCard(Long fundingId, FundingCreateRequest.InvitationRequest request) {
+        CharacterEntity character = characterRepository.findById(request.characterId())
+                .orElseThrow(() -> new FundingException(FundingErrorCode.CHARACTER_NOT_FOUND));
+        InvitationBackground background = invitationBackgroundRepository.findById(request.backgroundId())
+                .orElseThrow(() -> new ProjectException(FundingErrorCode.INVITATION_BACKGROUND_NOT_FOUND));
+
+        // TODO: URL 생성 정책 확정 전까지의 임시 방식
+        String url = "https://toget.com/funding/" + fundingId + "/invitation";
+
+        InvitationCard card = InvitationCard.builder()
+                .fundingId(fundingId)
+                .character(character)
+                .background(background)
+                .title(request.title())
+                .content(request.content())
+                .url(url)
+                .build();
+
+        invitationCardRepository.save(card);
     }
 
     private Funding createMyGift(Long userId, FundingCreateRequest request) {
