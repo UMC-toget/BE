@@ -66,9 +66,8 @@ public record FundingCreateRequest(
         @NotNull(message = "공개 설정은 필수입니다.")
         VisibilityRequest visibility,
 
-        @Schema(description = "후보 선물 목록 (최소 1개 이상)")
+        @Schema(description = "후보 선물 목록. MY_GIFT는 최소 1개 이상 필수, TOGETHER_GIFT는 비어 있어도 됨 (투표 후 등록)")
         @Valid
-        @NotEmpty(message = "선물은 최소 1개 이상 등록해야 합니다.")
         List<GiftRequest> gifts
 
 ) {

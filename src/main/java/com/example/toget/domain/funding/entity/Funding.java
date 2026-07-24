@@ -216,6 +216,7 @@ public class Funding extends BaseEntity {
      * 선물 리스트 갱신용 정산 계좌 등록/변경 — TOGETHER_GIFT가 나중에 계좌를 등록할 때 사용
      */
     public void updateAccount(Long userAccountId) {
+
         this.userAccountId = userAccountId;
     }
 
@@ -223,10 +224,12 @@ public class Funding extends BaseEntity {
      * 정산 계좌 소유권 검사 — 서비스 계층에서 남의 펀딩 접근을 막을 때 사용
      */
     public boolean isOwnedBy(Long userId) {
+
         return this.userId.equals(userId);
     }
 
     private boolean isExpired() {
+
         return LocalDate.now().isAfter(this.endDate);
     }
 

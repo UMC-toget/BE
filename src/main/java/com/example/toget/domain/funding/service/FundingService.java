@@ -36,6 +36,8 @@ public class FundingService {
 
     @Transactional
     public FundingCreateResponse create(Long userId, FundingCreateRequest request) {
+        validateGifts(request);
+
         Funding funding = switch (request.fundingType()) {
             case MY_GIFT -> createMyGift(userId, request);
             case TOGETHER_GIFT -> createTogetherGift(userId, request);
@@ -48,7 +50,34 @@ public class FundingService {
             fundingMemberRepository.save(creator);
         }
 
+        if (request.gifts() != null && !request.gifts().isEmpty()) {
+            saveGifts(saved.getId(), request.gifts());
+        }
+
+        saveInvitationCard(saved.getId(), request.invitation());
+
+
         return new FundingCreateResponse(saved.getId());
+    }
+
+    @Transactional
+    public void endEarly(Long userId, Long fundingId) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+
+        funding.complete();
+    }
+
+
+    private void validateGifts(FundingCreateRequest request) {
+        boolean giftsEmpty = request.gifts() == null || request.gifts().isEmpty();
+        if (request.fundingType() == FundingType.MY_GIFT && giftsEmpty) {
+            throw new FundingException(FundingErrorCode.GIFT_REQUIRED_FOR_MY_GIFT);
+        }
     }
 
 
