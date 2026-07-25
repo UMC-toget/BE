@@ -203,6 +203,23 @@ public class WishlistServiceTest {
     }
 
     @Test
+    @DisplayName("위시리스트 삭제 실패 - 존재하지 않는 아이템")
+    public void delete_fail_notFound() {
+        // given
+        Long userId = 1L;
+        Long wishlistItemId = 999L;
+        given(wishlistItemRepository.findById(wishlistItemId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> wishlistService.delete(userId, wishlistItemId))
+                .isInstanceOf(WishlistException.class)
+                .extracting(e -> ((WishlistException) e).getCode())
+                .isEqualTo(WishlistErrorCode.WISHLIST_NOT_FOUND);
+
+        verify(wishlistItemRepository, never()).delete(any());
+    }
+
+    @Test
     @DisplayName("위시리스트 삭제 실패 - 권한 없음")
     public void delete_fail_notOwner() {
         // given
