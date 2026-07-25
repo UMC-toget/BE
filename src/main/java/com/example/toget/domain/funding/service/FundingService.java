@@ -362,7 +362,6 @@ public class FundingService {
         }
     }
 
-    // --- 아래 두 메서드는 User 리포지토리 구조 확인 후 정확히 맞춰야 해요 ---
     private Map<Long, User> getUserMap(List<FundingMember> members) {
         List<Long> userIds = members.stream().map(FundingMember::getUserId).toList();
         return userRepository.findAllById(userIds).stream()
