@@ -1,0 +1,16 @@
+package com.example.toget.domain.gift.repository;
+
+import com.example.toget.domain.gift.entity.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+public interface ProductRepository extends JpaRepository<Product, Long> {
+
+    @Query("SELECT p FROM Product p WHERE " +
+           "(:category IS NULL OR p.category = :category) AND " +
+           "(:keyword IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR (p.brand IS NOT NULL AND LOWER(p.brand) LIKE LOWER(CONCAT('%', :keyword, '%'))))")
+    Page<Product> searchProducts(@Param("category") String category, @Param("keyword") String keyword, Pageable pageable);
+}

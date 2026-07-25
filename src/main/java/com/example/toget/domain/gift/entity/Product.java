@@ -37,4 +37,14 @@ public class Product extends BaseEntity {
 
     @Column(name = "brand", length = 50)
     private String brand;
+
+    public void update(String name, Long price, String description, String imageUrl, String purchaseUrl, String category, String brand) {
+        this.name = name;
+        this.price = price;
+        this.description = description;
+        this.imageUrl = imageUrl;
+        this.purchaseUrl = purchaseUrl;
+        this.category = category;
+        this.brand = brand;
+    }
 }
