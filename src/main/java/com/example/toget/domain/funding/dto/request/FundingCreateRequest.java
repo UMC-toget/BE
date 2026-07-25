@@ -61,9 +61,8 @@ public record FundingCreateRequest(
         InvitationRequest invitation,
 
 
-        @Schema(description = "공개 설정")
+        @Schema(description = "공개 설정. MY_GIFT는 필수, TOGETHER_GIFT는 사용하지 않음")
         @Valid
-        @NotNull(message = "공개 설정은 필수입니다.")
         VisibilityRequest visibility,
 
         @Schema(description = "후보 선물 목록. MY_GIFT는 최소 1개 이상 필수, TOGETHER_GIFT는 비어 있어도 됨 (투표 후 등록)")
