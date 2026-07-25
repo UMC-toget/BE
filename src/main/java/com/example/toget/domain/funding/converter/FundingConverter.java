@@ -14,6 +14,7 @@ import com.example.toget.domain.funding.dto.response.FundingBasicInfoResponse;
 import com.example.toget.domain.funding.dto.response.FundingCreateResponse;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.user.entity.UserAccount;
+
 import org.springframework.data.domain.Slice;
 
 import java.util.List;
@@ -145,4 +146,5 @@ public class FundingConverter {
     public static FundingAccountUpdateResponse toAccountUpdateResponse(Funding funding) {
         return new FundingAccountUpdateResponse(funding.getId(), funding.getUserAccountId());
     }
+
 }
