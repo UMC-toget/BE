@@ -2,7 +2,12 @@ package com.example.toget.domain.funding.converter;
 
 import com.example.toget.domain.funding.dto.MyFundingListResponse;
 import com.example.toget.domain.funding.dto.MyFundingListResponse.MyFundingSummary;
+import com.example.toget.domain.funding.dto.response.FundingMemberManagementResponse;
+import com.example.toget.domain.funding.dto.response.FundingSettlementListResponse;
 import com.example.toget.domain.funding.entity.Funding;
+import com.example.toget.domain.funding.entity.FundingMember;
+import com.example.toget.domain.funding.enums.FundingRole;
+import com.example.toget.domain.user.entity.User;
 import org.springframework.data.domain.Slice;
 
 import java.util.List;
@@ -61,5 +66,48 @@ public class FundingConverter {
             return 0; // targetAmount는 0허용
         }
         return (int) (collectedAmount * PERCENT / targetAmount);
+    }
+
+    public static FundingMemberManagementResponse.MemberInfo toMemberInfo(FundingMember member, Map<Long, User> userMap) {
+        User user = userMap.get(member.getUserId());
+        return new FundingMemberManagementResponse.MemberInfo(
+                member.getId(), member.getUserId(), user.getName(), user.getProfileImageUrl(), member.getRole().name()
+        );
+    }
+
+    public static FundingMemberManagementResponse toMemberManagementResponse(List<FundingMember> members, Map<Long, User> userMap) {
+        List<FundingMemberManagementResponse.MemberInfo> admins = members.stream()
+                .filter(m -> m.getRole() == FundingRole.CREATOR || m.getRole() == FundingRole.ADMIN)
+                .map(m -> toMemberInfo(m, userMap))
+                .toList();
+
+        List<FundingMemberManagementResponse.MemberInfo> participants = members.stream()
+                .filter(m -> m.getRole() == FundingRole.PARTICIPANT)
+                .map(m -> toMemberInfo(m, userMap))
+                .toList();
+
+        return new FundingMemberManagementResponse(
+                members.size(), admins.size(), participants.size(), admins, participants
+        );
+    }
+
+    public static FundingSettlementListResponse.SettlementInfo toSettlementInfo(FundingMember member, Map<Long, User> userMap) {
+        User user = userMap.get(member.getUserId());
+        return new FundingSettlementListResponse.SettlementInfo(
+                member.getId(), member.getUserId(), user.getName(), user.getProfileImageUrl(),
+                member.getAmountDue(), member.getSettlementStatus().name()
+        );
+    }
+
+    public static FundingSettlementListResponse toSettlementListResponse(List<FundingMember> settlementMembers, Map<Long, User> userMap) {
+        long totalAmount = settlementMembers.stream()
+                .mapToLong(FundingMember::getAmountDue)
+                .sum();
+
+        List<FundingSettlementListResponse.SettlementInfo> settlements = settlementMembers.stream()
+                .map(m -> toSettlementInfo(m, userMap))
+                .toList();
+
+        return new FundingSettlementListResponse(settlementMembers.size(), totalAmount, settlements);
     }
 }

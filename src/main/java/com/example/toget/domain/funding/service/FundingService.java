@@ -1,5 +1,6 @@
 package com.example.toget.domain.funding.service;
 
+import com.example.toget.domain.funding.converter.FundingConverter;
 import com.example.toget.domain.funding.dto.request.FundingAccountUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingBasicInfoUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingCreateRequest;
@@ -284,9 +285,7 @@ public class FundingService {
                 .map(m -> toMemberInfo(m, userMap))
                 .toList();
 
-        return new FundingMemberManagementResponse(
-                members.size(), admins.size(), participants.size(), admins, participants
-        );
+        return FundingConverter.toMemberManagementResponse(members, userMap);
     }
 
     @Transactional
@@ -335,7 +334,7 @@ public class FundingService {
                 ))
                 .toList();
 
-        return new FundingSettlementListResponse(settlementMembers.size(), totalAmount, settlements);
+        return FundingConverter.toSettlementListResponse(settlementMembers, userMap);
     }
 
     @Transactional
