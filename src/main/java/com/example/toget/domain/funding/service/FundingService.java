@@ -32,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -211,8 +212,13 @@ public class FundingService {
 
         boolean periodChanged = !request.startDate().equals(funding.getStartDate())
                 || !request.endDate().equals(funding.getEndDate());
-        if (periodChanged && !isPeriodEditable(funding.getStatus())) {
-            throw new FundingException(FundingErrorCode.INVALID_STATUS_FOR_PERIOD_UPDATE);
+        if (periodChanged) {
+            if (!isPeriodEditable(funding.getStatus())) {
+                throw new FundingException(FundingErrorCode.INVALID_STATUS_FOR_PERIOD_UPDATE);
+            }
+            if (!request.endDate().isAfter(LocalDate.now())) {
+                throw new FundingException(FundingErrorCode.END_DATE_MUST_BE_FUTURE);
+            }
         }
 
 
