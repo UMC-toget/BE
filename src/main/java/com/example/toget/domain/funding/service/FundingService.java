@@ -204,11 +204,28 @@ public class FundingService {
             throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
         }
 
+        if (funding.getStatus() == FundingStatus.ENDED) {
+            throw new FundingException(FundingErrorCode.FUNDING_ALREADY_ENDED);
+        }
+
+
+        boolean periodChanged = !request.startDate().equals(funding.getStartDate())
+                || !request.endDate().equals(funding.getEndDate());
+        if (periodChanged && !isPeriodEditable(funding.getStatus())) {
+            throw new FundingException(FundingErrorCode.INVALID_STATUS_FOR_PERIOD_UPDATE);
+        }
+
+
         funding.updateBasicInfo(
                 request.title(), request.anniversaryDate(), request.startDate(),
                 request.endDate(), request.introduction(), request.thumbnailImageUrl()
         );
+
         return FundingConverter.toBasicInfoResponse(funding);
+    }
+
+    private boolean isPeriodEditable(FundingStatus status) {
+        return status == FundingStatus.SELECTING || status == FundingStatus.SETTLING;
     }
 
     @Transactional(readOnly = true)
