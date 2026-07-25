@@ -6,7 +6,7 @@ import com.example.toget.domain.funding.dto.response.ContributionBackgroundCreat
 import com.example.toget.domain.funding.dto.response.ContributionBackgroundResponse;
 import com.example.toget.domain.funding.exception.code.ContributionSuccessCode;
 import com.example.toget.domain.funding.service.ContributionBackgroundService;
-import com.example.toget.domain.user.controller.LoginUserId;
+import com.example.toget.global.annotation.AdminOnly;
 import com.example.toget.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +16,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * 참여 카드 배경 색상 CRUD API 컨트롤러.
+ * 전체 조회(GET)는 비로그인 허용(SecurityConfig permitAll),
+ * 생성/수정/삭제는 관리자 전용(@AdminOnly → AdminOnlyInterceptor).
+ */
 @Tag(name = "펀딩 API", description = "선물 준비/펀딩 및 참여 관련 API")
 @RestController
 @RequestMapping("/api/v1/contribution-backgrounds")
@@ -32,39 +37,24 @@ public class ContributionBackgroundController {
         return ApiResponse.onSuccess(ContributionSuccessCode.BACKGROUND_LIST_OK, result);
     }
 
-    /**
-     * 배경 색상 생성.
-     *
-     * @deprecated 관리자 권한 체계가 아직 없어 로그인 여부만 확인한다.
-     * 추후 고도화에서 User 파트에서 role 체계 도입 예정 — 도입 전까지 프론트 미노출.
-     */
-    @Deprecated
-    @Operation(summary = "[관리자 전용 예정] 배경 색상 생성",
-            description = "⚠️ 관리자 권한 체계 도입 전까지 임시로 로그인 사용자 전체에게 열려 있습니다. 프론트 연동 금지.")
+    /** 배경 색상 생성 — 관리자 전용 */
+    @AdminOnly
+    @Operation(summary = "[관리자 전용] 배경 색상 생성",
+            description = "관리자 계정만 호출할 수 있습니다. 일반 사용자 요청은 403(COMMON403_1)으로 차단됩니다.")
     @PostMapping
     public ApiResponse<ContributionBackgroundCreateResponse> create(
-            @LoginUserId Long userId,
             @Valid @RequestBody ContributionBackgroundRequest request
     ) {
         ContributionBackgroundCreateResponse result = contributionBackgroundService.create(request);
         return ApiResponse.onSuccess(ContributionSuccessCode.BACKGROUND_CREATE_OK, result);
     }
 
-
-
-    /** 배경 색상 수정 (관리자용) */
-    /**
-     * 배경 색상 수정.
-     *
-     * @deprecated 관리자 권한 체계가 아직 없어 로그인 여부만 확인한다.
-     * User 파트에서 role 체계 도입 예정(이슈 트래킹 중) — 도입 전까지 프론트 미노출.
-     */
-    @Deprecated
-    @Operation(summary = "[관리자 전용 예정] 배경 색상 수정",
-            description = "⚠️ 관리자 권한 체계 도입 전까지 임시로 로그인 사용자 전체에게 열려 있습니다. 프론트 연동 금지.")
+    /** 배경 색상 수정 — 관리자 전용 */
+    @AdminOnly
+    @Operation(summary = "[관리자 전용] 배경 색상 수정",
+            description = "관리자 계정만 호출할 수 있습니다. 일반 사용자 요청은 403(COMMON403_1)으로 차단됩니다.")
     @PutMapping("/{id}")
     public ApiResponse<ContributionBackgroundResponse> update(
-            @LoginUserId Long userId,
             @PathVariable Long id,
             @Valid @RequestBody ContributionBackgroundRequest request
     ) {
@@ -72,19 +62,12 @@ public class ContributionBackgroundController {
         return ApiResponse.onSuccess(ContributionSuccessCode.BACKGROUND_UPDATE_OK, result);
     }
 
-
-    /**
-     * 배경 색상 삭제.
-     *
-     * @deprecated 관리자 권한 체계가 아직 없어 로그인 여부만 확인한다.
-     * User 파트에서 role 체계 도입 예정(이슈 트래킹 중) — 도입 전까지 프론트 미노출.
-     */
-    @Deprecated
-    @Operation(summary = "[관리자 전용 예정] 배경 색상 삭제",
-            description = "⚠️ 관리자 권한 체계 도입 전까지 임시로 로그인 사용자 전체에게 열려 있습니다. 프론트 연동 금지.")
+    /** 배경 색상 삭제 — 관리자 전용 */
+    @AdminOnly
+    @Operation(summary = "[관리자 전용] 배경 색상 삭제",
+            description = "관리자 계정만 호출할 수 있습니다. 일반 사용자 요청은 403(COMMON403_1)으로 차단됩니다.")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(
-            @LoginUserId Long userId,
             @PathVariable Long id
     ) {
         contributionBackgroundService.delete(id);
