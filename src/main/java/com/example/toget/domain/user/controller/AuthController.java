@@ -51,7 +51,7 @@ public class AuthController {
      * 의해 로그인(유효한 JWT)이 필요하다. 사용자 식별은 URL/본문이 아닌 @LoginUserId(토큰)로만 한다.
      */
     @Operation(summary = "로그아웃", description = "로그인한 사용자의 Refresh Token을 무효화하여 세션을 종료합니다.")
-    @PostMapping("/logout")
+    @DeleteMapping("/tokens/me")
     public ApiResponse<Void> logout(@LoginUserId Long userId) {
         authService.logout(userId);
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, null);
