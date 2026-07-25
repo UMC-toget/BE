@@ -29,6 +29,13 @@ jwt:
 encryption:
   key: ${ENCRYPTION_KEY} # 기본값 없음 — 미설정 시 기동 실패 (공개된 기본 키로 계좌번호가 암호화되는 사고 방지)
 
+admin:
+  # 관리자 계정 식별값 — users 테이블에 role 컬럼을 두지 않고 고정 관리자 1개를 환경변수로 관리한다.
+  # 미설정 시 관리자 전용 API는 전부 403으로 차단된다 (fail-closed: 설정 누락이 전면 개방으로 이어지지 않도록)
+  email: ${ADMIN_EMAIL:}
+  # 이메일만 비교하면 같은 주소를 다른 소셜 계정에 등록해 우회할 수 있으므로 공급자까지 함께 검증한다
+  provider: ${ADMIN_PROVIDER:GOOGLE}
+
 oauth:
   google:
     token-info-uri: ${GOOGLE_TOKEN_INFO_URI:https://oauth2.googleapis.com/tokeninfo}

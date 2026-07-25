@@ -48,24 +48,38 @@ public class GoogleOAuthClient implements OAuthClient {
         } catch (Exception e) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
-        // 응답 자체가 비어 있을 수 있으므로 사용 전에 먼저 검사한다 (NPE → 500 방지)
+        // body 검사를 sub 추출보다 먼저 — 순서가 뒤바뀌면 응답이 없을 때 NPE가 나 401이 아닌 500이 된다
         if (body == null) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
-        String sub = body.path("sub").textValue();
+        String sub = textOrNull(body, "sub");
         if (sub == null) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
         // aud(발급 대상 클라이언트 ID) 검증 — 없으면 타 서비스용으로 발급된 구글 토큰으로도 로그인 가능
-        String aud = body.path("aud").textValue();
+        String aud = textOrNull(body, "aud");
         if (clientId.isBlank() || !clientId.equals(aud)) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
+        // email/name/picture는 요청 스코프에 따라 응답에서 아예 빠질 수 있다 (openid만 요청한 경우 등).
+        // 필수값이 아니므로 없으면 null로 두고, 이후 프로필 갱신에서 채워지도록 한다.
         return new OAuthUserInfo(
                 sub, // 구글 계정 고유 ID → 우리 DB의 oAuthId
-                body.path("email").textValue(),
-                body.path("name").textValue(),
-                body.path("picture").textValue()
+                textOrNull(body, "email"),
+                textOrNull(body, "name"),
+                textOrNull(body, "picture")
         );
+    }
+
+    /**
+     * JSON 필드를 문자열로 읽되, 없거나 null이면 null을 반환한다.
+     *
+     * <p>path()는 필드가 없을 때 MissingNode를 반환하는데, Jackson 3부터는 그 위에
+     * textValue()/stringValue()를 호출하면 JsonNodeException을 던진다(Jackson 2는 null 반환).
+     * 반면 get()은 필드가 없으면 null을 주므로 누락과 명시적 null을 함께 걸러낼 수 있다.
+     */
+    private static String textOrNull(JsonNode body, String field) {
+        JsonNode node = body.get(field);
+        return (node == null || node.isNull()) ? null : node.asString();
     }
 }
