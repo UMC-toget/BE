@@ -1,6 +1,11 @@
 package com.example.toget.domain.funding.service;
 
+import com.example.toget.domain.funding.dto.request.FundingAccountUpdateRequest;
+import com.example.toget.domain.funding.dto.request.FundingBasicInfoUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingCreateRequest;
+import com.example.toget.domain.funding.dto.response.FundingAccountResponse;
+import com.example.toget.domain.funding.dto.response.FundingAccountUpdateResponse;
+import com.example.toget.domain.funding.dto.response.FundingBasicInfoResponse;
 import com.example.toget.domain.funding.dto.response.FundingCreateResponse;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingMember;
@@ -20,6 +25,8 @@ import com.example.toget.domain.invitation.entity.InvitationCard;
 import com.example.toget.domain.invitation.repository.CharacterRepository;
 import com.example.toget.domain.invitation.repository.InvitationBackgroundRepository;
 import com.example.toget.domain.invitation.repository.InvitationCardRepository;
+import com.example.toget.domain.user.entity.UserAccount;
+import com.example.toget.domain.user.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +44,7 @@ public class FundingService {
     private final CharacterRepository characterRepository;
     private final InvitationBackgroundRepository invitationBackgroundRepository;
     private final FundingVisibilitySettingsRepository fundingVisibilitySettingsRepository;
+    private final UserAccountRepository userAccountRepository;
 
     @Transactional
     public FundingCreateResponse create(Long userId, FundingCreateRequest request) {
@@ -186,4 +194,64 @@ public class FundingService {
                 request.targetAmount()
         );
     }
+
+    @Transactional
+    public FundingBasicInfoResponse updateBasicInfo(Long userId, Long fundingId, FundingBasicInfoUpdateRequest request) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+
+        funding.updateBasicInfo(
+                request.title(), request.anniversaryDate(), request.startDate(),
+                request.endDate(), request.introduction(), request.thumbnailImageUrl()
+        );
+
+        return new FundingBasicInfoResponse(
+                funding.getId(), funding.getTitle(), funding.getAnniversaryDate(),
+                funding.getStartDate(), funding.getEndDate(),
+                funding.getIntroduction(), funding.getThumbnailImageUrl()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public FundingAccountResponse getAccount(Long userId, Long fundingId) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+        if (funding.getUserAccountId() == null) {
+            throw new FundingException(FundingErrorCode.ACCOUNT_NOT_REGISTERED);
+        }
+
+        UserAccount account = userAccountRepository.findById(funding.getUserAccountId())
+                .orElseThrow(() -> new FundingException(FundingErrorCode.ACCOUNT_NOT_FOUND));
+
+        return new FundingAccountResponse(
+                account.getId(), account.getBankName().name(),
+                account.getAccount(), account.getAccountOwner()
+        );
+    }
+
+    @Transactional
+    public FundingAccountUpdateResponse updateAccount(Long userId, Long fundingId, FundingAccountUpdateRequest request) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+
+        UserAccount account = userAccountRepository.findById(request.userAccountId())
+                .orElseThrow(() -> new FundingException(FundingErrorCode.ACCOUNT_NOT_FOUND));
+        if (!account.getUserId().equals(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_ACCOUNT_OWNER);
+        }
+
+        funding.updateAccount(request.userAccountId());
+
+        return new FundingAccountUpdateResponse(funding.getId(), funding.getUserAccountId());
+    }
+
 }
