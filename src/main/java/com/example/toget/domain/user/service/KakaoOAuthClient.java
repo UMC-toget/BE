@@ -67,16 +67,30 @@ public class KakaoOAuthClient implements OAuthClient {
         JsonNode account = body.path("kakao_account");
         JsonNode profile = account.path("profile");
 
-        String idString = body.path("id").isNumber() 
-                ? String.valueOf(body.path("id").asLong()) 
-                : body.path("id").textValue();
+        String idString = body.path("id").isNumber()
+                ? String.valueOf(body.path("id").asLong())
+                : textOrNull(body, "id");
 
+        // email/nickname/profile_image_url은 사용자가 제공 동의를 하지 않으면 응답에서 빠진다.
+        // 필수값이 아니므로 없으면 null로 둔다.
         return new OAuthUserInfo(
                 idString,                                      // 카카오 회원번호 → 우리 DB의 oAuthId
-                account.path("email").textValue(),            // 동의 안 했으면 없을 수 있어 기본값 null
-                profile.path("nickname").textValue(),
-                profile.path("profile_image_url").textValue()
+                textOrNull(account, "email"),
+                textOrNull(profile, "nickname"),
+                textOrNull(profile, "profile_image_url")
         );
+    }
+
+    /**
+     * JSON 필드를 문자열로 읽되, 없거나 null이면 null을 반환한다.
+     *
+     * <p>path()는 필드가 없을 때 MissingNode를 반환하는데, Jackson 3부터는 그 위에
+     * textValue()/stringValue()를 호출하면 JsonNodeException을 던진다(Jackson 2는 null 반환).
+     * 카카오는 동의하지 않은 항목을 응답에서 아예 생략하므로 이 경로를 반드시 방어해야 한다.
+     */
+    private static String textOrNull(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        return (value == null || value.isNull()) ? null : value.asString();
     }
 
     /**
@@ -95,10 +109,10 @@ public class KakaoOAuthClient implements OAuthClient {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
 
-        JsonNode appIdNode = body == null ? null : body.path("app_id");
-        String tokenAppId = appIdNode == null || appIdNode.isMissingNode() ? null
+        JsonNode appIdNode = body == null ? null : body.get("app_id");
+        String tokenAppId = appIdNode == null || appIdNode.isNull() ? null
                 : appIdNode.isNumber() ? String.valueOf(appIdNode.asLong())
-                : appIdNode.textValue();
+                : appIdNode.asString();
         if (appId.isBlank() || !appId.equals(tokenAppId)) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
