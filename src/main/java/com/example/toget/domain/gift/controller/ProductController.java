@@ -23,16 +23,19 @@ public class ProductController {
 
     private final ProductService productService;
 
-    @Operation(summary = "상품 목록 조회", description = "자체 상품 목록을 카테고리, 검색어, 페이징 및 정렬 조건에 따라 조회합니다.")
+    @Operation(summary = "상품 목록 조회", description = "자체 상품 목록을 카테고리, 검색어, 브랜드, 가격 범위(minPrice/maxPrice), 페이징 및 정렬 조건에 따라 무한 스크롤(Slice) 형태로 조회합니다.")
     @GetMapping
     public ApiResponse<ProductListResponse> getProducts(
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) Long minPrice,
+            @RequestParam(required = false) Long maxPrice,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "latest") String sort
     ) {
-        return ApiResponse.onSuccess(GeneralSuccessCode.OK, productService.getProducts(category, keyword, page, size, sort));
+        return ApiResponse.onSuccess(GeneralSuccessCode.OK, productService.getProducts(category, keyword, brand, minPrice, maxPrice, page, size, sort));
     }
 
     @Operation(summary = "상품 상세 조회", description = "지정한 ID의 상품 상세 정보를 조회합니다.")

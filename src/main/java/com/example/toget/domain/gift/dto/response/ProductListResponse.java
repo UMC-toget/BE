@@ -4,10 +4,8 @@ import java.util.List;
 
 public record ProductListResponse(
     List<ProductDetailResponse> products,
-    int page,
-    int size,
-    long totalElements,
-    int totalPages,
-    boolean isFirst,
-    boolean isLast
+    int currentPage,
+    int pageSize,
+    boolean hasNext
 ) {}
+

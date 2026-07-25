@@ -19,6 +19,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -128,16 +130,18 @@ public class ProductServiceTest {
         ReflectionTestUtils.setField(product, "id", 1L);
 
         Pageable pageable = PageRequest.of(0, 10, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id"));
-        Page<Product> page = new PageImpl<>(List.of(product), pageable, 1);
+        Slice<Product> slice = new SliceImpl<>(List.of(product), pageable, false);
 
-        given(productRepository.searchProducts(eq("전자기기"), eq("Apple"), any(Pageable.class))).willReturn(page);
+        given(productRepository.searchProducts(eq("전자기기"), eq("워치"), eq("Apple"), eq(100000L), eq(500000L), any(Pageable.class))).willReturn(slice);
 
         // when
-        ProductListResponse response = productService.getProducts("전자기기", "Apple", 0, 10, "latest");
+        ProductListResponse response = productService.getProducts("전자기기", "워치", "Apple", 100000L, 500000L, 0, 10, "latest");
 
         // then
         assertThat(response.products()).hasSize(1);
-        assertThat(response.totalElements()).isEqualTo(1);
+        assertThat(response.currentPage()).isEqualTo(0);
+        assertThat(response.pageSize()).isEqualTo(10);
+        assertThat(response.hasNext()).isFalse();
         assertThat(response.products().get(0).name()).isEqualTo("애플 워치 SE 2세대");
     }
 

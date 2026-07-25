@@ -5,7 +5,7 @@ import com.example.toget.domain.gift.dto.response.ProductCreateResponse;
 import com.example.toget.domain.gift.dto.response.ProductDetailResponse;
 import com.example.toget.domain.gift.dto.response.ProductListResponse;
 import com.example.toget.domain.gift.entity.Product;
-import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Slice;
 
 import java.util.List;
 
@@ -42,19 +42,16 @@ public class ProductConverter {
         );
     }
 
-    public static ProductListResponse toListResponse(Page<Product> page) {
-        List<ProductDetailResponse> items = page.getContent().stream()
+    public static ProductListResponse toListResponse(Slice<Product> slice) {
+        List<ProductDetailResponse> items = slice.getContent().stream()
                 .map(ProductConverter::toDetailResponse)
                 .toList();
 
         return new ProductListResponse(
                 items,
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements(),
-                page.getTotalPages(),
-                page.isFirst(),
-                page.isLast()
+                slice.getNumber(),
+                slice.getSize(),
+                slice.hasNext()
         );
     }
 }

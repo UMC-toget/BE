@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +39,7 @@ public class ProductService {
         return ProductConverter.toDetailResponse(product);
     }
 
-    public ProductListResponse getProducts(String category, String keyword, int page, int size, String sort) {
+    public ProductListResponse getProducts(String category, String keyword, String brand, Long minPrice, Long maxPrice, int page, int size, String sort) {
         Sort sortOrder = Sort.by(Sort.Direction.DESC, "id");
         if ("oldest".equalsIgnoreCase(sort) || "asc".equalsIgnoreCase(sort)) {
             sortOrder = Sort.by(Sort.Direction.ASC, "id");
@@ -52,8 +53,9 @@ public class ProductService {
 
         String formattedKeyword = (keyword != null && !keyword.isBlank()) ? keyword.trim() : null;
         String formattedCategory = (category != null && !category.isBlank()) ? category.trim() : null;
+        String formattedBrand = (brand != null && !brand.isBlank()) ? brand.trim() : null;
 
-        Page<Product> products = productRepository.searchProducts(formattedCategory, formattedKeyword, pageable);
+        Slice<Product> products = productRepository.searchProducts(formattedCategory, formattedKeyword, formattedBrand, minPrice, maxPrice, pageable);
         return ProductConverter.toListResponse(products);
     }
 
