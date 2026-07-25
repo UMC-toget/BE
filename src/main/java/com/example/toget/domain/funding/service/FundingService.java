@@ -5,6 +5,7 @@ import com.example.toget.domain.funding.dto.response.FundingCreateResponse;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.entity.FundingVisibilitySettings;
+import com.example.toget.domain.funding.enums.FundingStatus;
 import com.example.toget.domain.funding.enums.FundingType;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
@@ -68,17 +69,31 @@ public class FundingService {
         return new FundingCreateResponse(saved.getId());
     }
 
+
     @Transactional
-    public void endEarly(Long userId, Long fundingId) {
+    public void updateStatus(Long userId, Long fundingId, FundingStatus newStatus) {
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
-
         if (!funding.isOwnedBy(userId)) {
             throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
         }
 
-        funding.complete();
+        if (funding.getFundingType() == FundingType.MY_GIFT && newStatus != FundingStatus.ENDED) {
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
+        }
+
+        // [TOGETHER_GIFT] SELECTING → SETTLING → PURCHASING → DELIVERING → ENDED 순서로 전환합니다.
+        //  단, SELECTING → SETTLING 전환은 이 API가 아니라 POST /fundings/{fundingId}/confirm-settlement(선물 확정하기) API를 통해서만 가능합니다.
+        //  이 API는 PURCHASING, DELIVERING, ENDED로의 전환만 처리합니다.
+        // [MY_GIFT] SETTLING → ENDED 전환만 가능합니다.
+        switch (newStatus) {
+            case PURCHASING -> funding.startPurchasing();
+            case DELIVERING -> funding.startDelivering();
+            case ENDED -> funding.complete();
+            default -> throw new FundingException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
+        }
     }
+
 
 
     private void validateGifts(FundingCreateRequest request) {

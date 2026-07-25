@@ -1,6 +1,7 @@
 package com.example.toget.domain.funding.controller;
 
 import com.example.toget.domain.funding.dto.request.FundingCreateRequest;
+import com.example.toget.domain.funding.dto.request.FundingStatusUpdateRequest;
 import com.example.toget.domain.funding.dto.response.FundingCreateResponse;
 import com.example.toget.domain.funding.exception.code.FundingSuccessCode;
 import com.example.toget.domain.funding.service.FundingService;
@@ -45,20 +46,33 @@ public class FundingController {
 
 
     @Operation(
-            summary = "선물 준비 조기 종료",
+            summary = "선물 준비 진행 상태 수정",
             description = """
-                    선물 준비를 즉시 마감합니다. 최종 선물이 확정된 상태든 \
-                    확정되지 않은 상태든 종료할 수 있습니다.
-                    
-                    이미 종료(ENDED)된 페이지를 다시 종료하려고 하면 오류가 발생합니다.
-                    """
+                본인이 개최한 선물 준비 페이지의 진행 상태를 전환합니다.
+                
+                **TOGETHER_GIFT**
+                - 상태 전이 순서: `SELECTING` → `SETTLING` → `PURCHASING` → `DELIVERING` → `ENDED`
+                - `ENDED`로는 위 순서와 무관하게 어느 단계에서든 즉시 전환할 수 있습니다 (조기 종료).
+                - ⚠️ **`SELECTING` → `SETTLING` 전환은 이 API로 처리하지 않습니다.** \
+                  최종 선물과 정산 참여자를 함께 확정해야 하므로, \
+                  `POST /fundings/{fundingId}/confirm-settlement`(선물 확정하기) API를 사용해주세요. \
+                  이 API로 `SETTLING`을 요청하면 400 에러가 반환됩니다.
+                - 이 API가 실제로 처리하는 전이는 `PURCHASING`, `DELIVERING`, `ENDED` 세 가지입니다.
+                
+                **MY_GIFT**
+                - `SETTLING` → `ENDED` 전환만 가능합니다. 후보 선정·구매·전달 단계가 없어 \
+                  다른 상태값은 사용하지 않습니다.
+                - `ENDED` 외의 상태를 요청하면 400 에러가 반환됩니다.
+                """
     )
     @PatchMapping("/{fundingId}/status")
     public ApiResponse<Void> endEarly(
             @Parameter(hidden = true) @LoginUserId Long userId,
-            @Parameter(description = "펀딩 ID", example = "1") @PathVariable Long fundingId
+            @Parameter(description = "펀딩 ID", example = "1") @PathVariable Long fundingId,
+            @Valid @RequestBody FundingStatusUpdateRequest request
+
     ) {
-        fundingService.endEarly(userId, fundingId);
+        fundingService.updateStatus(userId, fundingId, request.status());
         return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_STATUS_UPDATE_OK, null);
     }
 

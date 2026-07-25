@@ -179,7 +179,7 @@ public class Funding extends BaseEntity {
 
     /**
      * 정산 확정(4단계 "정산 시작하기") — SELECTING → SETTLING (TOGETHER_GIFT 전용)
-     * <p>
+     *
      * 프론트에서 선물 확정/정산인원 확정/금액 확정을 한 번에 모아 저장하는 원자적 액션이므로,
      * 이 메서드 호출 시점에 FundingGift.select(...), FundingMember.confirmSettlement(...)가
      * 같은 트랜잭션 안에서 함께 처리되어야 한다.
@@ -192,6 +192,23 @@ public class Funding extends BaseEntity {
         this.targetAmount = targetAmount;
         this.status = FundingStatus.SETTLING;
     }
+
+    /** 정산 완료 후 구매 시작 — SETTLING → PURCHASING */
+    public void startPurchasing() {
+        if (this.status != FundingStatus.SETTLING) {
+            throw new ProjectException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
+        }
+        this.status = FundingStatus.PURCHASING;
+    }
+
+    /** 구매 완료 후 전달 시작 — PURCHASING → DELIVERING */
+    public void startDelivering() {
+        if (this.status != FundingStatus.PURCHASING) {
+            throw new ProjectException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
+        }
+        this.status = FundingStatus.DELIVERING;
+    }
+
 
     /**
      * 펀딩 종료 처리 — SELECTING 또는 SETTLING → ENDED
