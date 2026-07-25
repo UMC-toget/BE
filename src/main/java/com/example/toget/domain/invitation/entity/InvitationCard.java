@@ -56,13 +56,11 @@ public class InvitationCard {
     @JoinColumn(name = "background_id", nullable = false)
     private InvitationBackground background;
 
-    // 초대장 제목
-    // TODO: 초대장 수정 API 구현 시 InvitationCardRequest에 @Size(max = 15) 추가 필요
+    // 초대장 제목 (DB 길이 제약과 InvitationCardUpdateRequest의 @Size(max = 15)가 대응)
     @Column(name = "title", nullable = false, length = 15)
     private String title;
 
-    // 초대장 본문 내용
-    // TODO: 초대장 수정 API 구현 시 InvitationCardRequest에 @Size(max = 60) 추가 필요
+    // 초대장 본문 내용 (DB 길이 제약과 InvitationCardUpdateRequest의 @Size(max = 60)가 대응)
     @Column(name = "content", nullable = false, length = 60)
     private String content;
 
@@ -79,5 +77,16 @@ public class InvitationCard {
         this.title = title;
         this.content = content;
         this.url = url;
+    }
+
+    /**
+     * 초대장 카드 수정 — 대표 캐릭터, 색상 테마(배경), 제목, 본문을 갱신한다.
+     * fundingId/url은 발행 시점에 고정되는 값이라 수정 대상에서 제외한다.
+     */
+    public void update(CharacterEntity character, InvitationBackground background, String title, String content) {
+        this.character = character;
+        this.background = background;
+        this.title = title;
+        this.content = content;
     }
 }
