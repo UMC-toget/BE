@@ -30,5 +30,10 @@ public interface FundingContributionRepository extends JpaRepository<FundingCont
             """)
     List<FundingCollectedAmount> sumAmountsByFundingIds(@Param("fundingIds") List<Long> fundingIds);
 
-    Slice<FundingContribution> findAllByFundingIdOrderByGuestNameAsc(Long fundingId, Pageable pageable);
+    Slice<FundingContribution> findAllByFundingIdOrderByCreatedAtDesc(Long fundingId, Pageable pageable);
+    Slice<FundingContribution> findAllByFundingIdOrderByCreatedAtAsc(Long fundingId, Pageable pageable);
+    int countByFundingId(Long fundingId);
+
+    @Query("SELECT COALESCE(SUM(c.amount), 0) FROM FundingContribution c WHERE c.fundingId = :fundingId")
+    Long sumAmountByFundingId(@Param("fundingId") Long fundingId);
 }

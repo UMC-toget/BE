@@ -6,14 +6,13 @@ import com.example.toget.domain.funding.dto.request.FundingBasicInfoUpdateReques
 import com.example.toget.domain.funding.dto.request.FundingCreateRequest;
 import com.example.toget.domain.funding.dto.response.*;
 import com.example.toget.domain.funding.entity.Funding;
+import com.example.toget.domain.funding.entity.FundingContribution;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.entity.FundingVisibilitySettings;
-import com.example.toget.domain.funding.enums.FundingRole;
-import com.example.toget.domain.funding.enums.FundingStatus;
-import com.example.toget.domain.funding.enums.FundingType;
-import com.example.toget.domain.funding.enums.SettlementStatus;
+import com.example.toget.domain.funding.enums.*;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
+import com.example.toget.domain.funding.repository.FundingContributionRepository;
 import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
 import com.example.toget.domain.funding.repository.FundingVisibilitySettingsRepository;
@@ -30,6 +29,9 @@ import com.example.toget.domain.user.entity.UserAccount;
 import com.example.toget.domain.user.repository.UserAccountRepository;
 import com.example.toget.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +48,7 @@ public class FundingService {
     private final FundingRepository fundingRepository;
     private final FundingMemberRepository fundingMemberRepository;
     private final FundingGiftRepository fundingGiftRepository;
+    private final FundingContributionRepository fundingContributionRepository;
     private final InvitationCardRepository invitationCardRepository;
     private final CharacterRepository characterRepository;
     private final InvitationBackgroundRepository invitationBackgroundRepository;
@@ -389,5 +392,32 @@ public class FundingService {
     }
 
 
+    @Transactional(readOnly = true)
+    public FundingContributionListResponse getContributions(
+            Long userId, Long fundingId, ContributionSortType sort, int page, int size
+    ) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
 
+        Pageable pageable = PageRequest.of(page, size);
+        Slice<FundingContribution> slice = (sort == ContributionSortType.OLDEST)
+                ? fundingContributionRepository.findAllByFundingIdOrderByCreatedAtAsc(fundingId, pageable)
+                : fundingContributionRepository.findAllByFundingIdOrderByCreatedAtDesc(fundingId, pageable);
+
+        int participantCount = fundingContributionRepository.countByFundingId(fundingId);
+        Long totalAmount = fundingContributionRepository.sumAmountByFundingId(fundingId);
+
+        List<FundingContributionListResponse.ContributionItem> items = slice.getContent().stream()
+                .map(c -> new FundingContributionListResponse.ContributionItem(
+                        c.getId(), c.getGuestName(), null, c.getAmount(), c.getCreatedAt()
+                ))
+                .toList();
+
+        return new FundingContributionListResponse(
+                participantCount, totalAmount, items, page, size, slice.hasNext()
+        );
+    }
 }
