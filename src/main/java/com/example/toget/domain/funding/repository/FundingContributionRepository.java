@@ -2,6 +2,8 @@ package com.example.toget.domain.funding.repository;
 
 import com.example.toget.domain.funding.dto.FundingCollectedAmount;
 import com.example.toget.domain.funding.entity.FundingContribution;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -27,4 +29,6 @@ public interface FundingContributionRepository extends JpaRepository<FundingCont
             group by fc.fundingId
             """)
     List<FundingCollectedAmount> sumAmountsByFundingIds(@Param("fundingIds") List<Long> fundingIds);
+
+    Slice<FundingContribution> findAllByFundingIdOrderByGuestNameAsc(Long fundingId, Pageable pageable);
 }
