@@ -71,7 +71,7 @@ public class FundingController {
                 """
     )
     @PatchMapping("/{fundingId}/status")
-    public ApiResponse<Void> endEarly(
+    public ApiResponse<Void> updateStatus(
             @Parameter(hidden = true) @LoginUserId Long userId,
             @Parameter(description = "펀딩 ID", example = "1") @PathVariable Long fundingId,
             @Valid @RequestBody FundingStatusUpdateRequest request
