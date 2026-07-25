@@ -3,9 +3,9 @@ package com.example.toget.domain.invitation.controller;
 import com.example.toget.domain.invitation.dto.CharacterCreateResponse;
 import com.example.toget.domain.invitation.dto.CharacterRequest;
 import com.example.toget.domain.invitation.dto.CharacterResponse;
+import com.example.toget.domain.invitation.exception.code.InvitationSuccessCode;
 import com.example.toget.domain.invitation.service.CharacterService;
 import com.example.toget.global.apiPayload.ApiResponse;
-import com.example.toget.global.apiPayload.code.GeneralSuccessCode;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -39,15 +39,15 @@ public class CharacterController {
     @Operation(summary = "캐릭터 전체 조회", description = "초대장 생성 화면의 캐릭터 선택지 목록을 조회합니다.")
     @GetMapping
     public ApiResponse<List<CharacterResponse>> getAllCharacters() {
-        return ApiResponse.onSuccess(GeneralSuccessCode.OK, characterService.getAllCharacters());
+        return ApiResponse.onSuccess(InvitationSuccessCode.CHARACTER_LIST_OK, characterService.getAllCharacters());
     }
 
     // 캐릭터 생성
     @Operation(summary = "캐릭터 생성", description = "초대장에 사용할 새로운 캐릭터 스킨을 생성합니다.")
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED) // 응답 본문 코드(COMMON201_1)와 실제 HTTP 상태를 201로 일치시킨다
+    @ResponseStatus(HttpStatus.CREATED) // 응답 본문 코드(CHARACTER201_1)와 실제 HTTP 상태를 201로 일치시킨다
     public ApiResponse<CharacterCreateResponse> create(@Valid @RequestBody CharacterRequest request) {
-        return ApiResponse.onSuccess(GeneralSuccessCode.CREATED, characterService.create(request));
+        return ApiResponse.onSuccess(InvitationSuccessCode.CHARACTER_CREATE_OK, characterService.create(request));
     }
 
     // 캐릭터 수정
@@ -55,7 +55,7 @@ public class CharacterController {
     @PutMapping("/{id}")
     public ApiResponse<CharacterResponse> update(@PathVariable Long id,
                                                  @Valid @RequestBody CharacterRequest request) {
-        return ApiResponse.onSuccess(GeneralSuccessCode.OK, characterService.update(id, request));
+        return ApiResponse.onSuccess(InvitationSuccessCode.CHARACTER_UPDATE_OK, characterService.update(id, request));
     }
 
     // 캐릭터 삭제 — soft delete (엔티티 CharacterEntity.delete() 주석 참고)
@@ -63,6 +63,6 @@ public class CharacterController {
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         characterService.delete(id);
-        return ApiResponse.onSuccess(GeneralSuccessCode.OK, null);
+        return ApiResponse.onSuccess(InvitationSuccessCode.CHARACTER_DELETE_OK, null);
     }
 }
