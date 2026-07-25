@@ -2,21 +2,18 @@ package com.example.toget.domain.funding.converter;
 
 import com.example.toget.domain.funding.dto.MyFundingListResponse;
 import com.example.toget.domain.funding.dto.MyFundingListResponse.MyFundingSummary;
-<<<<<<< HEAD
 import com.example.toget.domain.funding.dto.response.FundingMemberManagementResponse;
 import com.example.toget.domain.funding.dto.response.FundingSettlementListResponse;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.enums.FundingRole;
 import com.example.toget.domain.user.entity.User;
-=======
 import com.example.toget.domain.funding.dto.response.FundingAccountResponse;
 import com.example.toget.domain.funding.dto.response.FundingAccountUpdateResponse;
 import com.example.toget.domain.funding.dto.response.FundingBasicInfoResponse;
 import com.example.toget.domain.funding.dto.response.FundingCreateResponse;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.user.entity.UserAccount;
->>>>>>> develop
 import org.springframework.data.domain.Slice;
 
 import java.util.List;
