@@ -42,8 +42,15 @@ public class InvitationBackgroundController {
         return ApiResponse.onSuccess(InvitationSuccessCode.BACKGROUND_LIST_OK, invitationBackgroundService.getAllBackgrounds());
     }
 
-    // 배경 색상 생성
-    @Operation(summary = "초대장 배경 색상 생성", description = "초대장에 사용할 새로운 배경 색상 정보를 생성합니다.")
+    /**
+     * 배경 색상 생성.
+     *
+     * @deprecated 관리자 권한 체계가 아직 없어 로그인 여부만 확인한다.
+     * User 파트에서 role 체계 도입 예정 — 도입 전까지 프론트 미노출.
+     */
+    @Deprecated
+    @Operation(summary = "[관리자 전용 예정] 초대장 배경 색상 생성",
+            description = "⚠️ 관리자 권한 체계 도입 전까지 임시로 로그인 사용자 전체에게 열려 있습니다. 프론트 연동 금지.")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED) // 응답 본문 코드(BACKGROUND201_1)와 실제 HTTP 상태를 201로 일치시킨다
     public ApiResponse<InvitationBackgroundCreateResponse> create(
@@ -51,16 +58,30 @@ public class InvitationBackgroundController {
         return ApiResponse.onSuccess(InvitationSuccessCode.BACKGROUND_CREATE_OK, invitationBackgroundService.create(request));
     }
 
-    // 배경 색상 수정
-    @Operation(summary = "초대장 배경 색상 수정", description = "특정 배경 색상 정보를 수정합니다.")
+    /**
+     * 배경 색상 수정.
+     *
+     * @deprecated 관리자 권한 체계가 아직 없어 로그인 여부만 확인한다.
+     * User 파트에서 role 체계 도입 예정 — 도입 전까지 프론트 미노출.
+     */
+    @Deprecated
+    @Operation(summary = "[관리자 전용 예정] 초대장 배경 색상 수정",
+            description = "⚠️ 관리자 권한 체계 도입 전까지 임시로 로그인 사용자 전체에게 열려 있습니다. 프론트 연동 금지.")
     @PutMapping("/{id}")
     public ApiResponse<InvitationBackgroundResponse> update(@PathVariable Long id,
                                                             @Valid @RequestBody InvitationBackgroundRequest request) {
         return ApiResponse.onSuccess(InvitationSuccessCode.BACKGROUND_UPDATE_OK, invitationBackgroundService.update(id, request));
     }
 
-    // 배경 색상 삭제 — soft delete (엔티티 InvitationBackground.delete() 주석 참고)
-    @Operation(summary = "초대장 배경 색상 삭제", description = "지정된 배경 색상 정보를 삭제합니다 (Soft Delete).")
+    /**
+     * 배경 색상 삭제 — soft delete (엔티티 InvitationBackground.delete() 주석 참고).
+     *
+     * @deprecated 관리자 권한 체계가 아직 없어 로그인 여부만 확인한다.
+     * User 파트에서 role 체계 도입 예정 — 도입 전까지 프론트 미노출.
+     */
+    @Deprecated
+    @Operation(summary = "[관리자 전용 예정] 초대장 배경 색상 삭제",
+            description = "⚠️ 관리자 권한 체계 도입 전까지 임시로 로그인 사용자 전체에게 열려 있습니다. 프론트 연동 금지. (Soft Delete)")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         invitationBackgroundService.delete(id);

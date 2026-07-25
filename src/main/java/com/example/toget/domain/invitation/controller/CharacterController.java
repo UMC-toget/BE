@@ -42,24 +42,45 @@ public class CharacterController {
         return ApiResponse.onSuccess(InvitationSuccessCode.CHARACTER_LIST_OK, characterService.getAllCharacters());
     }
 
-    // 캐릭터 생성
-    @Operation(summary = "캐릭터 생성", description = "초대장에 사용할 새로운 캐릭터 스킨을 생성합니다.")
+    /**
+     * 캐릭터 생성.
+     *
+     * @deprecated 관리자 권한 체계가 아직 없어 로그인 여부만 확인한다.
+     * User 파트에서 role 체계 도입 예정 — 도입 전까지 프론트 미노출.
+     */
+    @Deprecated
+    @Operation(summary = "[관리자 전용 예정] 캐릭터 생성",
+            description = "⚠️ 관리자 권한 체계 도입 전까지 임시로 로그인 사용자 전체에게 열려 있습니다. 프론트 연동 금지.")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED) // 응답 본문 코드(CHARACTER201_1)와 실제 HTTP 상태를 201로 일치시킨다
     public ApiResponse<CharacterCreateResponse> create(@Valid @RequestBody CharacterRequest request) {
         return ApiResponse.onSuccess(InvitationSuccessCode.CHARACTER_CREATE_OK, characterService.create(request));
     }
 
-    // 캐릭터 수정
-    @Operation(summary = "캐릭터 수정", description = "특정 캐릭터 스킨 정보를 수정합니다.")
+    /**
+     * 캐릭터 수정.
+     *
+     * @deprecated 관리자 권한 체계가 아직 없어 로그인 여부만 확인한다.
+     * User 파트에서 role 체계 도입 예정 — 도입 전까지 프론트 미노출.
+     */
+    @Deprecated
+    @Operation(summary = "[관리자 전용 예정] 캐릭터 수정",
+            description = "⚠️ 관리자 권한 체계 도입 전까지 임시로 로그인 사용자 전체에게 열려 있습니다. 프론트 연동 금지.")
     @PutMapping("/{id}")
     public ApiResponse<CharacterResponse> update(@PathVariable Long id,
                                                  @Valid @RequestBody CharacterRequest request) {
         return ApiResponse.onSuccess(InvitationSuccessCode.CHARACTER_UPDATE_OK, characterService.update(id, request));
     }
 
-    // 캐릭터 삭제 — soft delete (엔티티 CharacterEntity.delete() 주석 참고)
-    @Operation(summary = "캐릭터 삭제", description = "지정된 캐릭터 스킨을 삭제합니다 (Soft Delete).")
+    /**
+     * 캐릭터 삭제 — soft delete (엔티티 CharacterEntity.delete() 주석 참고).
+     *
+     * @deprecated 관리자 권한 체계가 아직 없어 로그인 여부만 확인한다.
+     * User 파트에서 role 체계 도입 예정 — 도입 전까지 프론트 미노출.
+     */
+    @Deprecated
+    @Operation(summary = "[관리자 전용 예정] 캐릭터 삭제",
+            description = "⚠️ 관리자 권한 체계 도입 전까지 임시로 로그인 사용자 전체에게 열려 있습니다. 프론트 연동 금지. (Soft Delete)")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         characterService.delete(id);
