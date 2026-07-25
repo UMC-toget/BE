@@ -17,11 +17,19 @@ public enum FundingErrorCode implements BaseErrorCode {
     INVALID_TARGET_AMOUNT(HttpStatus.BAD_REQUEST, "FUNDING400_6", "목표 금액은 0원 이상 필수로 입력해야 합니다."),
     GIFT_REQUIRED_FOR_MY_GIFT(HttpStatus.BAD_REQUEST, "FUNDING400_7", "내 선물 만들기는 선물을 최소 1개 이상 등록해야 합니다."),
     VISIBILITY_REQUIRED_FOR_MY_GIFT(HttpStatus.BAD_REQUEST, "FUNDING400_8", "내 선물 만들기는 공개 여부를 설정해야 합니다."),
+    NOT_ACCOUNT_OWNER(HttpStatus.BAD_REQUEST, "FUNDING400_9", "본인 소유의 계좌만 등록할 수 있습니다."),
+    FUNDING_ALREADY_ENDED(HttpStatus.BAD_REQUEST, "FUNDING400_10", "이미 종료된 펀딩은 수정 불가합나다."),
+    INVALID_STATUS_FOR_PERIOD_UPDATE(HttpStatus.BAD_REQUEST, "FUNDING400_11", "SELECTING/SETTLING 외 상태에서의 기간 변경은 불가합니다."),
+    END_DATE_MUST_BE_FUTURE(HttpStatus.BAD_REQUEST, "FUNDING400_11", "종료일은 오늘 이후 날짜여야 합니다."),
 
     FUNDING_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_1", "해당 펀딩을 찾을 수 없습니다."),
     // TODO: 추후 수정 필요
-    CHARACTER_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_2", "해당 캐릭터를 찾을 수 없습니다."),
-    INVITATION_BACKGROUND_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_3", "해당 배경 색상을 찾을 수 없습니다."),
+    ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_2", "정산 계좌를 찾을 수 없습니다."),
+    ACCOUNT_NOT_REGISTERED(HttpStatus.NOT_FOUND, "FUNDING404_3", "아직 정산 계좌가 등록되지 않았습니다."),
+
+    CHARACTER_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_4", "해당 캐릭터를 찾을 수 없습니다."),
+    INVITATION_BACKGROUND_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_5", "해당 배경 색상을 찾을 수 없습니다."),
+
 
     NOT_FUNDING_OWNER(HttpStatus.FORBIDDEN, "FUNDING403", "펀딩 개설자만 가능한 작업입니다."),
 

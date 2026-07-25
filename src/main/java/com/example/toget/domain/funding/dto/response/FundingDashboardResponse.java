@@ -68,7 +68,7 @@ public record FundingDashboardResponse(
             String bankName,
 
             @Schema(description = "계좌번호", example = "3333-12-3456789")
-            String bankAccount,
+            String account,
 
             @Schema(description = "예금주", example = "홍길동")
             String accountOwner
