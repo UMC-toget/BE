@@ -12,6 +12,9 @@ import java.util.List;
 
 public class WishlistConverter {
 
+    private WishlistConverter() {
+    }
+
     public static WishlistItem toEntity(Long userId, WishlistCreateRequest request) {
         return WishlistItem.builder()
                 .userId(userId)

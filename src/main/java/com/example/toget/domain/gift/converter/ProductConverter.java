@@ -11,6 +11,9 @@ import java.util.List;
 
 public class ProductConverter {
 
+    private ProductConverter() {
+    }
+
     public static Product toEntity(ProductCreateRequest request) {
         return Product.builder()
                 .name(request.name())
