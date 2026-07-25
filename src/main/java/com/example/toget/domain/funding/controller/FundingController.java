@@ -19,7 +19,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "펀딩 (개설자/관리자용) API", description = "개설자/관리자 전용 펀딩 관리 API")
+@Tag(name = "펀딩 (개설자/공동관리자용) API", description = "개설자/공동관리자 전용 펀딩 관리 API")
 @RestController
 @RequestMapping("/api/v1/fundings")
 @RequiredArgsConstructor
