@@ -33,7 +33,7 @@ public class ProductService {
     }
 
     public ProductDetailResponse getProduct(Long productId) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
                 .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
         return ProductConverter.toDetailResponse(product);
     }
@@ -60,7 +60,7 @@ public class ProductService {
 
     @Transactional
     public ProductDetailResponse updateProduct(Long productId, ProductUpdateRequest request) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
                 .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
         product.update(
@@ -78,9 +78,9 @@ public class ProductService {
 
     @Transactional
     public void deleteProduct(Long productId) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
                 .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
-        productRepository.delete(product);
+        product.delete();
     }
 }

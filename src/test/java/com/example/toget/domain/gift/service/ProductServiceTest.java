@@ -90,7 +90,7 @@ public class ProductServiceTest {
                 .build();
         ReflectionTestUtils.setField(product, "id", productId);
 
-        given(productRepository.findById(productId)).willReturn(Optional.of(product));
+        given(productRepository.findByIdAndDeletedAtIsNull(productId)).willReturn(Optional.of(product));
 
         // when
         ProductDetailResponse response = productService.getProduct(productId);
@@ -107,7 +107,7 @@ public class ProductServiceTest {
     public void getProduct_fail_notFound() {
         // given
         Long productId = 999L;
-        given(productRepository.findById(productId)).willReturn(Optional.empty());
+        given(productRepository.findByIdAndDeletedAtIsNull(productId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> productService.getProduct(productId))
@@ -159,7 +159,7 @@ public class ProductServiceTest {
                 .build();
         ReflectionTestUtils.setField(product, "id", productId);
 
-        given(productRepository.findById(productId)).willReturn(Optional.of(product));
+        given(productRepository.findByIdAndDeletedAtIsNull(productId)).willReturn(Optional.of(product));
 
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "애플 워치 SE 2세대 (수정)", 359000L, "스마트 워치 신형",
@@ -177,7 +177,7 @@ public class ProductServiceTest {
     }
 
     @Test
-    @DisplayName("상품 삭제 성공")
+    @DisplayName("상품 삭제 성공 - Soft Delete")
     public void deleteProduct_success() {
         // given
         Long productId = 1L;
@@ -188,12 +188,12 @@ public class ProductServiceTest {
                 .build();
         ReflectionTestUtils.setField(product, "id", productId);
 
-        given(productRepository.findById(productId)).willReturn(Optional.of(product));
+        given(productRepository.findByIdAndDeletedAtIsNull(productId)).willReturn(Optional.of(product));
 
         // when
         productService.deleteProduct(productId);
 
         // then
-        verify(productRepository).delete(product);
+        assertThat(product.getDeletedAt()).isNotNull();
     }
 }

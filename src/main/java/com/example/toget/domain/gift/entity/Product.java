@@ -47,4 +47,8 @@ public class Product extends BaseEntity {
         this.category = category;
         this.brand = brand;
     }
+
+    public void delete() {
+        this.deletedAt = java.time.LocalDateTime.now();
+    }
 }
