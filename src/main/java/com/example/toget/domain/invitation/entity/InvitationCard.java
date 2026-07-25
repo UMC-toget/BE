@@ -18,7 +18,10 @@ import lombok.NoArgsConstructor;
 /**
  * 펀딩에 첨부되는 초대장 카드 엔티티
  *
- *  - fundingId: funding 도메인이 아직 구현되지 않아 엔티티 연관관계(@OneToOne) 대신 FK 값(Long)만 저장.
+ * [설계 포인트]
+ *  - fundingId: Funding 엔티티와의 결합도를 낮추고 Funding 정보가 필요한 시점에만 명시적으로 조회하기 위해
+ *    @OneToOne 연관관계 대신 FK 값(Long)만 저장한다.
+ *  - character/background: 같은 invitation 도메인 내부 참조라 @ManyToOne(LAZY) 연관관계를 사용한다.
  *  - url: 초대장 공유 링크.
  *    URL 생성 방식(UUID, 슬러그, id 기반 등)은 아직 확정되지 않아 현재는 Builder를 통해 외부에서 값을 주입받는다.
  */
@@ -38,7 +41,6 @@ public class InvitationCard {
     private Long id;
 
     // 이 초대장이 속한 funding의 ID
-    // funding 도메인이 아직 구현되지 않아 FK 값(Long)만 저장하며, 추후 Funding 엔티티가 추가되면 @OneToOne 연관관계로 변경 예정.
     @Column(name = "funding_id", nullable = false)
     private Long fundingId;
 
