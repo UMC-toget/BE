@@ -20,8 +20,8 @@ public enum FundingErrorCode implements BaseErrorCode {
 
     FUNDING_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_1", "해당 펀딩을 찾을 수 없습니다."),
     // TODO: 추후 수정 필요
-    CHARACTER_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_2", " 해당 캐릭터를 찾을 수 없습니다."),
-    INVITATION_BACKGROUND_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_3", "해당배경 색상을 찾을 수 없습니다."),
+    CHARACTER_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_2", "해당 캐릭터를 찾을 수 없습니다."),
+    INVITATION_BACKGROUND_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_3", "해당 배경 색상을 찾을 수 없습니다."),
 
     NOT_FUNDING_OWNER(HttpStatus.FORBIDDEN, "FUNDING403", "펀딩 개설자만 가능한 작업입니다."),
 
