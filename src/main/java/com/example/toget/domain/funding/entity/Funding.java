@@ -177,6 +177,7 @@ public class Funding extends BaseEntity {
                 .build();
     }
 
+
     /**
      * 정산 확정(4단계 "정산 시작하기") — SELECTING → SETTLING (TOGETHER_GIFT 전용)
      *
@@ -221,6 +222,23 @@ public class Funding extends BaseEntity {
         }
         this.status = FundingStatus.ENDED;
     }
+
+
+    /**
+     * 기본정보 일괄 수정 메서드
+     */
+    public void updateBasicInfo(String title, LocalDate anniversaryDate, LocalDate startDate,
+                                LocalDate endDate, String introduction, String thumbnailImageUrl) {
+        validatePeriod(startDate, endDate);
+        this.title = title;
+        this.anniversaryDate = anniversaryDate;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.introduction = introduction;
+        this.thumbnailImageUrl = thumbnailImageUrl;
+    }
+
+
 
 
     /**
