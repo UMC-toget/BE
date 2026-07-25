@@ -1,4 +1,4 @@
-package com.example.toget.domain.invitation.exception;
+package com.example.toget.domain.invitation.exception.code;
 
 import com.example.toget.global.apiPayload.code.BaseErrorCode;
 import lombok.Getter;

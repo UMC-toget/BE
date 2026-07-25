@@ -5,7 +5,7 @@ import com.example.toget.domain.invitation.dto.CharacterCreateResponse;
 import com.example.toget.domain.invitation.dto.CharacterRequest;
 import com.example.toget.domain.invitation.dto.CharacterResponse;
 import com.example.toget.domain.invitation.entity.CharacterEntity;
-import com.example.toget.domain.invitation.exception.InvitationErrorCode;
+import com.example.toget.domain.invitation.exception.code.InvitationErrorCode;
 import com.example.toget.domain.invitation.exception.InvitationException;
 import com.example.toget.domain.invitation.repository.CharacterRepository;
 import java.util.List;

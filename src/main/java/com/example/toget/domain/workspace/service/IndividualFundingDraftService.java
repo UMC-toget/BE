@@ -4,7 +4,7 @@ import com.example.toget.domain.gift.entity.IndividualFundingDraftGift;
 import com.example.toget.domain.gift.repository.IndividualFundingDraftGiftRepository;
 import com.example.toget.domain.invitation.entity.CharacterEntity;
 import com.example.toget.domain.invitation.entity.InvitationBackground;
-import com.example.toget.domain.invitation.exception.InvitationErrorCode;
+import com.example.toget.domain.invitation.exception.code.InvitationErrorCode;
 import com.example.toget.domain.invitation.exception.InvitationException;
 import com.example.toget.domain.invitation.repository.CharacterRepository;
 import com.example.toget.domain.invitation.repository.InvitationBackgroundRepository;
