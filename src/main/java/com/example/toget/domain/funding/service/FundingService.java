@@ -1,5 +1,6 @@
 package com.example.toget.domain.funding.service;
 
+import com.example.toget.domain.funding.converter.FundingConverter;
 import com.example.toget.domain.funding.dto.request.FundingAccountUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingBasicInfoUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingCreateRequest;
@@ -74,7 +75,7 @@ public class FundingService {
         saveInvitationCard(saved.getId(), request.invitation());
 
 
-        return new FundingCreateResponse(saved.getId());
+        return FundingConverter.toCreateResponse(saved);
     }
 
 
@@ -207,12 +208,7 @@ public class FundingService {
                 request.title(), request.anniversaryDate(), request.startDate(),
                 request.endDate(), request.introduction(), request.thumbnailImageUrl()
         );
-
-        return new FundingBasicInfoResponse(
-                funding.getId(), funding.getTitle(), funding.getAnniversaryDate(),
-                funding.getStartDate(), funding.getEndDate(),
-                funding.getIntroduction(), funding.getThumbnailImageUrl()
-        );
+        return FundingConverter.toBasicInfoResponse(funding);
     }
 
     @Transactional(readOnly = true)
@@ -229,10 +225,7 @@ public class FundingService {
         UserAccount account = userAccountRepository.findById(funding.getUserAccountId())
                 .orElseThrow(() -> new FundingException(FundingErrorCode.ACCOUNT_NOT_FOUND));
 
-        return new FundingAccountResponse(
-                account.getId(), account.getBankName().name(),
-                account.getAccount(), account.getAccountOwner()
-        );
+        return FundingConverter.toAccountResponse(account);
     }
 
     @Transactional
@@ -251,7 +244,7 @@ public class FundingService {
 
         funding.updateAccount(request.userAccountId());
 
-        return new FundingAccountUpdateResponse(funding.getId(), funding.getUserAccountId());
+        return FundingConverter.toAccountUpdateResponse(funding);
     }
 
 }
