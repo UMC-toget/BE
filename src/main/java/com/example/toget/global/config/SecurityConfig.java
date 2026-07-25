@@ -77,6 +77,10 @@ public class SecurityConfig {
 
         // HTTP 요청에 대한 접근 제어 설정
         .authorizeHttpRequests(requests -> requests
+
+                // 로그아웃은 /auth/tokens/** permitAll 패턴에 걸리지만 인증이 필요하므로 먼저 예외 처리
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/auth/tokens/me").authenticated()
+
                 // Swagger 및 소셜 로그인 API 무조건 허용
                 .requestMatchers(allowAllUris).permitAll()
 
@@ -85,11 +89,12 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/fundings/*/contributions").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/fundings/*/contributions").permitAll()
 
-                // 공통 리소스 정보 조회는 인증 없이 가능하도록 설정
-                // (캐릭터/배경색의 POST·PUT·DELETE는 아래 anyRequest().authenticated()에 걸려 로그인만 요구)
-                // TODO: ADMIN 권한 도입 후 캐릭터/배경색의 생성·수정·삭제는 hasRole("ADMIN")으로 제한
-                //  전제조건: User 엔티티 role 필드 + JWT 클레임에 role 포함 + JwtAuthenticationFilter의
-                //  권한(GrantedAuthority) 매핑이 먼저 구현되어야 함. SecurityConfig만 바꾸면 항상 403이 남.
+                // 공통 리소스 정보 조회는 인증 없이 가능하도록 설정.
+                // contribution-backgrounds의 POST·PUT·DELETE는 아래 anyRequest().authenticated()로 로그인을
+                // 요구하고, 그 위에 @AdminOnly + AdminOnlyInterceptor가 "관리자 계정인가"를 한 겹 더 검사한다.
+                // (JWT에 role 클레임이 없어 hasRole("ADMIN")을 쓸 수 없으므로 인터셉터 방식을 택했다.
+                //  관리자가 여러 명/등급으로 확장되면 role 컬럼 + GrantedAuthority 매핑으로 교체 예정)
+                // TODO: 캐릭터/초대장 배경색도 동일한 마스터 데이터이므로 @AdminOnly 적용 검토 (별도 이슈)
                 .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/characters/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/invitation-backgrounds", "/api/v1/invitation-backgrounds/**").permitAll()

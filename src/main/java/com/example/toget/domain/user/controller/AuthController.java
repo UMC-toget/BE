@@ -44,4 +44,16 @@ public class AuthController {
     public ApiResponse<TokenResponse> refresh(@Valid @RequestBody TokenRefreshRequest request) {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, authService.refresh(request.refreshToken()));
     }
+
+    /**
+     * 로그아웃 — 서버에 저장된 refresh 토큰을 무효화한다.
+     * 이 경로는 /tokens/** 가 아니라 permitAll 대상이 아니므로, SecurityConfig의 anyRequest().authenticated()에
+     * 의해 로그인(유효한 JWT)이 필요하다. 사용자 식별은 URL/본문이 아닌 @LoginUserId(토큰)로만 한다.
+     */
+    @Operation(summary = "로그아웃", description = "로그인한 사용자의 Refresh Token을 무효화하여 세션을 종료합니다.")
+    @DeleteMapping("/tokens/me")
+    public ApiResponse<Void> logout(@LoginUserId Long userId) {
+        authService.logout(userId);
+        return ApiResponse.onSuccess(GeneralSuccessCode.OK, null);
+    }
 }

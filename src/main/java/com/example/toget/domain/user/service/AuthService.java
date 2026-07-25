@@ -105,6 +105,19 @@ public class AuthService {
         return issueTokens(user);
     }
 
+    /**
+     * 로그아웃 — DB에 저장된 refresh 토큰(jti)을 제거해 이후 토큰 재발급을 차단한다.
+     * 이미 로그아웃된(refresh_token == null) 상태로 다시 호출돼도 그대로 성공 처리한다(멱등).
+     */
+    @Transactional
+    public void logout(Long userId) {
+        // @LoginUserId로 넘어온, 이미 인증된 사용자다. 존재하지 않으면 refresh()와 동일하게 401.
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserException(UserErrorCode.UNAUTHORIZED));
+        // 트랜잭션 안에서 필드만 비우면 커밋 시 dirty checking으로 UPDATE가 자동 실행된다.
+        user.clearRefreshToken();
+    }
+
     /** 토큰 발급 — 새 refresh 토큰의 jti를 users.refresh_token에 저장(Rotation) */
     private TokenResponse issueTokens(User user) {
         String tokenId = UUID.randomUUID().toString();
