@@ -77,6 +77,10 @@ public class SecurityConfig {
 
         // HTTP 요청에 대한 접근 제어 설정
         .authorizeHttpRequests(requests -> requests
+
+                // 로그아웃은 /auth/tokens/** permitAll 패턴에 걸리지만 인증이 필요하므로 먼저 예외 처리
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/auth/tokens/me").authenticated()
+
                 // Swagger 및 소셜 로그인 API 무조건 허용
                 .requestMatchers(allowAllUris).permitAll()
 
