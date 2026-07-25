@@ -106,6 +106,26 @@ public class User extends BaseEntity {
     }
 
     /**
+     * 이 회원이 설정된 관리자 계정인지 판정한다.
+     *
+     * <p>공급자와 이메일을 <b>모두</b> 비교하는 이유: 이메일만 보면 관리자 이메일 주소를
+     * 다른 소셜 계정(예: 카카오)에 등록한 뒤 로그인해 관리자 권한을 얻는 우회가 가능하다.
+     *
+     * <p>탈퇴 회원은 withdraw()에서 email이 null이 되므로 자연히 false가 된다.
+     * (애초에 ActiveUserReader가 탈퇴 회원을 먼저 401로 차단한다)
+     *
+     * <p>향후 관리자가 여러 명이 되거나 등급 구분이 필요해지면 role 컬럼 기반 판정으로
+     * 이 메서드의 내부만 교체하면 된다.
+     */
+    public boolean isAdmin(OAuthProvider adminProvider, String adminEmail) {
+        if (adminProvider == null || adminEmail == null || adminEmail.isBlank()) {
+            return false;
+        }
+        // adminEmail을 수신자로 두어 this.email이 null이어도 NPE가 나지 않는다
+        return this.oAuthProvider == adminProvider && adminEmail.equalsIgnoreCase(this.email);
+    }
+
+    /**
      * Soft Delete + 개인정보 익명화 — 상태를 WITHDRAWN으로 전환하고 세션(refresh token)을 만료시킨다.
      * oauth_id를 무작위 값으로 교체하므로 (oauth_provider, oauth_id) 유니크 제약에서 벗어나고,
      * 같은 소셜 계정으로 다시 로그인하면 완전히 새 계정으로 가입된다.

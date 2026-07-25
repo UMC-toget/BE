@@ -19,9 +19,11 @@ public record FundingBasicInfoUpdateRequest(
         LocalDate anniversaryDate,
 
         @Schema(description = "시작일", example = "2026-07-05")
+        @NotNull(message = "시작일은 필수입니다.")
         LocalDate startDate,
 
         @Schema(description = "종료일", example = "2026-08-14")
+        @NotNull(message = "종료일은 필수입니다.")
         LocalDate endDate,
 
         @Schema(description = "소개글", example = "생일 축하해 주셔서 감사합니다!")

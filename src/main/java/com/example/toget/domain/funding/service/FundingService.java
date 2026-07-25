@@ -33,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -81,7 +82,7 @@ public class FundingService {
         saveInvitationCard(saved.getId(), request.invitation());
 
 
-        return new FundingCreateResponse(saved.getId());
+        return FundingConverter.toCreateResponse(saved);
     }
 
 
@@ -210,16 +211,33 @@ public class FundingService {
             throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
         }
 
+        if (funding.getStatus() == FundingStatus.ENDED) {
+            throw new FundingException(FundingErrorCode.FUNDING_ALREADY_ENDED);
+        }
+
+
+        boolean periodChanged = !request.startDate().equals(funding.getStartDate())
+                || !request.endDate().equals(funding.getEndDate());
+        if (periodChanged) {
+            if (!isPeriodEditable(funding.getStatus())) {
+                throw new FundingException(FundingErrorCode.INVALID_STATUS_FOR_PERIOD_UPDATE);
+            }
+            if (!request.endDate().isAfter(LocalDate.now())) {
+                throw new FundingException(FundingErrorCode.END_DATE_MUST_BE_FUTURE);
+            }
+        }
+
+
         funding.updateBasicInfo(
                 request.title(), request.anniversaryDate(), request.startDate(),
                 request.endDate(), request.introduction(), request.thumbnailImageUrl()
         );
 
-        return new FundingBasicInfoResponse(
-                funding.getId(), funding.getTitle(), funding.getAnniversaryDate(),
-                funding.getStartDate(), funding.getEndDate(),
-                funding.getIntroduction(), funding.getThumbnailImageUrl()
-        );
+        return FundingConverter.toBasicInfoResponse(funding);
+    }
+
+    private boolean isPeriodEditable(FundingStatus status) {
+        return status == FundingStatus.SELECTING || status == FundingStatus.SETTLING;
     }
 
     @Transactional(readOnly = true)
@@ -236,10 +254,7 @@ public class FundingService {
         UserAccount account = userAccountRepository.findById(funding.getUserAccountId())
                 .orElseThrow(() -> new FundingException(FundingErrorCode.ACCOUNT_NOT_FOUND));
 
-        return new FundingAccountResponse(
-                account.getId(), account.getBankName().name(),
-                account.getAccount(), account.getAccountOwner()
-        );
+        return FundingConverter.toAccountResponse(account);
     }
 
     @Transactional
@@ -258,7 +273,7 @@ public class FundingService {
 
         funding.updateAccount(request.userAccountId());
 
-        return new FundingAccountUpdateResponse(funding.getId(), funding.getUserAccountId());
+        return FundingConverter.toAccountUpdateResponse(funding);
     }
 
     @Transactional(readOnly = true)
