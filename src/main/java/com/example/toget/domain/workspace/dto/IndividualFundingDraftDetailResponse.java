@@ -63,19 +63,19 @@ public record IndividualFundingDraftDetailResponse(
     @Builder
     public record VisibilitySettingsResponse(
             @Schema(description = "진행률 공개 여부", example = "true")
-            Boolean isProgressPublic,
+            Boolean showProgress,
 
             @Schema(description = "모금액 공개 여부", example = "true")
-            Boolean isAmountPublic,
+            Boolean showAmount,
 
             @Schema(description = "참여자 수 공개 여부", example = "true")
-            Boolean isParticipantCountPublic,
+            Boolean showParticipantCount,
 
             @Schema(description = "참여자 이름 공개 여부", example = "true")
-            Boolean isParticipantNamePublic,
+            Boolean showParticipantNames,
 
             @Schema(description = "축하 메시지 공개 여부", example = "true")
-            Boolean isMessagePublic
+            Boolean showMessages
     ) {}
 
     @Builder

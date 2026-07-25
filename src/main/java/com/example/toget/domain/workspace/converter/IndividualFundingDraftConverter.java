@@ -32,11 +32,11 @@ public class IndividualFundingDraftConverter {
                         .accountOwner(userAccount.getAccountOwner())
                         .build() : null)
                 .visibilitySettings(IndividualFundingDraftDetailResponse.VisibilitySettingsResponse.builder()
-                        .isProgressPublic(draft.getIsProgressPublic())
-                        .isAmountPublic(draft.getIsAmountPublic())
-                        .isParticipantCountPublic(draft.getIsParticipantCountPublic())
-                        .isParticipantNamePublic(draft.getIsParticipantNamePublic())
-                        .isMessagePublic(draft.getIsMessagePublic())
+                        .showProgress(draft.getIsProgressPublic())
+                        .showAmount(draft.getIsAmountPublic())
+                        .showParticipantCount(draft.getIsParticipantCountPublic())
+                        .showParticipantNames(draft.getIsParticipantNamePublic())
+                        .showMessages(draft.getIsMessagePublic())
                         .build())
                 .invitationCard(IndividualFundingDraftDetailResponse.InvitationCardResponse.builder()
                         .characterId(draft.getInvitationCharacter() != null ? draft.getInvitationCharacter().getId() : null)
@@ -62,11 +62,11 @@ public class IndividualFundingDraftConverter {
             InvitationBackground background,
             Long userAccountId
     ) {
-        Boolean isProgressPublic = (request.visibilitySettings() != null && request.visibilitySettings().isProgressPublic() != null) ? request.visibilitySettings().isProgressPublic() : true;
-        Boolean isAmountPublic = (request.visibilitySettings() != null && request.visibilitySettings().isAmountPublic() != null) ? request.visibilitySettings().isAmountPublic() : true;
-        Boolean isParticipantCountPublic = (request.visibilitySettings() != null && request.visibilitySettings().isParticipantCountPublic() != null) ? request.visibilitySettings().isParticipantCountPublic() : true;
-        Boolean isParticipantNamePublic = (request.visibilitySettings() != null && request.visibilitySettings().isParticipantNamePublic() != null) ? request.visibilitySettings().isParticipantNamePublic() : true;
-        Boolean isMessagePublic = (request.visibilitySettings() != null && request.visibilitySettings().isMessagePublic() != null) ? request.visibilitySettings().isMessagePublic() : true;
+        Boolean isProgressPublic = (request.visibilitySettings() != null && request.visibilitySettings().showProgress() != null) ? request.visibilitySettings().showProgress() : true;
+        Boolean isAmountPublic = (request.visibilitySettings() != null && request.visibilitySettings().showAmount() != null) ? request.visibilitySettings().showAmount() : true;
+        Boolean isParticipantCountPublic = (request.visibilitySettings() != null && request.visibilitySettings().showParticipantCount() != null) ? request.visibilitySettings().showParticipantCount() : true;
+        Boolean isParticipantNamePublic = (request.visibilitySettings() != null && request.visibilitySettings().showParticipantNames() != null) ? request.visibilitySettings().showParticipantNames() : true;
+        Boolean isMessagePublic = (request.visibilitySettings() != null && request.visibilitySettings().showMessages() != null) ? request.visibilitySettings().showMessages() : true;
 
         String invitationTitle = request.invitationCard() != null ? request.invitationCard().title() : null;
         String invitationContent = request.invitationCard() != null ? request.invitationCard().content() : null;
