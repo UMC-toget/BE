@@ -18,7 +18,11 @@ public enum FundingSuccessCode implements BaseSuccessCode {
     FUNDING_DASHBOARD_OK(HttpStatus.OK, "FUNDING200_4", "선물 준비 상세 정보를 성공적으로 조회했습니다."),
     FUNDING_BASIC_INFO_UPDATE_OK(HttpStatus.OK, "FUNDING200_5", "기본정보가 성공적으로 수정되었습니다."),
     FUNDING_ACCOUNT_GET_OK(HttpStatus.OK, "FUNDING200_6", "정산 계좌 정보를 성공적으로 조회했습니다."),
-    FUNDING_ACCOUNT_UPDATE_OK(HttpStatus.OK, "FUNDING200_7", "정산 계좌가 성공적으로 변경되었습니다.");
+    FUNDING_ACCOUNT_UPDATE_OK(HttpStatus.OK, "FUNDING200_7", "정산 계좌가 성공적으로 변경되었습니다."),
+    FUNDING_MEMBERS_GET_OK(HttpStatus.OK, "FUNDING200_8", "참여자 관리 정보를 성공적으로 조회했습니다."),
+    FUNDING_MEMBER_ROLE_UPDATE_OK(HttpStatus.OK, "FUNDING200_9", "멤버 역할이 성공적으로 변경되었습니다."),
+    FUNDING_SETTLEMENTS_GET_OK(HttpStatus.OK, "FUNDING200_10", "정산 내역을 성공적으로 조회했습니다."),
+    FUNDING_SETTLEMENT_STATUS_UPDATE_OK(HttpStatus.OK, "FUNDING200_11", "정산 입금 상태가 성공적으로 변경되었습니다.");
 
     private final HttpStatus status;
     private final String code;
