@@ -1,13 +1,7 @@
 package com.example.toget.domain.funding.controller;
 
-import com.example.toget.domain.funding.dto.request.FundingAccountUpdateRequest;
-import com.example.toget.domain.funding.dto.request.FundingBasicInfoUpdateRequest;
-import com.example.toget.domain.funding.dto.request.FundingCreateRequest;
-import com.example.toget.domain.funding.dto.request.FundingStatusUpdateRequest;
-import com.example.toget.domain.funding.dto.response.FundingAccountResponse;
-import com.example.toget.domain.funding.dto.response.FundingAccountUpdateResponse;
-import com.example.toget.domain.funding.dto.response.FundingBasicInfoResponse;
-import com.example.toget.domain.funding.dto.response.FundingCreateResponse;
+import com.example.toget.domain.funding.dto.request.*;
+import com.example.toget.domain.funding.dto.response.*;
 import com.example.toget.domain.funding.exception.code.FundingSuccessCode;
 import com.example.toget.domain.funding.service.FundingService;
 import com.example.toget.domain.user.controller.LoginUserId;
@@ -114,5 +108,92 @@ public class FundingController {
     ) {
         FundingAccountUpdateResponse result = fundingService.updateAccount(userId, fundingId, request);
         return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_ACCOUNT_UPDATE_OK, result);
+    }
+
+    @Operation(
+            summary = "참여자 관리 탭 조회",
+            description = """
+                함께 선물하기 펀딩이 선물을 고르는 중(`SELECTING`)일 때, 전체 참여자 목록을 \
+                역할별로(개설자·관리자 / 일반참여자) 구분해 반환합니다.
+                
+                펀딩 상태가 `SETTLING` 이상으로 전환되면 이 탭은 정산 내역 탭(`GET .../dashboards/settlements`)으로 \
+                대체되며, 이 API는 더 이상 사용하지 않습니다.
+                
+                개설자 본인만 조회할 수 있습니다.
+                """
+    )
+    @GetMapping("/{fundingId}/dashboards/members")
+    public ApiResponse<FundingMemberManagementResponse> getMembers(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @PathVariable Long fundingId
+    ) {
+        FundingMemberManagementResponse result = fundingService.getMembers(userId, fundingId);
+        return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_MEMBERS_GET_OK, result);
+    }
+
+    @Operation(
+            summary = "멤버 역할 변경",
+            description = """
+                개설자가 특정 참여자를 관리자(`ADMIN`)로 위임하거나, 관리자를 일반 참여자(`PARTICIPANT`)로 \
+                강등합니다.
+                
+                개설자(`CREATOR`) 본인의 역할은 이 API로 변경할 수 없습니다.
+                """
+    )
+    @PatchMapping("/{fundingId}/members/{memberId}/role")
+    public ApiResponse<Void> updateMemberRole(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @PathVariable Long fundingId,
+            @PathVariable Long memberId,
+            @Valid @RequestBody FundingMemberRoleUpdateRequest request
+    ) {
+        fundingService.updateMemberRole(userId, fundingId, memberId, request.role());
+        return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_MEMBER_ROLE_UPDATE_OK, null);
+    }
+
+    @Operation(
+            summary = "정산 내역 탭 조회",
+            description = """
+                최종 선물이 확정되어 정산이 진행 중(`SETTLING` 이상)일 때, 정산 대상으로 확정된 참여자 목록과 \
+                각자의 입금 상태를 반환합니다.
+                
+                정산 인원에서 제외된 참여자(투표는 했지만 정산 대상에서 빠진 경우)는 목록에 포함되지 않습니다. \
+                이 탭은 펀딩이 `SELECTING` 상태일 때는 조회할 수 없으며, 그 경우 참여자 관리 탭 \
+                (`GET .../dashboards/members`)을 사용해야 합니다.
+                
+                개설자 본인만 조회할 수 있습니다.
+                """
+    )
+    @GetMapping("/{fundingId}/dashboards/settlements")
+    public ApiResponse<FundingSettlementListResponse> getSettlements(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @PathVariable Long fundingId
+    ) {
+        FundingSettlementListResponse result = fundingService.getSettlements(userId, fundingId);
+        return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_SETTLEMENTS_GET_OK, result);
+    }
+
+
+    @Operation(
+            summary = "정산 입금 상태 수정",
+            description = """
+                개설자가 정산 대상자의 입금 상태를 확인 처리(`PAID` → `CONFIRMED`)하거나, \
+                잘못 확인한 경우 되돌립니다(`CONFIRMED` → `PAID`).
+                
+                - `UNPAID`로의 변경은 이 API로 처리하지 않습니다.
+                - 참여자 본인이 입금을 완료했다고 알리는 절차(`UNPAID` → `PAID`)는 이 API가 아니라 \
+                  별도의 참여자용 API를 사용합니다(개설자가 대신 처리할 수 없습니다).
+                - 정산 대상자가 아닌 멤버(정산 확정에서 제외된 멤버)에게는 이 API를 사용할 수 없습니다.
+                """
+    )
+    @PatchMapping("/{fundingId}/members/{memberId}/settlement-status")
+    public ApiResponse<Void> updateSettlementStatus(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @PathVariable Long fundingId,
+            @PathVariable Long memberId,
+            @Valid @RequestBody FundingSettlementStatusUpdateRequest request
+    ) {
+        fundingService.updateSettlementStatus(userId, fundingId, memberId, request.settlementStatus());
+        return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_SETTLEMENT_STATUS_UPDATE_OK, null);
     }
 }
