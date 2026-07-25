@@ -1,6 +1,6 @@
 package com.example.toget.domain.gift.repository;
 
-import com.example.toget.domain.funding.enums.FundingGiftStatus;
+import com.example.toget.domain.gift.enums.FundingGiftStatus;
 import com.example.toget.domain.gift.entity.FundingGift;
 import org.springframework.data.jpa.repository.JpaRepository;
 

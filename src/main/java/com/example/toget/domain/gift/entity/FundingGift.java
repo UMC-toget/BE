@@ -1,6 +1,6 @@
 package com.example.toget.domain.gift.entity;
 
-import com.example.toget.domain.funding.enums.FundingGiftStatus;
+import com.example.toget.domain.gift.enums.FundingGiftStatus;
 import com.example.toget.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
