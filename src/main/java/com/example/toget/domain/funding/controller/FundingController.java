@@ -177,13 +177,20 @@ public class FundingController {
     @Operation(
             summary = "정산 입금 상태 수정",
             description = """
-                개설자가 정산 대상자의 입금 상태를 확인 처리(`PAID` → `CONFIRMED`)하거나, \
-                잘못 확인한 경우 되돌립니다(`CONFIRMED` → `PAID`).
+                개설자가 정산 대상자의 입금 상태를 직접 조정합니다.
                 
-                - `UNPAID`로의 변경은 이 API로 처리하지 않습니다.
+                **허용되는 전이**
+                - `PAID` → `CONFIRMED`: 실제 입금을 확인 처리합니다.
+                - `CONFIRMED` → `PAID`: 잘못 확인한 경우 되돌립니다.
+                - `PAID` → `UNPAID`: 참여자가 실수로 입금 완료를 눌렀거나, 신고를 취소하고 싶을 때 \
+                  미입금 상태로 되돌립니다.
+                
+                **허용되지 않는 것**
+                - `CONFIRMED`에서 바로 `UNPAID`로 변경하는 것은 현재 지원하지 않습니다. \
+                  먼저 `PAID`로 되돌린 뒤 `UNPAID`로 변경해주세요. (추후 정책 확정 시 직접 전환 지원 예정)
                 - 참여자 본인이 입금을 완료했다고 알리는 절차(`UNPAID` → `PAID`)는 이 API가 아니라 \
-                  별도의 참여자용 API를 사용합니다(개설자가 대신 처리할 수 없습니다).
-                - 정산 대상자가 아닌 멤버(정산 확정에서 제외된 멤버)에게는 이 API를 사용할 수 없습니다.
+                  별도의 참여자용 API를 사용합니다.
+                - 정산 대상자가 아닌 멤버(정산 확정에서 제외된 멤버)에게는 사용할 수 없습니다.
                 """
     )
     @PatchMapping("/{fundingId}/members/{memberId}/settlement-status")

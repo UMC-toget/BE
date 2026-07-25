@@ -352,12 +352,11 @@ public class FundingService {
             throw new FundingException(FundingErrorCode.NOT_SETTLEMENT_TARGET_MEMBER);
         }
 
-        if (newStatus == SettlementStatus.CONFIRMED) {
-            member.confirmPayment();
-        } else if (newStatus == SettlementStatus.PAID) {
-            member.revertPaymentConfirmation();
-        } else {
-            throw new FundingException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
+        switch (newStatus) {
+            case CONFIRMED -> member.confirmPayment();              // PAID → CONFIRMED
+            case PAID -> member.revertPaymentConfirmation();        // CONFIRMED → PAID
+            case UNPAID -> member.revertToUnpaid();                 // PAID → UNPAID (CONFIRMED에선 불가)
+            default -> throw new FundingException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
         }
     }
 

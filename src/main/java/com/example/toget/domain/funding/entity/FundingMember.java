@@ -152,6 +152,20 @@ public class FundingMember extends BaseEntity {
         this.settlementStatus = SettlementStatus.PAID;
     }
 
+    /**
+     * 개설자가 PAID를 UNPAID로 되돌림 — 참여자가 실수로 "입금 완료"를 눌렀거나,
+     * 개설자가 신고를 취소하고 싶을 때 사용.
+     * CONFIRMED에서 바로 UNPAID로 되돌리는 경로는 아직 정책 미확정이라 이 메서드는 지원하지 않는다
+     * (CONFIRMED → PAID는 revertPaymentConfirmation()으로 먼저 되돌린 뒤, 그 상태에서 이 메서드를 호출해야 함).
+     */
+    public void revertToUnpaid() {
+        if (this.settlementStatus != SettlementStatus.PAID) {
+            throw new ProjectException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
+        }
+        this.settlementStatus = SettlementStatus.UNPAID;
+    }
+
+
     /** 이 멤버가 정산 대상으로 확정됐는지 여부 */
     public boolean isSettlementTarget() {
         return this.amountDue != null;
