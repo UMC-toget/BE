@@ -236,4 +236,23 @@ public class FundingController {
         return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_CONTRIBUTIONS_GET_OK, result);
     }
 
+    @Operation(
+            summary = "기여 금액 수정",
+            description = """
+                개설자가 제출된 후원 내역의 금액을 수정합니다. 0원 이상만 허용됩니다.
+                """
+    )
+    @PatchMapping("/{fundingId}/contributions/{contributionId}")
+    public ApiResponse<FundingContributionAmountUpdateResponse> updateContributionAmount(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @Parameter(description = "펀딩 ID", example = "12") @PathVariable Long fundingId,
+            @Parameter(description = "후원 기록 ID", example = "45") @PathVariable Long contributionId,
+            @Valid @RequestBody FundingContributionAmountUpdateRequest request
+    ) {
+        FundingContributionAmountUpdateResponse result = fundingService.updateContributionAmount(
+                userId, fundingId, contributionId, request
+        );
+        return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_CONTRIBUTION_AMOUNT_UPDATE_OK, result);
+    }
+
 }

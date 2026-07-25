@@ -2,16 +2,12 @@ package com.example.toget.domain.funding.converter;
 
 import com.example.toget.domain.funding.dto.MyFundingListResponse;
 import com.example.toget.domain.funding.dto.MyFundingListResponse.MyFundingSummary;
-import com.example.toget.domain.funding.dto.response.FundingMemberManagementResponse;
-import com.example.toget.domain.funding.dto.response.FundingSettlementListResponse;
+import com.example.toget.domain.funding.dto.response.*;
 import com.example.toget.domain.funding.entity.Funding;
+import com.example.toget.domain.funding.entity.FundingContribution;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.enums.FundingRole;
 import com.example.toget.domain.user.entity.User;
-import com.example.toget.domain.funding.dto.response.FundingAccountResponse;
-import com.example.toget.domain.funding.dto.response.FundingAccountUpdateResponse;
-import com.example.toget.domain.funding.dto.response.FundingBasicInfoResponse;
-import com.example.toget.domain.funding.dto.response.FundingCreateResponse;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.user.entity.UserAccount;
 
@@ -145,6 +141,10 @@ public class FundingConverter {
 
     public static FundingAccountUpdateResponse toAccountUpdateResponse(Funding funding) {
         return new FundingAccountUpdateResponse(funding.getId(), funding.getUserAccountId());
+    }
+
+    public static FundingContributionAmountUpdateResponse toContributionAmountUpdateResponse(FundingContribution contribution) {
+        return new FundingContributionAmountUpdateResponse(contribution.getId(), contribution.getAmount());
     }
 
 }

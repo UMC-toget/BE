@@ -3,6 +3,7 @@ package com.example.toget.domain.funding.service;
 import com.example.toget.domain.funding.converter.FundingConverter;
 import com.example.toget.domain.funding.dto.request.FundingAccountUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingBasicInfoUpdateRequest;
+import com.example.toget.domain.funding.dto.request.FundingContributionAmountUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingCreateRequest;
 import com.example.toget.domain.funding.dto.response.*;
 import com.example.toget.domain.funding.entity.Funding;
