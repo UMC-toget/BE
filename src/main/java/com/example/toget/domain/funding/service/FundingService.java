@@ -100,7 +100,7 @@ public class FundingService {
                 v.showProgress(),
                 v.showParticipantCount(),
                 v.showParticipantNames(),
-                v.showParticipantCount(),
+                v.showMessages(),
                 v.showAmount()
         );
         fundingVisibilitySettingsRepository.save(settings);
