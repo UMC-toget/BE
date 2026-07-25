@@ -420,4 +420,25 @@ public class FundingService {
                 participantCount, totalAmount, items, page, size, slice.hasNext()
         );
     }
+
+    @Transactional
+    public FundingContributionAmountUpdateResponse updateContributionAmount(
+            Long userId, Long fundingId, Long contributionId, FundingContributionAmountUpdateRequest request
+    ) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+
+        FundingContribution contribution = fundingContributionRepository.findById(contributionId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.CONTRIBUTION_NOT_FOUND));
+        if (!contribution.getFundingId().equals(fundingId)) {
+            throw new FundingException(FundingErrorCode.CONTRIBUTION_NOT_FOUND);
+        }
+
+        contribution.updateAmount(request.amount());
+
+        return new FundingContributionAmountUpdateResponse(contribution.getId(), contribution.getAmount());
+    }
 }
