@@ -7,6 +7,8 @@ import com.example.toget.domain.funding.dto.response.FundingSettlementListRespon
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.enums.FundingRole;
+import com.example.toget.domain.funding.exception.FundingException;
+import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.user.entity.User;
 import com.example.toget.domain.funding.dto.response.FundingAccountResponse;
 import com.example.toget.domain.funding.dto.response.FundingAccountUpdateResponse;
@@ -78,6 +80,9 @@ public class FundingConverter {
 
     public static FundingSettlementListResponse.SettlementInfo toSettlementInfo(FundingMember member, Map<Long, User> userMap) {
         User user = userMap.get(member.getUserId());
+        if (user == null) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
         return new FundingSettlementListResponse.SettlementInfo(
                 member.getId(), member.getUserId(), user.getName(), user.getProfileImageUrl(),
                 member.getAmountDue(), member.getSettlementStatus().name()

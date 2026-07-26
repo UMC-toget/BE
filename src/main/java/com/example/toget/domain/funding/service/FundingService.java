@@ -381,6 +381,10 @@ public class FundingService {
 
     private FundingMemberManagementResponse.MemberInfo toMemberInfo(FundingMember m, Map<Long, User> userMap) {
         User user = userMap.get(m.getUserId());
+        if (user == null) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
+
         return new FundingMemberManagementResponse.MemberInfo(
                 m.getId(), m.getUserId(), user.getName(), user.getProfileImageUrl(), m.getRole().name()
         );
