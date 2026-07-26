@@ -4,15 +4,14 @@ import com.example.toget.domain.funding.converter.FundingConverter;
 import com.example.toget.domain.funding.dto.request.FundingAccountUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingBasicInfoUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingCreateRequest;
-import com.example.toget.domain.funding.dto.response.FundingAccountResponse;
-import com.example.toget.domain.funding.dto.response.FundingAccountUpdateResponse;
-import com.example.toget.domain.funding.dto.response.FundingBasicInfoResponse;
-import com.example.toget.domain.funding.dto.response.FundingCreateResponse;
+import com.example.toget.domain.funding.dto.response.*;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.entity.FundingVisibilitySettings;
+import com.example.toget.domain.funding.enums.FundingRole;
 import com.example.toget.domain.funding.enums.FundingStatus;
 import com.example.toget.domain.funding.enums.FundingType;
+import com.example.toget.domain.funding.enums.SettlementStatus;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.repository.FundingMemberRepository;
@@ -26,14 +25,19 @@ import com.example.toget.domain.invitation.entity.InvitationCard;
 import com.example.toget.domain.invitation.repository.CharacterRepository;
 import com.example.toget.domain.invitation.repository.InvitationBackgroundRepository;
 import com.example.toget.domain.invitation.repository.InvitationCardRepository;
+import com.example.toget.domain.user.entity.User;
 import com.example.toget.domain.user.entity.UserAccount;
 import com.example.toget.domain.user.repository.UserAccountRepository;
+import com.example.toget.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +50,9 @@ public class FundingService {
     private final CharacterRepository characterRepository;
     private final InvitationBackgroundRepository invitationBackgroundRepository;
     private final FundingVisibilitySettingsRepository fundingVisibilitySettingsRepository;
+    private final UserRepository userRepository;
     private final UserAccountRepository userAccountRepository;
+
 
     @Transactional
     public FundingCreateResponse create(Long userId, FundingCreateRequest request) {
@@ -269,5 +275,111 @@ public class FundingService {
 
         return FundingConverter.toAccountUpdateResponse(funding);
     }
+
+    @Transactional(readOnly = true)
+    public FundingMemberManagementResponse getMembers(Long userId, Long fundingId) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+        if (funding.getStatus() != FundingStatus.SELECTING) {
+            throw new FundingException(FundingErrorCode.DASHBOARD_STATUS_MISMATCH);
+        }
+
+        List<FundingMember> members = fundingMemberRepository.findAllByFundingId(fundingId);
+        Map<Long, User> userMap = getUserMap(members);
+
+        return FundingConverter.toMemberManagementResponse(members, userMap);
+    }
+
+    @Transactional
+    public void updateMemberRole(Long userId, Long fundingId, Long memberId, FundingRole newRole) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+
+        FundingMember member = fundingMemberRepository.findById(memberId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
+        if (!member.getFundingId().equals(fundingId)) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
+
+        if (newRole == FundingRole.ADMIN) {
+            member.promoteToAdmin();
+        } else if (newRole == FundingRole.PARTICIPANT) {
+            member.demoteToParticipant();
+        } else {
+            throw new FundingException(FundingErrorCode.INVALID_MEMBER_ROLE);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public FundingSettlementListResponse getSettlements(Long userId, Long fundingId) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+        if (funding.getStatus() == FundingStatus.SELECTING) {
+            throw new FundingException(FundingErrorCode.DASHBOARD_STATUS_MISMATCH);
+        }
+
+        List<FundingMember> settlementMembers = fundingMemberRepository
+                .findAllByFundingIdAndAmountDueIsNotNull(fundingId);
+        Map<Long, User> userMap = getUserMap(settlementMembers);
+
+        long totalAmount = settlementMembers.stream()
+                .mapToLong(FundingMember::getAmountDue)
+                .sum();
+
+        List<FundingSettlementListResponse.SettlementInfo> settlements = settlementMembers.stream()
+                .map(m -> new FundingSettlementListResponse.SettlementInfo(
+                        m.getId(), m.getUserId(),
+                        userMap.get(m.getUserId()).getName(),
+                        userMap.get(m.getUserId()).getProfileImageUrl(),
+                        m.getAmountDue(), m.getSettlementStatus().name()
+                ))
+                .toList();
+
+        return FundingConverter.toSettlementListResponse(settlementMembers, userMap);
+    }
+
+    @Transactional
+    public void updateSettlementStatus(Long userId, Long fundingId, Long memberId, SettlementStatus newStatus) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+
+        FundingMember member = fundingMemberRepository.findById(memberId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
+        if (!member.getFundingId().equals(fundingId)) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
+
+        if (!member.isSettlementTarget()) {
+            throw new FundingException(FundingErrorCode.NOT_SETTLEMENT_TARGET_MEMBER);
+        }
+
+        switch (newStatus) {
+            case CONFIRMED -> member.confirmPayment();              // PAID → CONFIRMED
+            case PAID -> member.revertPaymentConfirmation();        // CONFIRMED → PAID
+            case UNPAID -> member.revertToUnpaid();                 // PAID → UNPAID (CONFIRMED에선 불가)
+            default -> throw new FundingException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
+        }
+    }
+
+    private Map<Long, User> getUserMap(List<FundingMember> members) {
+        List<Long> userIds = members.stream().map(FundingMember::getUserId).toList();
+        return userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+    }
+
+
+
 
 }

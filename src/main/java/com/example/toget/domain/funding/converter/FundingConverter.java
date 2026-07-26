@@ -2,12 +2,20 @@ package com.example.toget.domain.funding.converter;
 
 import com.example.toget.domain.funding.dto.MyFundingListResponse;
 import com.example.toget.domain.funding.dto.MyFundingListResponse.MyFundingSummary;
+import com.example.toget.domain.funding.dto.response.FundingMemberManagementResponse;
+import com.example.toget.domain.funding.dto.response.FundingSettlementListResponse;
+import com.example.toget.domain.funding.entity.Funding;
+import com.example.toget.domain.funding.entity.FundingMember;
+import com.example.toget.domain.funding.enums.FundingRole;
+import com.example.toget.domain.funding.exception.FundingException;
+import com.example.toget.domain.funding.exception.code.FundingErrorCode;
+import com.example.toget.domain.user.entity.User;
 import com.example.toget.domain.funding.dto.response.FundingAccountResponse;
 import com.example.toget.domain.funding.dto.response.FundingAccountUpdateResponse;
 import com.example.toget.domain.funding.dto.response.FundingBasicInfoResponse;
 import com.example.toget.domain.funding.dto.response.FundingCreateResponse;
-import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.user.entity.UserAccount;
+
 import org.springframework.data.domain.Slice;
 
 import java.util.List;
@@ -69,6 +77,57 @@ public class FundingConverter {
     }
 
 
+    public static FundingMemberManagementResponse toMemberManagementResponse(List<FundingMember> members, Map<Long, User> userMap) {
+        List<FundingMemberManagementResponse.MemberInfo> admins = members.stream()
+                .filter(m -> m.getRole() == FundingRole.CREATOR || m.getRole() == FundingRole.ADMIN)
+                .map(m -> toMemberInfo(m, userMap))
+                .toList();
+
+        List<FundingMemberManagementResponse.MemberInfo> participants = members.stream()
+                .filter(m -> m.getRole() == FundingRole.PARTICIPANT)
+                .map(m -> toMemberInfo(m, userMap))
+                .toList();
+
+        return new FundingMemberManagementResponse(
+                members.size(), admins.size(), participants.size(), admins, participants
+        );
+    }
+
+
+
+    public static FundingSettlementListResponse.SettlementInfo toSettlementInfo(FundingMember member, Map<Long, User> userMap) {
+        User user = userMap.get(member.getUserId());
+        if (user == null) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
+        return new FundingSettlementListResponse.SettlementInfo(
+                member.getId(), member.getUserId(), user.getName(), user.getProfileImageUrl(),
+                member.getAmountDue(), member.getSettlementStatus().name()
+        );
+    }
+
+    public static FundingMemberManagementResponse.MemberInfo toMemberInfo(FundingMember member, Map<Long, User> userMap) {
+        User user = userMap.get(member.getUserId());
+        if (user == null) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
+        return new FundingMemberManagementResponse.MemberInfo(
+                member.getId(), member.getUserId(), user.getName(), user.getProfileImageUrl(), member.getRole().name()
+        );
+    }
+
+    public static FundingSettlementListResponse toSettlementListResponse(List<FundingMember> settlementMembers, Map<Long, User> userMap) {
+        long totalAmount = settlementMembers.stream()
+                .mapToLong(FundingMember::getAmountDue)
+                .sum();
+
+        List<FundingSettlementListResponse.SettlementInfo> settlements = settlementMembers.stream()
+                .map(m -> toSettlementInfo(m, userMap))
+                .toList();
+
+        return new FundingSettlementListResponse(settlementMembers.size(), totalAmount, settlements);
+    }
+
     public static FundingCreateResponse toCreateResponse(Funding funding) {
         return new FundingCreateResponse(funding.getId());
     }
@@ -97,4 +156,5 @@ public class FundingConverter {
     public static FundingAccountUpdateResponse toAccountUpdateResponse(Funding funding) {
         return new FundingAccountUpdateResponse(funding.getId(), funding.getUserAccountId());
     }
+
 }
