@@ -31,4 +31,11 @@ public class WishlistItem extends BaseEntity {
 
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
+
+    public void update(String name, Long price, String purchaseUrl, String imageUrl) {
+        this.name = name;
+        this.price = price;
+        this.purchaseUrl = purchaseUrl;
+        this.imageUrl = imageUrl;
+    }
 }

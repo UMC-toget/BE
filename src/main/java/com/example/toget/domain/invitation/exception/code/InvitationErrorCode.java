@@ -1,4 +1,4 @@
-package com.example.toget.domain.invitation.exception;
+package com.example.toget.domain.invitation.exception.code;
 
 import com.example.toget.global.apiPayload.code.BaseErrorCode;
 import lombok.Getter;
@@ -15,7 +15,12 @@ public enum InvitationErrorCode implements BaseErrorCode {
 
     // 404 Not Found — soft delete된 리소스도 "존재하지 않음"으로 취급한다
     CHARACTER_NOT_FOUND(HttpStatus.NOT_FOUND, "CHARACTER404_1", "존재하지 않는 캐릭터입니다."),
-    BACKGROUND_NOT_FOUND(HttpStatus.NOT_FOUND, "BACKGROUND404_1", "존재하지 않는 초대장 배경입니다.");
+    BACKGROUND_NOT_FOUND(HttpStatus.NOT_FOUND, "BACKGROUND404_1", "존재하지 않는 초대장 배경입니다."),
+    // 대상 펀딩이 없거나 해당 펀딩에 초대장이 없을 때 동일하게 취급한다
+    INVITATION_NOT_FOUND(HttpStatus.NOT_FOUND, "INVITATION404_1", "존재하지 않는 초대장입니다."),
+
+    // 403 Forbidden — 펀딩 개최자만 초대장을 수정할 수 있다
+    INVITATION_FORBIDDEN(HttpStatus.FORBIDDEN, "INVITATION403_1", "초대장을 수정할 권한이 없습니다.");
 
     private final HttpStatus status;
     private final String code;
