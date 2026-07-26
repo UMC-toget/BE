@@ -82,8 +82,6 @@ public class FundingContributionService {
         }
 
         boolean isOwner = viewerId != null && funding.isOwnedBy(viewerId);
-        String content = shouldHideContent(contribution, isOwner) ? null : contribution.getContent();
-
         return FundingContributionConverter.toDetailResponse(contribution, isOwner);
     }
 
