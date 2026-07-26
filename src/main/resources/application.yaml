@@ -1,3 +1,6 @@
+server:
+  forward-headers-strategy: framework # Nginx가 전달한 프록시 헤더(X-Forwarded-*) 인식
+
 spring:
   config:
     import: optional:file:.env[.properties]
