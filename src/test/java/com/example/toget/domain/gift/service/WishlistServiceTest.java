@@ -1,5 +1,6 @@
 package com.example.toget.domain.gift.service;
 
+import com.example.toget.domain.gift.enums.WishlistSort;
 import com.example.toget.domain.gift.dto.request.WishlistCreateRequest;
 import com.example.toget.domain.gift.dto.request.WishlistUpdateRequest;
 import com.example.toget.domain.gift.dto.response.WishlistCreateResponse;
@@ -89,7 +90,7 @@ public class WishlistServiceTest {
         given(wishlistItemRepository.findByUserIdOrderByIdDesc(userId, pageable)).willReturn(slice);
 
         // when
-        WishlistListResponse response = wishlistService.getWishlist(userId, 0, 10, "latest");
+        WishlistListResponse response = wishlistService.getWishlist(userId, 0, 10, WishlistSort.LATEST);
 
         // then
         assertThat(response.wishlistItems()).hasSize(1);

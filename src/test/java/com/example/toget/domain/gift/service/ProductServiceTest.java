@@ -1,5 +1,6 @@
 package com.example.toget.domain.gift.service;
 
+import com.example.toget.domain.gift.enums.ProductSort;
 import com.example.toget.domain.gift.dto.request.ProductCreateRequest;
 import com.example.toget.domain.gift.dto.request.ProductUpdateRequest;
 import com.example.toget.domain.gift.dto.response.ProductCreateResponse;
@@ -135,7 +136,7 @@ public class ProductServiceTest {
         given(productRepository.searchProducts(eq("전자기기"), eq("워치"), eq("Apple"), eq(100000L), eq(500000L), any(Pageable.class))).willReturn(slice);
 
         // when
-        ProductListResponse response = productService.getProducts("전자기기", "워치", "Apple", 100000L, 500000L, 0, 10, "latest");
+        ProductListResponse response = productService.getProducts("전자기기", "워치", "Apple", 100000L, 500000L, 0, 10, ProductSort.LATEST);
 
         // then
         assertThat(response.products()).hasSize(1);
