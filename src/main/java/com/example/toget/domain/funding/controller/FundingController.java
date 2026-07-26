@@ -234,7 +234,7 @@ public class FundingController {
             @Parameter(description = "펀딩 ID", example = "12") @PathVariable Long fundingId,
             @Parameter(description = "정렬 기준") @RequestParam(defaultValue = "LATEST") ContributionSortType sort,
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "0") @Min(0) int page,
-            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") @Max(100) int size
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size
     ) {
         FundingContributionListResponse result = fundingService.getContributions(userId, fundingId, sort, page, size);
         return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_CONTRIBUTIONS_GET_OK, result);
