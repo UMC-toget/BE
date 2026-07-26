@@ -58,6 +58,7 @@ public class FundingService {
     private final FundingVisibilitySettingsRepository fundingVisibilitySettingsRepository;
     private final UserRepository userRepository;
     private final UserAccountRepository userAccountRepository;
+    private final FundingMemberUserResolver fundingMemberUserResolver;
 
 
     @Transactional
@@ -294,7 +295,7 @@ public class FundingService {
         }
 
         List<FundingMember> members = fundingMemberRepository.findAllByFundingId(fundingId);
-        Map<Long, User> userMap = getUserMapFromMembers(members);
+        Map<Long, User> userMap = fundingMemberUserResolver.resolve(members);
 
         return FundingConverter.toMemberManagementResponse(members, userMap);
     }
@@ -335,7 +336,7 @@ public class FundingService {
 
         List<FundingMember> settlementMembers = fundingMemberRepository
                 .findAllByFundingIdAndAmountDueIsNotNull(fundingId);
-        Map<Long, User> userMap = getUserMapFromMembers(settlementMembers);
+        Map<Long, User> userMap = fundingMemberUserResolver.resolve(settlementMembers);
 
         long totalAmount = settlementMembers.stream()
                 .mapToLong(FundingMember::getAmountDue)
@@ -377,13 +378,6 @@ public class FundingService {
             case UNPAID -> member.revertToUnpaid();                 // PAID → UNPAID (CONFIRMED에선 불가)
             default -> throw new FundingException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
         }
-    }
-
-    // FundingMember 목록에서 User 배치 조회 (참여자 관리/정산 내역 탭용)
-    private Map<Long, User> getUserMapFromMembers(List<FundingMember> members) {
-        List<Long> userIds = members.stream().map(FundingMember::getUserId).toList();
-        return userRepository.findAllById(userIds).stream()
-                .collect(Collectors.toMap(User::getId, Function.identity()));
     }
 
 

@@ -53,6 +53,7 @@ public class FundingQueryService {
     private final FundingGiftRepository fundingGiftRepository;
     private final FundingGiftVoteRepository fundingGiftVoteRepository;
     private final UserAccountRepository userAccountRepository;
+    private final FundingMemberUserResolver fundingMemberUserResolver;
 
 
     /**
@@ -150,7 +151,7 @@ public class FundingQueryService {
         List<FundingMember> members = fundingMemberRepository
                 .findTopMembersOrderByRole(fundingId, PageRequest.of(0, MEMBER_SUMMARY_LIMIT));
 
-        Map<Long, User> userMap = getUserMapFromMembers(members);
+        Map<Long, User> userMap = fundingMemberUserResolver.resolve(members);
 
         return members.stream()
                 .map(m -> {
