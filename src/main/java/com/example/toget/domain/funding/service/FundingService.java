@@ -404,6 +404,9 @@ public class FundingService {
         if (!funding.isOwnedBy(userId)) {
             throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
         }
+        if (funding.getFundingType() != FundingType.MY_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);
+        }
 
         Pageable pageable = PageRequest.of(page, size);
         Slice<FundingContribution> slice = (sort == ContributionSortType.OLDEST)
@@ -415,12 +418,8 @@ public class FundingService {
 
         Map<Long, User> userMap = getUserMapFromContributions(slice.getContent());
 
-        List<FundingContributionListResponse.ContributionItem> items = slice.getContent().stream()
-                .map(c -> toContributionItem(c, userMap))
-                .toList();
-
-        return new FundingContributionListResponse(
-                participantCount, totalAmount, items, page, size, slice.hasNext()
+        return FundingConverter.toContributionListResponse(
+                slice, participantCount, totalAmount, page, size, userMap
         );
     }
 
