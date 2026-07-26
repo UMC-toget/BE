@@ -288,17 +288,7 @@ public class FundingService {
         }
 
         List<FundingMember> members = fundingMemberRepository.findAllByFundingId(fundingId);
-        Map<Long, User> userMap = getUserMap(members);
-
-        List<FundingMemberManagementResponse.MemberInfo> admins = members.stream()
-                .filter(m -> m.getRole() == FundingRole.CREATOR || m.getRole() == FundingRole.ADMIN)
-                .map(m -> toMemberInfo(m, userMap))
-                .toList();
-
-        List<FundingMemberManagementResponse.MemberInfo> participants = members.stream()
-                .filter(m -> m.getRole() == FundingRole.PARTICIPANT)
-                .map(m -> toMemberInfo(m, userMap))
-                .toList();
+        Map<Long, User> userMap = getUserMap(members)
 
         return FundingConverter.toMemberManagementResponse(members, userMap);
     }
