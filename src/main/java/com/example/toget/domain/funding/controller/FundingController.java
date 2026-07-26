@@ -11,11 +11,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "펀딩 - 개설자/공동관리자용 API", description = "개설자/공동관리자 전용 펀딩 관리 API")
 @RestController
+@Validated
 @RequestMapping("/api/v1/fundings")
 @RequiredArgsConstructor
 public class FundingController {
@@ -229,8 +233,8 @@ public class FundingController {
             @Parameter(hidden = true) @LoginUserId Long userId,
             @Parameter(description = "펀딩 ID", example = "12") @PathVariable Long fundingId,
             @Parameter(description = "정렬 기준") @RequestParam(defaultValue = "LATEST") ContributionSortType sort,
-            @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size
+            @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "0") @Min(0) int page,
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") @Max(100) int size
     ) {
         FundingContributionListResponse result = fundingService.getContributions(userId, fundingId, sort, page, size);
         return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_CONTRIBUTIONS_GET_OK, result);
