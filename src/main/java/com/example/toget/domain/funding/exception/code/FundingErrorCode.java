@@ -18,9 +18,9 @@ public enum FundingErrorCode implements BaseErrorCode {
     GIFT_REQUIRED_FOR_MY_GIFT(HttpStatus.BAD_REQUEST, "FUNDING400_7", "내 선물 만들기는 선물을 최소 1개 이상 등록해야 합니다."),
     VISIBILITY_REQUIRED_FOR_MY_GIFT(HttpStatus.BAD_REQUEST, "FUNDING400_8", "내 선물 만들기는 공개 여부를 설정해야 합니다."),
     NOT_ACCOUNT_OWNER(HttpStatus.BAD_REQUEST, "FUNDING400_9", "본인 소유의 계좌만 등록할 수 있습니다."),
-    FUNDING_ALREADY_ENDED(HttpStatus.BAD_REQUEST, "FUNDING400_10", "이미 종료된 펀딩은 수정 불가합나다."),
+    FUNDING_ALREADY_ENDED(HttpStatus.BAD_REQUEST, "FUNDING400_10", "이미 종료된 펀딩은 수정 불가합니다."),
     INVALID_STATUS_FOR_PERIOD_UPDATE(HttpStatus.BAD_REQUEST, "FUNDING400_11", "SELECTING/SETTLING 외 상태에서의 기간 변경은 불가합니다."),
-    END_DATE_MUST_BE_FUTURE(HttpStatus.BAD_REQUEST, "FUNDING400_11", "종료일은 오늘 이후 날짜여야 합니다."),
+    END_DATE_MUST_BE_FUTURE(HttpStatus.BAD_REQUEST, "FUNDING400_12", "종료일은 오늘 이후 날짜여야 합니다."),
     INVALID_MEMBER_ROLE(HttpStatus.BAD_REQUEST, "FUNDING400_12", "유효하지 않은 멤버 역할입니다."),
 
     FUNDING_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_1", "해당 펀딩을 찾을 수 없습니다."),
