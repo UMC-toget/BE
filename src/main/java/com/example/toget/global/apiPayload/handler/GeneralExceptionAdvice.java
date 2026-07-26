@@ -14,6 +14,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +22,18 @@ import java.util.Map;
 @Slf4j
 @RestControllerAdvice
 public class GeneralExceptionAdvice {
+
+    // 404 Not Found — 존재하지 않는 리소스/경로 요청 시 500이 아닌 404 (COMMON404_1) 응답
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFoundException(
+            NoResourceFoundException e
+    ) {
+        log.warn("NoResourceFoundException: ", e);
+        BaseErrorCode code = GeneralErrorCode.NOT_FOUND;
+        return ResponseEntity.status(code.getStatus())
+                .body(ApiResponse.onFailure(code, null));
+    }
+
 
     // 프로젝트에서 발생한 예외 처리
     @ExceptionHandler(com.example.toget.global.apiPayload.exception.ProjectException.class)

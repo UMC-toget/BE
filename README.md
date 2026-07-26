@@ -14,6 +14,8 @@ UMC 10기 프로젝트 '투겟 (Toget)'의 백엔드 저장소입니다.
   - Lombok (1.18.46)
   - Springdoc OpenAPI / Swagger (v3.0.1)
   - MySQL Connector/J (v9.7.0)
+  - AWS SDK v2 S3 (v2.25.20)
+
 
 ---
 
