@@ -1,6 +1,7 @@
 package com.example.toget.domain.funding.service;
 
 
+import com.example.toget.domain.funding.converter.FundingContributionConverter;
 import com.example.toget.domain.funding.dto.request.FundingContributionCreateRequest;
 import com.example.toget.domain.funding.dto.response.FundingContributionCreateResponse;
 import com.example.toget.domain.funding.dto.response.FundingContributionDetailResponse;
@@ -50,7 +51,7 @@ public class FundingContributionService {
 
         FundingContribution saved = fundingContributionRepository.save(contribution);
 
-        return new FundingContributionCreateResponse(saved.getFundingId());
+        return FundingContributionConverter.toCreateResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -83,7 +84,7 @@ public class FundingContributionService {
         boolean isOwner = viewerId != null && funding.isOwnedBy(viewerId);
         String content = shouldHideContent(contribution, isOwner) ? null : contribution.getContent();
 
-        return new FundingContributionDetailResponse(contribution.getId(), content);
+        return FundingContributionConverter.toDetailResponse(contribution, isOwner);
     }
 
     private FundingContributionRollingPaperResponse.ContributionItem toListItem(FundingContribution c, boolean isOwner) {
@@ -101,8 +102,6 @@ public class FundingContributionService {
                 c.getCreatedAt()
         );
     }
-
-
 
     private boolean shouldHideContent(FundingContribution c, boolean isOwner) {
         return !isOwner && !c.getIsMessageVisible();
