@@ -205,4 +205,36 @@ public class FundingConverter {
         );
     }
 
+    public static FundingContributionListResponse.ContributionItem toContributionItem(
+            FundingContribution contribution, Map<Long, User> userMap
+    ) {
+        if (contribution.getUserId() != null) {
+            User user = userMap.get(contribution.getUserId());
+            String name = user != null ? user.getName() : null;
+            String profileImageUrl = user != null ? user.getProfileImageUrl() : null;
+            return new FundingContributionListResponse.ContributionItem(
+                    contribution.getId(), name, profileImageUrl,
+                    contribution.getAmount(), contribution.getCreatedAt()
+            );
+        }
+        return new FundingContributionListResponse.ContributionItem(
+                contribution.getId(), contribution.getGuestName(), null,
+                contribution.getAmount(), contribution.getCreatedAt()
+        );
+    }
+
+    public static FundingContributionListResponse toContributionListResponse(
+            Slice<FundingContribution> slice, int participantCount, Long totalAmount,
+            int page, int size, Map<Long, User> userMap
+    ) {
+        List<FundingContributionListResponse.ContributionItem> items = slice.getContent().stream()
+                .map(c -> toContributionItem(c, userMap))
+                .toList();
+
+        return new FundingContributionListResponse(
+                participantCount, totalAmount, items, page, size, slice.hasNext()
+        );
+    }
+
+
 }
