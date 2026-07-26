@@ -38,7 +38,7 @@ public class FundingGift extends BaseEntity {
     @Builder.Default
     private FundingGiftStatus status = FundingGiftStatus.CANDIDATE;
 
-    @Column(name = "note", nullable = false, length = 100)
+    @Column(name = "note", length = 100)
     private String note;
 
     /** 최종 선물로 확정 */

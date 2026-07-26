@@ -2,6 +2,7 @@ package com.example.toget.domain.funding.controller;
 
 import com.example.toget.domain.funding.dto.request.*;
 import com.example.toget.domain.funding.dto.response.*;
+import com.example.toget.domain.funding.enums.ContributionSortType;
 import com.example.toget.domain.funding.exception.code.FundingSuccessCode;
 import com.example.toget.domain.funding.service.FundingService;
 import com.example.toget.domain.user.controller.LoginUserId;
@@ -213,4 +214,45 @@ public class FundingController {
         fundingService.updateSettlementStatus(userId, fundingId, memberId, request.settlementStatus());
         return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_SETTLEMENT_STATUS_UPDATE_OK, null);
     }
+
+    @Operation(
+            summary = "참여자 목록 탭 조회 (내 선물 준비하기)",
+            description = """
+                MY_GIFT 펀딩의 후원 기록을 페이지네이션으로 조회합니다.
+                
+                `sort=LATEST`(기본값)면 최신 등록순, `sort=OLDEST`면 오래된 순으로 정렬됩니다. \
+                `participantCount`, `totalAmount`는 페이지와 무관하게 항상 전체 후원 기록 기준의 요약값입니다.
+                """
+    )
+    @GetMapping("/{fundingId}/dashboards/contributions")
+    public ApiResponse<FundingContributionListResponse> getContributions(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @Parameter(description = "펀딩 ID", example = "12") @PathVariable Long fundingId,
+            @Parameter(description = "정렬 기준") @RequestParam(defaultValue = "LATEST") ContributionSortType sort,
+            @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size
+    ) {
+        FundingContributionListResponse result = fundingService.getContributions(userId, fundingId, sort, page, size);
+        return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_CONTRIBUTIONS_GET_OK, result);
+    }
+
+    @Operation(
+            summary = "기여 금액 수정",
+            description = """
+                개설자가 제출된 후원 내역의 금액을 수정합니다. 0원 이상만 허용됩니다.
+                """
+    )
+    @PatchMapping("/{fundingId}/contributions/{contributionId}")
+    public ApiResponse<FundingContributionAmountUpdateResponse> updateContributionAmount(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @Parameter(description = "펀딩 ID", example = "12") @PathVariable Long fundingId,
+            @Parameter(description = "후원 기록 ID", example = "45") @PathVariable Long contributionId,
+            @Valid @RequestBody FundingContributionAmountUpdateRequest request
+    ) {
+        FundingContributionAmountUpdateResponse result = fundingService.updateContributionAmount(
+                userId, fundingId, contributionId, request
+        );
+        return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_CONTRIBUTION_AMOUNT_UPDATE_OK, result);
+    }
+
 }

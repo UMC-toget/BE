@@ -2,9 +2,9 @@ package com.example.toget.domain.funding.converter;
 
 import com.example.toget.domain.funding.dto.MyFundingListResponse;
 import com.example.toget.domain.funding.dto.MyFundingListResponse.MyFundingSummary;
-import com.example.toget.domain.funding.dto.response.FundingMemberManagementResponse;
-import com.example.toget.domain.funding.dto.response.FundingSettlementListResponse;
+import com.example.toget.domain.funding.dto.response.*;
 import com.example.toget.domain.funding.entity.Funding;
+import com.example.toget.domain.funding.entity.FundingContribution;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.enums.FundingRole;
 import com.example.toget.domain.funding.exception.FundingException;
@@ -156,5 +156,42 @@ public class FundingConverter {
     public static FundingAccountUpdateResponse toAccountUpdateResponse(Funding funding) {
         return new FundingAccountUpdateResponse(funding.getId(), funding.getUserAccountId());
     }
+
+    public static FundingContributionAmountUpdateResponse toContributionAmountUpdateResponse(FundingContribution contribution) {
+        return new FundingContributionAmountUpdateResponse(contribution.getId(), contribution.getAmount());
+    }
+
+    public static FundingContributionListResponse.ContributionItem toContributionItem(
+            FundingContribution contribution, Map<Long, User> userMap
+    ) {
+        if (contribution.getUserId() != null) {
+            User user = userMap.get(contribution.getUserId());
+            String name = user != null ? user.getName() : null;
+            String profileImageUrl = user != null ? user.getProfileImageUrl() : null;
+            return new FundingContributionListResponse.ContributionItem(
+                    contribution.getId(), name, profileImageUrl,
+                    contribution.getAmount(), contribution.getCreatedAt()
+            );
+        }
+        return new FundingContributionListResponse.ContributionItem(
+                contribution.getId(), contribution.getGuestName(), null,
+                contribution.getAmount(), contribution.getCreatedAt()
+        );
+    }
+
+    public static FundingContributionListResponse toContributionListResponse(
+            Slice<FundingContribution> slice, int participantCount, Long totalAmount,
+            int page, int size, Map<Long, User> userMap
+    ) {
+        List<FundingContributionListResponse.ContributionItem> items = slice.getContent().stream()
+                .map(c -> toContributionItem(c, userMap))
+                .toList();
+
+        return new FundingContributionListResponse(
+                participantCount, totalAmount, items, page, size, slice.hasNext()
+        );
+    }
+
+
 
 }

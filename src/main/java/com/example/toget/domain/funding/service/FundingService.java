@@ -3,17 +3,17 @@ package com.example.toget.domain.funding.service;
 import com.example.toget.domain.funding.converter.FundingConverter;
 import com.example.toget.domain.funding.dto.request.FundingAccountUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingBasicInfoUpdateRequest;
+import com.example.toget.domain.funding.dto.request.FundingContributionAmountUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingCreateRequest;
 import com.example.toget.domain.funding.dto.response.*;
 import com.example.toget.domain.funding.entity.Funding;
+import com.example.toget.domain.funding.entity.FundingContribution;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.entity.FundingVisibilitySettings;
-import com.example.toget.domain.funding.enums.FundingRole;
-import com.example.toget.domain.funding.enums.FundingStatus;
-import com.example.toget.domain.funding.enums.FundingType;
-import com.example.toget.domain.funding.enums.SettlementStatus;
+import com.example.toget.domain.funding.enums.*;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
+import com.example.toget.domain.funding.repository.FundingContributionRepository;
 import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
 import com.example.toget.domain.funding.repository.FundingVisibilitySettingsRepository;
@@ -30,6 +30,9 @@ import com.example.toget.domain.user.entity.UserAccount;
 import com.example.toget.domain.user.repository.UserAccountRepository;
 import com.example.toget.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,9 +46,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FundingService {
 
+
     private final FundingRepository fundingRepository;
     private final FundingMemberRepository fundingMemberRepository;
     private final FundingGiftRepository fundingGiftRepository;
+    private final FundingContributionRepository fundingContributionRepository;
     private final InvitationCardRepository invitationCardRepository;
     private final CharacterRepository characterRepository;
     private final InvitationBackgroundRepository invitationBackgroundRepository;
@@ -288,7 +293,7 @@ public class FundingService {
         }
 
         List<FundingMember> members = fundingMemberRepository.findAllByFundingId(fundingId);
-        Map<Long, User> userMap = getUserMap(members);
+        Map<Long, User> userMap = getUserMapFromMembers(members);
 
         return FundingConverter.toMemberManagementResponse(members, userMap);
     }
@@ -329,7 +334,7 @@ public class FundingService {
 
         List<FundingMember> settlementMembers = fundingMemberRepository
                 .findAllByFundingIdAndAmountDueIsNotNull(fundingId);
-        Map<Long, User> userMap = getUserMap(settlementMembers);
+        Map<Long, User> userMap = getUserMapFromMembers(settlementMembers);
 
         long totalAmount = settlementMembers.stream()
                 .mapToLong(FundingMember::getAmountDue)
@@ -373,7 +378,8 @@ public class FundingService {
         }
     }
 
-    private Map<Long, User> getUserMap(List<FundingMember> members) {
+    // FundingMember 목록에서 User 배치 조회 (참여자 관리/정산 내역 탭용)
+    private Map<Long, User> getUserMapFromMembers(List<FundingMember> members) {
         List<Long> userIds = members.stream().map(FundingMember::getUserId).toList();
         return userRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
@@ -381,5 +387,87 @@ public class FundingService {
 
 
 
+    @Transactional(readOnly = true)
+    public FundingContributionListResponse getContributions(
+            Long userId, Long fundingId, ContributionSortType sort, int page, int size
+    ) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+        if (funding.getFundingType() != FundingType.MY_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);
+        }
 
+        Pageable pageable = PageRequest.of(page, size);
+        Slice<FundingContribution> slice = (sort == ContributionSortType.OLDEST)
+                ? fundingContributionRepository.findAllByFundingIdOrderByCreatedAtAsc(fundingId, pageable)
+                : fundingContributionRepository.findAllByFundingIdOrderByCreatedAtDesc(fundingId, pageable);
+
+        int participantCount = fundingContributionRepository.countByFundingId(fundingId);
+        Long totalAmount = fundingContributionRepository.sumAmountByFundingId(fundingId);
+
+        Map<Long, User> userMap = getUserMapFromContributions(slice.getContent());
+
+        return FundingConverter.toContributionListResponse(
+                slice, participantCount, totalAmount, page, size, userMap
+        );
+    }
+
+    /** 로그인 회원 참여자들의 User 정보를 배치 조회, 비회원은 필터링 (N+1 방지) */
+    private Map<Long, User> getUserMapFromContributions(List<FundingContribution> contributions) {
+        List<Long> userIds = contributions.stream()
+                .map(FundingContribution::getUserId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+        return userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+    }
+
+    private FundingContributionListResponse.ContributionItem toContributionItem(
+            FundingContribution c, Map<Long, User> userMap
+    ) {
+        if (c.getUserId() != null) {
+            // 로그인 회원 참여 — User 조회로 이름/프로필 채움
+            User user = userMap.get(c.getUserId());
+            String name = user != null ? user.getName() : null;
+            String profileImageUrl = user != null ? user.getProfileImageUrl() : null;
+            return new FundingContributionListResponse.ContributionItem(
+                    c.getId(), name, profileImageUrl, c.getAmount(), c.getCreatedAt()
+            );
+        }
+        // 비회원 참여 — guestName 그대로, 프로필 이미지는 애초에 없음
+        return new FundingContributionListResponse.ContributionItem(
+                c.getId(), c.getGuestName(), null, c.getAmount(), c.getCreatedAt()
+        );
+    }
+
+    @Transactional
+    public FundingContributionAmountUpdateResponse updateContributionAmount(
+            Long userId, Long fundingId, Long contributionId, FundingContributionAmountUpdateRequest request
+    ) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+        if (funding.getFundingType() != FundingType.MY_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);
+        }
+
+        FundingContribution contribution = fundingContributionRepository.findById(contributionId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.CONTRIBUTION_NOT_FOUND));
+        if (!contribution.getFundingId().equals(fundingId)) {
+            throw new FundingException(FundingErrorCode.CONTRIBUTION_NOT_FOUND);
+        }
+
+        contribution.updateAmount(request.amount());
+
+        return FundingConverter.toContributionAmountUpdateResponse(contribution);
+    }
 }
