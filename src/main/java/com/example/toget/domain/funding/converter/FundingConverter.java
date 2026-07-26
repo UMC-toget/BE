@@ -10,7 +10,6 @@ import com.example.toget.domain.user.entity.User;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
-import com.example.toget.domain.user.entity.User;
 import com.example.toget.domain.funding.dto.response.FundingAccountResponse;
 import com.example.toget.domain.funding.dto.response.FundingAccountUpdateResponse;
 import com.example.toget.domain.funding.dto.response.FundingBasicInfoResponse;
@@ -247,5 +246,12 @@ public class FundingConverter {
         );
     }
 
+    public static FundingContributionAmountUpdateResponse toContributionAmountUpdateResponse(
+            FundingContribution contribution
+    ) {
+        return new FundingContributionAmountUpdateResponse(
+                contribution.getId(), contribution.getAmount()
+        );
+    }
 
 }
