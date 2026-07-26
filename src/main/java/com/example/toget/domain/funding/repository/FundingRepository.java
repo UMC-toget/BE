@@ -1,6 +1,7 @@
 package com.example.toget.domain.funding.repository;
 
 import com.example.toget.domain.funding.entity.Funding;
+import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +12,9 @@ import org.springframework.data.repository.query.Param;
  * fundings 테이블 접근 리포지토리.
  */
 public interface FundingRepository extends JpaRepository<Funding, Long> {
+
+    // 단건 조회용 — soft delete된(deletedAt 기록된) 펀딩은 없는 것으로 취급한다 (deletedAt is null 컨벤션)
+    Optional<Funding> findByIdAndDeletedAtIsNull(Long id);
 
     /**
      * 내가 개최한 펀딩 목록 페이징 조회.
