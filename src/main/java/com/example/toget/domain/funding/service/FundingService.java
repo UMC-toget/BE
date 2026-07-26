@@ -295,16 +295,6 @@ public class FundingService {
         List<FundingMember> members = fundingMemberRepository.findAllByFundingId(fundingId);
         Map<Long, User> userMap = getUserMap(members);
 
-        List<FundingMemberManagementResponse.MemberInfo> admins = members.stream()
-                .filter(m -> m.getRole() == FundingRole.CREATOR || m.getRole() == FundingRole.ADMIN)
-                .map(m -> toMemberInfo(m, userMap))
-                .toList();
-
-        List<FundingMemberManagementResponse.MemberInfo> participants = members.stream()
-                .filter(m -> m.getRole() == FundingRole.PARTICIPANT)
-                .map(m -> toMemberInfo(m, userMap))
-                .toList();
-
         return FundingConverter.toMemberManagementResponse(members, userMap);
     }
 
@@ -318,11 +308,16 @@ public class FundingService {
 
         FundingMember member = fundingMemberRepository.findById(memberId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
+        if (!member.getFundingId().equals(fundingId)) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
 
         if (newRole == FundingRole.ADMIN) {
             member.promoteToAdmin();
-        } else {
+        } else if (newRole == FundingRole.PARTICIPANT) {
             member.demoteToParticipant();
+        } else {
+            throw new FundingException(FundingErrorCode.INVALID_MEMBER_ROLE);
         }
     }
 
@@ -367,6 +362,9 @@ public class FundingService {
 
         FundingMember member = fundingMemberRepository.findById(memberId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
+        if (!member.getFundingId().equals(fundingId)) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
 
         if (!member.isSettlementTarget()) {
             throw new FundingException(FundingErrorCode.NOT_SETTLEMENT_TARGET_MEMBER);
@@ -386,12 +384,6 @@ public class FundingService {
                 .collect(Collectors.toMap(User::getId, Function.identity()));
     }
 
-    private FundingMemberManagementResponse.MemberInfo toMemberInfo(FundingMember m, Map<Long, User> userMap) {
-        User user = userMap.get(m.getUserId());
-        return new FundingMemberManagementResponse.MemberInfo(
-                m.getId(), m.getUserId(), user.getName(), user.getProfileImageUrl(), m.getRole().name()
-        );
-    }
 
 
     @Transactional(readOnly = true)
