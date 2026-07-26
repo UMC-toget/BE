@@ -25,6 +25,9 @@ import com.example.toget.domain.gift.enums.ProductSort;
 @Transactional(readOnly = true)
 public class ProductService {
 
+    private static final int DEFAULT_PAGE_SIZE = 10;
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final ProductRepository productRepository;
 
     @Transactional
@@ -41,6 +44,9 @@ public class ProductService {
     }
 
     public ProductListResponse getProducts(String category, String keyword, String brand, Long minPrice, Long maxPrice, int page, int size, ProductSort sort) {
+        int safePage = Math.max(page, 0);
+        int safeSize = (size <= 0) ? DEFAULT_PAGE_SIZE : Math.min(size, MAX_PAGE_SIZE);
+
         ProductSort sortType = (sort != null) ? sort : ProductSort.LATEST;
         Sort sortOrder = switch (sortType) {
             case OLDEST -> Sort.by(Sort.Direction.ASC, "id");
@@ -49,7 +55,7 @@ public class ProductService {
             case LATEST -> Sort.by(Sort.Direction.DESC, "id");
         };
 
-        Pageable pageable = PageRequest.of(page, size, sortOrder);
+        Pageable pageable = PageRequest.of(safePage, safeSize, sortOrder);
 
         String formattedKeyword = (keyword != null && !keyword.isBlank()) ? keyword.trim() : null;
         String formattedCategory = (category != null && !category.isBlank()) ? category.trim() : null;

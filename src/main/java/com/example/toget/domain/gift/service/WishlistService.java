@@ -24,6 +24,9 @@ import com.example.toget.domain.gift.enums.WishlistSort;
 @Transactional(readOnly = true)
 public class WishlistService {
 
+    private static final int DEFAULT_PAGE_SIZE = 10;
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final WishlistItemRepository wishlistItemRepository;
 
     @Transactional
@@ -34,7 +37,10 @@ public class WishlistService {
     }
 
     public WishlistListResponse getWishlist(Long userId, int page, int size, WishlistSort sort) {
-        Pageable pageable = PageRequest.of(page, size);
+        int safePage = Math.max(page, 0);
+        int safeSize = (size <= 0) ? DEFAULT_PAGE_SIZE : Math.min(size, MAX_PAGE_SIZE);
+
+        Pageable pageable = PageRequest.of(safePage, safeSize);
         Slice<WishlistItem> slice;
         WishlistSort sortType = (sort != null) ? sort : WishlistSort.LATEST;
         if (sortType == WishlistSort.OLDEST) {
