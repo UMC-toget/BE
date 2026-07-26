@@ -404,7 +404,7 @@ public class FundingService {
             throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
         }
         if (funding.getFundingType() != FundingType.MY_GIFT) {
-            throw new FundingException(FundingErrorCode.INVALID_FUNDING_TYPE);
+            throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);
         }
 
         Pageable pageable = PageRequest.of(page, size);
