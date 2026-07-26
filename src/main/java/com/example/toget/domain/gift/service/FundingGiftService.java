@@ -1,10 +1,7 @@
 package com.example.toget.domain.gift.service;
 
-import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.enums.FundingRole;
-import com.example.toget.domain.funding.exception.FundingException;
-import com.example.toget.domain.funding.repository.FundingGiftCommentRepository;
 import com.example.toget.domain.funding.repository.FundingGiftVoteRepository;
 import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
