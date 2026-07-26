@@ -464,6 +464,9 @@ public class FundingService {
         if (!funding.isOwnedBy(userId)) {
             throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
         }
+        if (funding.getFundingType() != FundingType.MY_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);
+        }
 
         FundingContribution contribution = fundingContributionRepository.findById(contributionId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.CONTRIBUTION_NOT_FOUND));
@@ -473,6 +476,6 @@ public class FundingService {
 
         contribution.updateAmount(request.amount());
 
-        return new FundingContributionAmountUpdateResponse(contribution.getId(), contribution.getAmount());
+        return FundingConverter.toContributionAmountUpdateResponse(contribution);
     }
 }
