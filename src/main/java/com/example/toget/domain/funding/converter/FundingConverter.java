@@ -75,28 +75,6 @@ public class FundingConverter {
         return (int) (collectedAmount * PERCENT / targetAmount);
     }
 
-    public static FundingMemberManagementResponse.MemberInfo toMemberInfo(FundingMember member, Map<Long, User> userMap) {
-        User user = userMap.get(member.getUserId());
-        return new FundingMemberManagementResponse.MemberInfo(
-                member.getId(), member.getUserId(), user.getName(), user.getProfileImageUrl(), member.getRole().name()
-        );
-    }
-
-    public static FundingMemberManagementResponse toMemberManagementResponse(List<FundingMember> members, Map<Long, User> userMap) {
-        List<FundingMemberManagementResponse.MemberInfo> admins = members.stream()
-                .filter(m -> m.getRole() == FundingRole.CREATOR || m.getRole() == FundingRole.ADMIN)
-                .map(m -> toMemberInfo(m, userMap))
-                .toList();
-
-        List<FundingMemberManagementResponse.MemberInfo> participants = members.stream()
-                .filter(m -> m.getRole() == FundingRole.PARTICIPANT)
-                .map(m -> toMemberInfo(m, userMap))
-                .toList();
-
-        return new FundingMemberManagementResponse(
-                members.size(), admins.size(), participants.size(), admins, participants
-        );
-    }
 
     public static FundingSettlementListResponse.SettlementInfo toSettlementInfo(FundingMember member, Map<Long, User> userMap) {
         User user = userMap.get(member.getUserId());
