@@ -2,6 +2,7 @@ package com.example.toget.domain.funding.entity;
 
 import com.example.toget.domain.funding.enums.FundingRole;
 import com.example.toget.domain.funding.enums.SettlementStatus;
+import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.global.apiPayload.exception.ProjectException;
 import com.example.toget.global.entity.BaseEntity;
@@ -95,7 +96,7 @@ public class FundingMember extends BaseEntity {
     public void promoteToAdmin() {
         if (this.role == FundingRole.CREATOR) {
             // 개설자는 역할 변경 대상이 아님 — 예외처리 추가
-            throw new ProjectException(FundingErrorCode.CREATOR_ROLE_CANNOT_BE_CHANGED);
+            throw new FundingException(FundingErrorCode.CREATOR_ROLE_CANNOT_BE_CHANGED);
         }
         this.role = FundingRole.ADMIN;
     }
@@ -103,7 +104,7 @@ public class FundingMember extends BaseEntity {
     /** 일반 참여자로 강등 (현재 로직엔 없지만 추후에 필요시 사용) */
     public void demoteToParticipant() {
         if (this.role == FundingRole.CREATOR) {
-            throw new ProjectException(FundingErrorCode.CREATOR_ROLE_CANNOT_BE_CHANGED);
+            throw new FundingException(FundingErrorCode.CREATOR_ROLE_CANNOT_BE_CHANGED);
         }
         this.role = FundingRole.PARTICIPANT;
     }
@@ -122,10 +123,10 @@ public class FundingMember extends BaseEntity {
      */
     public void requestPaymentConfirmation() {
         if (this.amountDue == null) {
-            throw new ProjectException(FundingErrorCode.NOT_SETTLEMENT_TARGET);
+            throw new FundingException(FundingErrorCode.NOT_SETTLEMENT_TARGET);
         }
         if (this.settlementStatus != SettlementStatus.UNPAID) {
-            throw new ProjectException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
+            throw new FundingException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
         }
         this.settlementStatus = SettlementStatus.PAID;
     }
@@ -136,7 +137,7 @@ public class FundingMember extends BaseEntity {
      */
     public void confirmPayment() {
         if (this.settlementStatus != SettlementStatus.PAID) {
-            throw new ProjectException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
+            throw new FundingException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
         }
         this.settlementStatus = SettlementStatus.CONFIRMED;
     }
@@ -147,7 +148,7 @@ public class FundingMember extends BaseEntity {
      */
     public void revertPaymentConfirmation() {
         if (this.settlementStatus != SettlementStatus.CONFIRMED) {
-            throw new ProjectException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
+            throw new FundingException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
         }
         this.settlementStatus = SettlementStatus.PAID;
     }
@@ -160,7 +161,7 @@ public class FundingMember extends BaseEntity {
      */
     public void revertToUnpaid() {
         if (this.settlementStatus != SettlementStatus.PAID) {
-            throw new ProjectException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
+            throw new FundingException(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
         }
         this.settlementStatus = SettlementStatus.UNPAID;
     }
