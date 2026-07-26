@@ -69,13 +69,15 @@ public class FundingConverter {
      * 소수점 내림(정수%), 100 초과 허용(초과 달성 그대로 노출)
      * targetAmount는 0 허용 -> 0 나눗셈을 방어
      */
-    private static int calculateProgressRate(Long collectedAmount, Long targetAmount) {
+    private static double calculateProgressRate(Long collectedAmount, Long targetAmount) {
         if (targetAmount == null || targetAmount == 0) {
-            return 0; // targetAmount는 0허용
+            return 0.0;
         }
-        return (int) (collectedAmount * PERCENT / targetAmount);
+        if (collectedAmount == null) {
+            return 0.0;
+        }
+        return Math.round(collectedAmount * 10000.0 / targetAmount) / 100.0;
     }
-
 
     public static FundingMemberManagementResponse toMemberManagementResponse(List<FundingMember> members, Map<Long, User> userMap) {
         List<FundingMemberManagementResponse.MemberInfo> admins = members.stream()
