@@ -313,11 +313,16 @@ public class FundingService {
 
         FundingMember member = fundingMemberRepository.findById(memberId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
+        if (!member.getFundingId().equals(fundingId)) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
 
         if (newRole == FundingRole.ADMIN) {
             member.promoteToAdmin();
-        } else {
+        } else if (newRole == FundingRole.PARTICIPANT) {
             member.demoteToParticipant();
+        } else {
+            throw new FundingException(FundingErrorCode.INVALID_MEMBER_ROLE);
         }
     }
 
@@ -362,6 +367,9 @@ public class FundingService {
 
         FundingMember member = fundingMemberRepository.findById(memberId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
+        if (!member.getFundingId().equals(fundingId)) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
 
         if (!member.isSettlementTarget()) {
             throw new FundingException(FundingErrorCode.NOT_SETTLEMENT_TARGET_MEMBER);
