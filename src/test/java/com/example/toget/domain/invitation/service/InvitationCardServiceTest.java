@@ -67,7 +67,7 @@ class InvitationCardServiceTest {
     @DisplayName("펀딩 개최자가 아니면 INVITATION_FORBIDDEN(403)을 던지고 초대장 조회까지 가지 않는다")
     void notHost_throwsForbidden() {
         // given: 펀딩은 존재하지만 소유자가 호출자(1L)와 다른 사용자(999L)
-        given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(fundingOwnedBy(999L)));
+        given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(fundingOwnedBy(999L)));
 
         // when & then
         assertThatThrownBy(() -> invitationCardService.update(CALLER_ID, FUNDING_ID, request))
@@ -80,9 +80,10 @@ class InvitationCardServiceTest {
     }
 
     @Test
-    @DisplayName("대상 펀딩이 없으면 INVITATION_NOT_FOUND(404)를 던진다")
-    void fundingNotFound_throwsNotFound() {
-        given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.empty());
+    @DisplayName("대상 펀딩이 없거나 soft delete되었으면 INVITATION_NOT_FOUND(404)를 던진다")
+    void fundingNotFoundOrDeleted_throwsNotFound() {
+        // findByIdAndDeletedAtIsNull은 미존재/삭제된 펀딩을 모두 빈 결과로 반환하므로 한 케이스로 검증한다
+        given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> invitationCardService.update(CALLER_ID, FUNDING_ID, request))
                 .isInstanceOf(InvitationException.class)
@@ -94,7 +95,7 @@ class InvitationCardServiceTest {
     @DisplayName("soft delete된 캐릭터를 선택하면 CHARACTER_NOT_FOUND(404)를 던진다")
     void softDeletedCharacter_throwsNotFound() {
         // given: 개최자 본인 + 초대장 존재, 그러나 캐릭터는 soft delete되어 조회되지 않음
-        given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(fundingOwnedBy(CALLER_ID)));
+        given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(fundingOwnedBy(CALLER_ID)));
         given(invitationCardRepository.findByFundingId(FUNDING_ID)).willReturn(Optional.of(cardStub()));
         given(characterRepository.findByIdAndDeletedAtIsNull(request.characterId())).willReturn(Optional.empty());
 
@@ -108,7 +109,7 @@ class InvitationCardServiceTest {
     @DisplayName("soft delete된 배경을 선택하면 BACKGROUND_NOT_FOUND(404)를 던진다")
     void softDeletedBackground_throwsNotFound() {
         // given: 캐릭터는 정상 조회되지만 배경은 soft delete되어 조회되지 않음
-        given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(fundingOwnedBy(CALLER_ID)));
+        given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(fundingOwnedBy(CALLER_ID)));
         given(invitationCardRepository.findByFundingId(FUNDING_ID)).willReturn(Optional.of(cardStub()));
         given(characterRepository.findByIdAndDeletedAtIsNull(request.characterId()))
                 .willReturn(Optional.of(CharacterEntity.builder().name("캐릭터").imageUrl("https://img/c.png").build()));

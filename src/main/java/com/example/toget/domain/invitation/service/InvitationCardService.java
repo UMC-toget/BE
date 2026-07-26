@@ -47,8 +47,8 @@ public class InvitationCardService {
         // 1. 활성 사용자 여부 검증 (보안 컨벤션)
         activeUserReader.getActiveUser(userId);
 
-        // 2. 대상 펀딩 조회 — 없으면 초대장도 없는 것으로 간주(404)
-        Funding funding = fundingRepository.findById(fundingId)
+        // 2. 대상 펀딩 조회 — 없거나 soft delete된 펀딩은 초대장도 없는 것으로 간주(404)
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
                 .orElseThrow(() -> new InvitationException(InvitationErrorCode.INVITATION_NOT_FOUND));
 
         // 3. 개최자 권한 검증 — 펀딩 개최자 본인만 수정 가능(403)
