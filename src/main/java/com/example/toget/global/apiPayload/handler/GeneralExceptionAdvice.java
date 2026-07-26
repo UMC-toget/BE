@@ -112,4 +112,41 @@ public class GeneralExceptionAdvice {
         return ResponseEntity.status(code.getStatus())
                 .body(ApiResponse.onFailure(code, errors));
     }
+
+    // ConstraintViolationException (@Validated 파라미터 검증 실패) 처리
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleConstraintViolationException(
+            jakarta.validation.ConstraintViolationException e
+    ) {
+        Map<String, String> errors = new HashMap<>();
+        e.getConstraintViolations().forEach(violation -> {
+            String propertyPath = violation.getPropertyPath().toString();
+            String fieldName = propertyPath.contains(".")
+                    ? propertyPath.substring(propertyPath.lastIndexOf('.') + 1)
+                    : propertyPath;
+            errors.put(fieldName, violation.getMessage());
+        });
+
+        BaseErrorCode code = GeneralErrorCode.BAD_REQUEST;
+        return ResponseEntity.status(code.getStatus())
+                .body(ApiResponse.onFailure(code, errors));
+    }
+
+    // HandlerMethodValidationException (Spring 메소드 파라미터 검증 실패) 처리
+    @ExceptionHandler(org.springframework.web.method.annotation.HandlerMethodValidationException.class)
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleHandlerMethodValidationException(
+            org.springframework.web.method.annotation.HandlerMethodValidationException e
+    ) {
+        Map<String, String> errors = new HashMap<>();
+        e.getAllErrors().forEach(error -> {
+            String fieldName = (error instanceof org.springframework.validation.FieldError fe)
+                    ? fe.getField()
+                    : "parameter";
+            errors.put(fieldName, error.getDefaultMessage());
+        });
+
+        BaseErrorCode code = GeneralErrorCode.BAD_REQUEST;
+        return ResponseEntity.status(code.getStatus())
+                .body(ApiResponse.onFailure(code, errors));
+    }
 }
