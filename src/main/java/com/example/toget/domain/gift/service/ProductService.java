@@ -18,6 +18,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.toget.domain.gift.enums.ProductSort;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -38,15 +40,14 @@ public class ProductService {
         return ProductConverter.toDetailResponse(product);
     }
 
-    public ProductListResponse getProducts(String category, String keyword, String brand, Long minPrice, Long maxPrice, int page, int size, String sort) {
-        Sort sortOrder = Sort.by(Sort.Direction.DESC, "id");
-        if ("oldest".equalsIgnoreCase(sort) || "asc".equalsIgnoreCase(sort)) {
-            sortOrder = Sort.by(Sort.Direction.ASC, "id");
-        } else if ("price_asc".equalsIgnoreCase(sort)) {
-            sortOrder = Sort.by(Sort.Direction.ASC, "price").and(Sort.by(Sort.Direction.DESC, "id"));
-        } else if ("price_desc".equalsIgnoreCase(sort)) {
-            sortOrder = Sort.by(Sort.Direction.DESC, "price").and(Sort.by(Sort.Direction.DESC, "id"));
-        }
+    public ProductListResponse getProducts(String category, String keyword, String brand, Long minPrice, Long maxPrice, int page, int size, ProductSort sort) {
+        ProductSort sortType = (sort != null) ? sort : ProductSort.LATEST;
+        Sort sortOrder = switch (sortType) {
+            case OLDEST -> Sort.by(Sort.Direction.ASC, "id");
+            case PRICE_ASC -> Sort.by(Sort.Direction.ASC, "price").and(Sort.by(Sort.Direction.DESC, "id"));
+            case PRICE_DESC -> Sort.by(Sort.Direction.DESC, "price").and(Sort.by(Sort.Direction.DESC, "id"));
+            case LATEST -> Sort.by(Sort.Direction.DESC, "id");
+        };
 
         Pageable pageable = PageRequest.of(page, size, sortOrder);
 

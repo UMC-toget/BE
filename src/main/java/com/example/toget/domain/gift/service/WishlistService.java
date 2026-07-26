@@ -17,6 +17,8 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.toget.domain.gift.enums.WishlistSort;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -31,10 +33,11 @@ public class WishlistService {
         return WishlistConverter.toCreateResponse(savedItem);
     }
 
-    public WishlistListResponse getWishlist(Long userId, int page, int size, String sort) {
+    public WishlistListResponse getWishlist(Long userId, int page, int size, WishlistSort sort) {
         Pageable pageable = PageRequest.of(page, size);
         Slice<WishlistItem> slice;
-        if ("oldest".equalsIgnoreCase(sort) || "asc".equalsIgnoreCase(sort)) {
+        WishlistSort sortType = (sort != null) ? sort : WishlistSort.LATEST;
+        if (sortType == WishlistSort.OLDEST) {
             slice = wishlistItemRepository.findByUserIdOrderByIdAsc(userId, pageable);
         } else {
             slice = wishlistItemRepository.findByUserIdOrderByIdDesc(userId, pageable);

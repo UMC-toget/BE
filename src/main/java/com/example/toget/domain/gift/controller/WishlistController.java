@@ -1,5 +1,6 @@
 package com.example.toget.domain.gift.controller;
 
+import com.example.toget.domain.gift.enums.WishlistSort;
 import com.example.toget.domain.gift.dto.request.WishlistCreateRequest;
 import com.example.toget.domain.gift.dto.request.WishlistUpdateRequest;
 import com.example.toget.domain.gift.dto.response.WishlistCreateResponse;
@@ -30,7 +31,7 @@ public class WishlistController {
             @Parameter(hidden = true) @LoginUserId Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "latest") String sort
+            @RequestParam(defaultValue = "LATEST") WishlistSort sort
     ) {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, wishlistService.getWishlist(userId, page, size, sort));
     }

@@ -1,5 +1,6 @@
 package com.example.toget.domain.gift.controller;
 
+import com.example.toget.domain.gift.enums.ProductSort;
 import com.example.toget.domain.gift.dto.request.ProductCreateRequest;
 import com.example.toget.domain.gift.dto.request.ProductUpdateRequest;
 import com.example.toget.domain.gift.dto.response.ProductCreateResponse;
@@ -33,7 +34,7 @@ public class ProductController {
             @RequestParam(required = false) Long maxPrice,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "latest") String sort
+            @RequestParam(defaultValue = "LATEST") ProductSort sort
     ) {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, productService.getProducts(category, keyword, brand, minPrice, maxPrice, page, size, sort));
     }
