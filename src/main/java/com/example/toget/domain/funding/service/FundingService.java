@@ -288,7 +288,7 @@ public class FundingService {
         }
 
         List<FundingMember> members = fundingMemberRepository.findAllByFundingId(fundingId);
-        Map<Long, User> userMap = getUserMap(members)
+        Map<Long, User> userMap = getUserMap(members);
 
         return FundingConverter.toMemberManagementResponse(members, userMap);
     }
@@ -379,16 +379,6 @@ public class FundingService {
                 .collect(Collectors.toMap(User::getId, Function.identity()));
     }
 
-    private FundingMemberManagementResponse.MemberInfo toMemberInfo(FundingMember m, Map<Long, User> userMap) {
-        User user = userMap.get(m.getUserId());
-        if (user == null) {
-            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
-        }
-
-        return new FundingMemberManagementResponse.MemberInfo(
-                m.getId(), m.getUserId(), user.getName(), user.getProfileImageUrl(), m.getRole().name()
-        );
-    }
 
 
 
