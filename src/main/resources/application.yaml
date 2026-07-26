@@ -1,3 +1,6 @@
+server:
+  forward-headers-strategy: framework # Nginx가 전달한 프록시 헤더(X-Forwarded-*) 인식
+
 spring:
   config:
     import: optional:file:.env[.properties]
@@ -44,3 +47,14 @@ oauth:
     user-info-uri: ${KAKAO_USER_INFO_URI:https://kapi.kakao.com/v2/user/me}
     token-info-uri: ${KAKAO_TOKEN_INFO_URI:https://kapi.kakao.com/v1/user/access_token_info}
     app-id: ${KAKAO_APP_ID:} # access token의 발급 앱(app_id) 검증용 — 미설정 시 카카오 로그인 불가
+
+cloud:
+  aws:
+    credentials:
+      access-key: ${AWS_ACCESS_KEY:}
+      secret-key: ${AWS_SECRET_KEY:}
+    region:
+      static: ${AWS_REGION:ap-northeast-2}
+    s3:
+      bucket: ${AWS_S3_BUCKET:toget-bucket-dev}
+

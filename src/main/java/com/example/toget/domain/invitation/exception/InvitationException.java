@@ -1,5 +1,6 @@
 package com.example.toget.domain.invitation.exception;
 
+import com.example.toget.domain.invitation.exception.code.InvitationErrorCode;
 import com.example.toget.global.apiPayload.exception.ProjectException;
 
 /**
