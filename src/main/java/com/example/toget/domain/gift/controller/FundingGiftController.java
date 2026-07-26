@@ -60,7 +60,7 @@ public class FundingGiftController {
 
     @Operation(summary = "선물 후보 투표/취소 (토글)",
             description = "이미 투표한 상태면 취소, 아니면 새로 투표합니다. 멤버당 최대 3개까지 가능합니다.")
-    @PostMapping("/{fundingId}/gift-candidates/{fundingGiftId}/vote")
+    @PostMapping("/{fundingId}/gift-candidates/{fundingGiftId}/votes")
     public ApiResponse<FundingGiftVoteToggleResponse> toggleVote(
             @Parameter(hidden = true) @LoginUserId Long userId,
             @PathVariable Long fundingId,
