@@ -14,10 +14,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "GIFT / 위시리스트 API", description = "선물 위시리스트 CRUD API")
+@Validated
 @RestController
 @RequestMapping("/api/v1/wishlists")
 @RequiredArgsConstructor
@@ -29,8 +33,8 @@ public class WishlistController {
     @GetMapping
     public ApiResponse<WishlistListResponse> getWishlist(
             @Parameter(hidden = true) @LoginUserId Long userId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
             @RequestParam(defaultValue = "LATEST") WishlistSort sort
     ) {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, wishlistService.getWishlist(userId, page, size, sort));

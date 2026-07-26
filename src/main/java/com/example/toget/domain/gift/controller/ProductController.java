@@ -13,10 +13,14 @@ import com.example.toget.global.apiPayload.code.GeneralSuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "GIFT / 자체 상품 API", description = "자체 상품 CRUD API")
+@Validated
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
@@ -32,8 +36,8 @@ public class ProductController {
             @RequestParam(required = false) String brand,
             @RequestParam(required = false) Long minPrice,
             @RequestParam(required = false) Long maxPrice,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
             @RequestParam(defaultValue = "LATEST") ProductSort sort
     ) {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, productService.getProducts(category, keyword, brand, minPrice, maxPrice, page, size, sort));
