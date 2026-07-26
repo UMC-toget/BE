@@ -1,19 +1,24 @@
 package com.example.toget.domain.funding.converter;
 
-import com.example.toget.domain.funding.dto.response.ContributionResponse;
-import com.example.toget.domain.funding.dto.response.FundingContributionCreateResponse;
-import com.example.toget.domain.funding.dto.response.FundingContributionDetailResponse;
-import com.example.toget.domain.funding.dto.response.FundingContributionRollingPaperResponse;
+import com.example.toget.domain.funding.dto.response.*;
 import com.example.toget.domain.funding.entity.FundingContribution;
+import com.example.toget.domain.funding.exception.FundingException;
+import com.example.toget.domain.funding.exception.code.FundingErrorCode;
+import com.example.toget.domain.user.entity.User;
+import org.springframework.data.domain.Slice;
 
 import java.util.List;
+import java.util.Map;
 
 public class FundingContributionConverter {
 
-    public static ContributionResponse toResponse(FundingContribution contribution) {
+    public static ContributionResponse toResponse(FundingContribution contribution, User user) {
+        // TODO: 실제 사용 시점에 호출부에서 로그인 유저는 userRepository로 조회해 user를 채워서 호출할 것
+        String senderName = (user != null) ? user.getName() : contribution.getGuestName();
+
         return new ContributionResponse(
                 contribution.getId(),
-                contribution.getGuestName(),      // 필드명 매핑: guestName → senderName
+                contribution.getGuestName(),
                 contribution.getAmount(),
                 contribution.getContent(),
                 contribution.getIsAnonymous(),
@@ -62,5 +67,40 @@ public class FundingContributionConverter {
 
     public static boolean shouldHideContent(FundingContribution c, boolean isOwner) {
         return !isOwner && !c.getIsMessageVisible();
+    }
+
+    public static FundingContributionListResponse.ContributionItem toContributionListItem(
+            FundingContribution c, Map<Long, User> userMap
+    ) {
+        String senderName;
+        String profileImageUrl;
+        if (c.getUserId() != null) {
+            User user = userMap.get(c.getUserId());
+            if (user == null) {
+                throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+            }
+            senderName = user.getName();
+            profileImageUrl = user.getProfileImageUrl();
+        } else {
+            senderName = c.getGuestName();
+            profileImageUrl = null;
+        }
+
+        return new FundingContributionListResponse.ContributionItem(
+                c.getId(), senderName, profileImageUrl, c.getAmount(), c.getCreatedAt()
+        );
+    }
+
+    public static FundingContributionListResponse toContributionListResponse(
+            Slice<FundingContribution> slice, Map<Long, User> userMap,
+            int participantCount, Long totalAmount, int page, int size
+    ) {
+        List<FundingContributionListResponse.ContributionItem> items = slice.getContent().stream()
+                .map(c -> toContributionListItem(c, userMap))
+                .toList();
+
+        return new FundingContributionListResponse(
+                participantCount, totalAmount, items, page, size, slice.hasNext()
+        );
     }
 }
