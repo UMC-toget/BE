@@ -3,10 +3,9 @@ package com.example.toget.domain.funding.converter;
 import com.example.toget.domain.funding.dto.MyFundingListResponse;
 import com.example.toget.domain.funding.dto.MyFundingListResponse.MyFundingSummary;
 import com.example.toget.domain.funding.dto.response.*;
-import com.example.toget.domain.funding.entity.Funding;
-import com.example.toget.domain.funding.entity.FundingContribution;
-import com.example.toget.domain.funding.entity.FundingMember;
+import com.example.toget.domain.funding.entity.*;
 import com.example.toget.domain.funding.enums.FundingRole;
+import com.example.toget.domain.gift.entity.FundingGift;
 import com.example.toget.domain.user.entity.User;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.user.entity.UserAccount;
@@ -145,6 +144,49 @@ public class FundingConverter {
 
     public static FundingContributionAmountUpdateResponse toContributionAmountUpdateResponse(FundingContribution contribution) {
         return new FundingContributionAmountUpdateResponse(contribution.getId(), contribution.getAmount());
+    }
+
+    public static FundingMyGiftDashboardResponse toMyGiftDashboardResponse(
+            Funding funding, Long collectedAmount, int participantCount,
+            UserAccount account, FundingVisibilitySettings visibility, List<FundingGift> gifts
+    ) {
+        double progressRate = funding.getTargetAmount() == 0 ? 0.0
+                : Math.round((collectedAmount * 10000.0 / funding.getTargetAmount())) / 100.0;
+
+        return new FundingMyGiftDashboardResponse(
+                funding.getId(), funding.getTitle(), funding.getRecipientName(),
+                funding.getAnniversaryDate(), funding.getStartDate(), funding.getEndDate(),
+                funding.getIntroduction(), funding.getThumbnailImageUrl(),
+                funding.getTargetAmount(), collectedAmount, progressRate, participantCount,
+                funding.getStatus().name(),
+                account == null ? null : new FundingMyGiftDashboardResponse.AccountInfo(
+                        account.getId(), account.getBankName().name(), account.getAccount(), account.getAccountOwner()
+                ),
+                visibility == null ? null : new FundingMyGiftDashboardResponse.VisibilityInfo(
+                        visibility.getIsProgressVisible(), visibility.getIsCollectedAmountVisible(),
+                        visibility.getIsParticipantCountVisible(), visibility.getIsParticipantNameVisible(),
+                        visibility.getIsMessageVisible()
+                ),
+                gifts.stream()
+                        .map(g -> new FundingMyGiftDashboardResponse.GiftInfo(
+                                g.getId(), g.getName(), g.getPrice(), g.getPurchaseUrl(), g.getImageUrl()
+                        ))
+                        .toList()
+        );
+    }
+
+    public static FundingTogetherGiftDashboardResponse toTogetherGiftDashboardResponse(
+            Funding funding, List<FundingTogetherGiftDashboardResponse.MemberSummary> members,
+            List<FundingTogetherGiftDashboardResponse.TopGift> topGifts,
+            Long collectedAmount, Long targetAmount,
+            List<FundingTogetherGiftDashboardResponse.ConfirmedGift> confirmedGifts,
+            List<Long> messageIds
+    ) {
+        return new FundingTogetherGiftDashboardResponse(
+                funding.getId(), funding.getStatus().name(), funding.getAnniversaryDate(),
+                funding.getRecipientName(), funding.getIntroduction(), funding.getThumbnailImageUrl(),
+                members, topGifts, collectedAmount, targetAmount, confirmedGifts, messageIds
+        );
     }
 
 }
