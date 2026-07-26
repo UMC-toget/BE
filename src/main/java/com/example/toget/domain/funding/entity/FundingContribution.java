@@ -1,8 +1,8 @@
 package com.example.toget.domain.funding.entity;
 
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
-import com.example.toget.global.apiPayload.exception.ProjectException;
 import com.example.toget.global.entity.BaseEntity;
+import com.example.toget.domain.funding.exception.FundingException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -74,7 +74,7 @@ public class FundingContribution extends BaseEntity {
 
     private static void validateAmount(Long amount) {
         if (amount == null || amount < 0) {
-            throw new ProjectException(FundingErrorCode.INVALID_TARGET_AMOUNT);
+            throw new FundingException(FundingErrorCode.INVALID_TARGET_AMOUNT);
         }
     }
 

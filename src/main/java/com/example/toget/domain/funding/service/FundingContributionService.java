@@ -9,6 +9,7 @@ import com.example.toget.domain.funding.dto.response.FundingContributionRollingP
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingContribution;
 import com.example.toget.domain.funding.enums.FundingStatus;
+import com.example.toget.domain.funding.enums.FundingType;
 import com.example.toget.domain.funding.exception.ContributionException;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.ContributionErrorCode;
@@ -36,6 +37,10 @@ public class FundingContributionService {
     ) {
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+
+        if (funding.getFundingType() != FundingType.MY_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);
+        }
         if (funding.getStatus() == FundingStatus.ENDED || funding.getStatus() == FundingStatus.DELIVERING) {
             throw new FundingException(FundingErrorCode.CONTRIBUTION_NOT_ALLOWED_FOR_STATUS);
         }

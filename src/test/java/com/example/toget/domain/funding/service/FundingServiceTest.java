@@ -8,7 +8,6 @@ import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.repository.FundingContributionRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
-import com.example.toget.global.apiPayload.exception.ProjectException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -70,7 +69,7 @@ class FundingServiceTest {
                     "새 제목", LocalDate.of(2026, 8, 20),
                     LocalDate.of(2026, 8, 1), LocalDate.of(2026, 7, 1),
                     "새 소개", "새url"
-            )).isInstanceOf(ProjectException.class);
+            )).isInstanceOf(FundingException.class);
 
             assertThat(funding.getTitle()).isEqualTo("원래제목");
         }
