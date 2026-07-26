@@ -63,11 +63,8 @@ public class FundingContributionService {
 
         List<FundingContribution> contributions = fundingContributionRepository.findAllByFundingId(fundingId);
 
-        List<FundingContributionRollingPaperResponse.ContributionItem> items = contributions.stream()
-                .map(c -> toListItem(c, isOwner))
-                .toList();
 
-        return new FundingContributionRollingPaperResponse(contributions.size(), items);
+        return FundingContributionConverter.toRollingPaperResponse(contributions, isOwner);
     }
 
     @Transactional(readOnly = true)
@@ -85,23 +82,4 @@ public class FundingContributionService {
         return FundingContributionConverter.toDetailResponse(contribution, isOwner);
     }
 
-    private FundingContributionRollingPaperResponse.ContributionItem toListItem(FundingContribution c, boolean isOwner) {
-        boolean hideSender = !isOwner && Boolean.TRUE.equals(c.getIsAnonymous());
-        boolean hideContent = shouldHideContent(c, isOwner);
-        boolean isPrivate = !c.getIsMessageVisible();
-
-        return new FundingContributionRollingPaperResponse.ContributionItem(
-                c.getId(),
-                hideSender ? null : c.getGuestName(),
-                c.getIsAnonymous(),
-                c.getAmount(),
-                hideContent ? null : c.getContent(),
-                isPrivate,
-                c.getCreatedAt()
-        );
-    }
-
-    private boolean shouldHideContent(FundingContribution c, boolean isOwner) {
-        return !isOwner && !c.getIsMessageVisible();
-    }
 }
