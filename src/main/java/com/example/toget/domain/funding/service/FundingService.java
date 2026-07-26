@@ -39,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -402,6 +403,9 @@ public class FundingService {
         if (!funding.isOwnedBy(userId)) {
             throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
         }
+        if (funding.getFundingType() != FundingType.MY_GIFT) {
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_TYPE);
+        }
 
         Pageable pageable = PageRequest.of(page, size);
         Slice<FundingContribution> slice = (sort == ContributionSortType.OLDEST)
@@ -411,14 +415,15 @@ public class FundingService {
         int participantCount = fundingContributionRepository.countByFundingId(fundingId);
         Long totalAmount = fundingContributionRepository.sumAmountByFundingId(fundingId);
 
-        List<FundingContributionListResponse.ContributionItem> items = slice.getContent().stream()
-                .map(c -> new FundingContributionListResponse.ContributionItem(
-                        c.getId(), c.getGuestName(), null, c.getAmount(), c.getCreatedAt()
-                ))
+        List<Long> userIds = slice.getContent().stream()
+                .map(FundingContribution::getUserId)
+                .filter(Objects::nonNull)
                 .toList();
+        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
 
-        return new FundingContributionListResponse(
-                participantCount, totalAmount, items, page, size, slice.hasNext()
+        return FundingConverter.toContributionListResponse(
+                slice, userMap, participantCount, totalAmount, page, size
         );
     }
 
