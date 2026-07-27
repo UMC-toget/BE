@@ -15,6 +15,7 @@ import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
 import com.example.toget.domain.funding.repository.FundingVisibilitySettingsRepository;
 import com.example.toget.domain.gift.entity.FundingGift;
+import com.example.toget.domain.gift.enums.FundingGiftStatus;
 import com.example.toget.domain.gift.exception.FundingGiftException;
 import com.example.toget.domain.gift.exception.code.FundingGiftErrorCode;
 import com.example.toget.domain.gift.repository.FundingGiftRepository;
@@ -454,25 +455,46 @@ public class FundingService {
         if (funding.getFundingType() != FundingType.TOGETHER_GIFT) {
             throw new FundingException(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
         }
+
+        if (funding.getStatus() != FundingStatus.SELECTING) {
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_STATUS_FOR_SETTLEMENT);
+        }
+
+
+        // 1단계: 존재/상태 검증만 먼저 전부 끝낸다 (아직 아무것도 mutate하지 않음)
+        List<FundingGift> gifts = validateAndFetchGifts(fundingId, request.giftIds());
+        List<Long> settlementMemberIds = includeCreator(fundingId, userId, request.settlementMemberIds());
+
         if (request.settlementMemberIds().size() > MAX_SETTLEMENT_MEMBER_COUNT) {
             throw new FundingException(FundingErrorCode.MAX_SETTLEMENT_MEMBER_EXCEEDED);
         }
+        List<FundingMember> settlementMembers = validateAndFetchMembers(fundingId, settlementMemberIds);
 
-        List<FundingGift> selectedGifts = confirmGifts(fundingId, request.giftIds());
-        long totalAmount = selectedGifts.stream().mapToLong(FundingGift::getPrice).sum();
-
-        List<Long> settlementMemberIds = includeCreator(fundingId, userId, request.settlementMemberIds());
-        if (settlementMemberIds.size() > MAX_SETTLEMENT_MEMBER_COUNT) {
-            throw new FundingException(FundingErrorCode.MAX_SETTLEMENT_MEMBER_EXCEEDED);
-        }
-
-        List<FundingMember> settlementMembers = confirmSettlementMembers(fundingId, settlementMemberIds);
+        // 2단계: 검증이 전부 끝났으니 이제 안전하게 상태 변경
+        long totalAmount = gifts.stream().mapToLong(FundingGift::getPrice).sum();
+        gifts.forEach(FundingGift::select);
         assignSettlementAmounts(settlementMembers, totalAmount);
-
         funding.confirmSettlement(totalAmount);
 
         return new FundingConfirmSettlementResponse(funding.getId());
     }
+
+    private List<FundingGift> validateAndFetchGifts(Long fundingId, List<Long> giftIds) {
+        List<FundingGift> gifts = fundingGiftRepository.findAllById(giftIds);
+        if (gifts.size() != giftIds.size()) {
+            throw new FundingGiftException(FundingGiftErrorCode.FUNDING_GIFT_NOT_FOUND);
+        }
+        for (FundingGift gift : gifts) {
+            if (!gift.getFundingId().equals(fundingId)) {
+                throw new FundingGiftException(FundingGiftErrorCode.FUNDING_GIFT_NOT_FOUND);
+            }
+            if (gift.getStatus() != FundingGiftStatus.CANDIDATE) {
+                throw new FundingGiftException(FundingGiftErrorCode.GIFT_ALREADY_SELECTED);
+            }
+        }
+        return gifts;
+    }
+
 
     /** 요청 배열에 개설자가 없으면 자동으로 추가. 이미 포함되어 있으면 중복 없이 그대로 사용 */
     private List<Long> includeCreator(Long fundingId, Long userId, List<Long> requestedMemberIds) {
@@ -488,22 +510,7 @@ public class FundingService {
         return merged;
     }
 
-
-    private List<FundingGift> confirmGifts(Long fundingId, List<Long> giftIds) {
-        List<FundingGift> gifts = fundingGiftRepository.findAllById(giftIds);
-        if (gifts.size() != giftIds.size()) {
-            throw new FundingGiftException(FundingGiftErrorCode.FUNDING_GIFT_NOT_FOUND);
-        }
-        for (FundingGift gift : gifts) {
-            if (!gift.getFundingId().equals(fundingId)) {
-                throw new FundingGiftException(FundingGiftErrorCode.FUNDING_GIFT_NOT_FOUND);
-            }
-            gift.select();
-        }
-        return gifts;
-    }
-
-    private List<FundingMember> confirmSettlementMembers(Long fundingId, List<Long> memberIds) {
+    private List<FundingMember> validateAndFetchMembers(Long fundingId, List<Long> memberIds) {
         List<FundingMember> members = fundingMemberRepository.findAllById(memberIds);
         if (members.size() != memberIds.size()) {
             throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
@@ -515,7 +522,6 @@ public class FundingService {
         }
         return members;
     }
-
 
 
     private void assignSettlementAmounts(List<FundingMember> members, long totalAmount) {
