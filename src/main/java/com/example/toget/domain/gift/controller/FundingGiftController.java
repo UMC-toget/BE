@@ -33,17 +33,6 @@ public class FundingGiftController {
         return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_CANDIDATE_LIST_OK, result);
     }
 
-    @Operation(summary = "선물 후보 등록하기",
-            description = "개설자 또는 관리자가 투표 후보로 선물을 등록합니다. 후보(CANDIDATE) 상태로 생성됩니다.")
-    @PostMapping("/{fundingId}/gift-candidates")
-    public ApiResponse<FundingGiftCandidateCreateResponse> createCandidate(
-            @Parameter(hidden = true) @LoginUserId Long userId,
-            @PathVariable Long fundingId,
-            @Valid @RequestBody FundingGiftCandidateCreateRequest request
-    ) {
-        FundingGiftCandidateCreateResponse result = fundingGiftService.createCandidate(userId, fundingId, request);
-        return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_CANDIDATE_CREATE_OK, result);
-    }
 
     @Operation(summary = "선물 후보 상세 조회",
             description = "특정 선물 후보의 상세 정보와 댓글 목록을 반환합니다.")
