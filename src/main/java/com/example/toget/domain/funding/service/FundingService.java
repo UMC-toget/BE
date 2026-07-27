@@ -36,10 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -47,6 +44,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FundingService {
 
+    private static final int MAX_SETTLEMENT_MEMBER_COUNT = 50;
 
     private final FundingRepository fundingRepository;
     private final FundingMemberRepository fundingMemberRepository;
@@ -338,10 +336,6 @@ public class FundingService {
                 .findAllByFundingIdAndAmountDueIsNotNull(fundingId);
         Map<Long, User> userMap = fundingMemberUserResolver.resolve(settlementMembers);
 
-        long totalAmount = settlementMembers.stream()
-                .mapToLong(FundingMember::getAmountDue)
-                .sum();
-
         List<FundingSettlementListResponse.SettlementInfo> settlements = settlementMembers.stream()
                 .map(m -> new FundingSettlementListResponse.SettlementInfo(
                         m.getId(), m.getUserId(),
@@ -424,24 +418,6 @@ public class FundingService {
                 .collect(Collectors.toMap(User::getId, Function.identity()));
     }
 
-    private FundingContributionListResponse.ContributionItem toContributionItem(
-            FundingContribution c, Map<Long, User> userMap
-    ) {
-        if (c.getUserId() != null) {
-            // 로그인 회원 참여 — User 조회로 이름/프로필 채움
-            User user = userMap.get(c.getUserId());
-            String name = user != null ? user.getName() : null;
-            String profileImageUrl = user != null ? user.getProfileImageUrl() : null;
-            return new FundingContributionListResponse.ContributionItem(
-                    c.getId(), name, profileImageUrl, c.getAmount(), c.getCreatedAt()
-            );
-        }
-        // 비회원 참여 — guestName 그대로, 프로필 이미지는 애초에 없음
-        return new FundingContributionListResponse.ContributionItem(
-                c.getId(), c.getGuestName(), null, c.getAmount(), c.getCreatedAt()
-        );
-    }
-
     @Transactional
     public FundingContributionAmountUpdateResponse updateContributionAmount(
             Long userId, Long fundingId, Long contributionId, FundingContributionAmountUpdateRequest request
@@ -478,6 +454,10 @@ public class FundingService {
         if (funding.getFundingType() != FundingType.TOGETHER_GIFT) {
             throw new FundingException(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
         }
+        if (request.settlementMemberIds().size() > MAX_SETTLEMENT_MEMBER_COUNT) {
+            throw new FundingException(FundingErrorCode.MAX_SETTLEMENT_MEMBER_EXCEEDED);
+        }
+
 
         List<FundingGift> selectedGifts = confirmGifts(fundingId, request.giftIds());
         long totalAmount = selectedGifts.stream().mapToLong(FundingGift::getPrice).sum();
@@ -489,6 +469,21 @@ public class FundingService {
 
         return new FundingConfirmSettlementResponse(funding.getId());
     }
+
+    /** 요청 배열에 개설자가 없으면 자동으로 추가. 이미 포함되어 있으면 중복 없이 그대로 사용 */
+    private List<Long> includeCreator(Long fundingId, Long userId, List<Long> requestedMemberIds) {
+        FundingMember creator = fundingMemberRepository.findByFundingIdAndUserId(fundingId, userId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
+
+        if (requestedMemberIds.contains(creator.getId())) {
+            return requestedMemberIds;
+        }
+
+        List<Long> merged = new ArrayList<>(requestedMemberIds);
+        merged.add(creator.getId());
+        return merged;
+    }
+
 
     private List<FundingGift> confirmGifts(Long fundingId, List<Long> giftIds) {
         List<FundingGift> gifts = fundingGiftRepository.findAllById(giftIds);
@@ -516,6 +511,8 @@ public class FundingService {
         }
         return members;
     }
+
+
 
     private void assignSettlementAmounts(List<FundingMember> members, long totalAmount) {
         List<FundingMember> sorted = members.stream()
