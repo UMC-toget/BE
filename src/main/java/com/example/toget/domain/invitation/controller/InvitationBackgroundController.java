@@ -5,6 +5,7 @@ import com.example.toget.domain.invitation.dto.InvitationBackgroundRequest;
 import com.example.toget.domain.invitation.dto.InvitationBackgroundResponse;
 import com.example.toget.domain.invitation.exception.code.InvitationSuccessCode;
 import com.example.toget.domain.invitation.service.InvitationBackgroundService;
+import com.example.toget.global.annotation.AdminOnly;
 import com.example.toget.global.apiPayload.ApiResponse;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -24,8 +25,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 초대장 배경 색상 CRUD API 컨트롤러.
- * 전체 조회(GET)는 비로그인 허용(SecurityConfig permitAll), 생성/수정/삭제는 로그인 필요.
- * TODO: ADMIN 권한 도입 후 생성/수정/삭제는 관리자 전용으로 제한 (SecurityConfig의 TODO 참고)
+ * 전체 조회(GET)는 비로그인 허용(SecurityConfig permitAll),
+ * 생성/수정/삭제는 관리자 전용(@AdminOnly → AdminOnlyInterceptor).
+ *
+ * <p>배경 색상은 특정 사용자의 소유물이 아니라 서비스 전체가 공유하는 마스터 데이터이므로,
+ * 참여 카드 배경 색상(ContributionBackgroundController)과 동일하게 관리자만 변경할 수 있다.
  */
 @Tag(name = "초대장 API", description = "초대장 및 캐릭터 관련 API")
 @RestController
@@ -42,15 +46,10 @@ public class InvitationBackgroundController {
         return ApiResponse.onSuccess(InvitationSuccessCode.BACKGROUND_LIST_OK, invitationBackgroundService.getAllBackgrounds());
     }
 
-    /**
-     * 배경 색상 생성.
-     *
-     * @deprecated 관리자 권한 체계가 아직 없어 로그인 여부만 확인한다.
-     * User 파트에서 role 체계 도입 예정 — 도입 전까지 프론트 미노출.
-     */
-    @Deprecated
-    @Operation(summary = "[관리자 전용 예정] 초대장 배경 색상 생성",
-            description = "⚠️ 관리자 권한 체계 도입 전까지 임시로 로그인 사용자 전체에게 열려 있습니다. 프론트 연동 금지.")
+    /** 배경 색상 생성 — 관리자 전용 */
+    @AdminOnly
+    @Operation(summary = "[관리자 전용] 초대장 배경 색상 생성",
+            description = "관리자 계정만 호출할 수 있습니다. 일반 사용자 요청은 403(COMMON403_1)으로 차단됩니다.")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED) // 응답 본문 코드(BACKGROUND201_1)와 실제 HTTP 상태를 201로 일치시킨다
     public ApiResponse<InvitationBackgroundCreateResponse> create(
@@ -58,30 +57,20 @@ public class InvitationBackgroundController {
         return ApiResponse.onSuccess(InvitationSuccessCode.BACKGROUND_CREATE_OK, invitationBackgroundService.create(request));
     }
 
-    /**
-     * 배경 색상 수정.
-     *
-     * @deprecated 관리자 권한 체계가 아직 없어 로그인 여부만 확인한다.
-     * User 파트에서 role 체계 도입 예정 — 도입 전까지 프론트 미노출.
-     */
-    @Deprecated
-    @Operation(summary = "[관리자 전용 예정] 초대장 배경 색상 수정",
-            description = "⚠️ 관리자 권한 체계 도입 전까지 임시로 로그인 사용자 전체에게 열려 있습니다. 프론트 연동 금지.")
+    /** 배경 색상 수정 — 관리자 전용 */
+    @AdminOnly
+    @Operation(summary = "[관리자 전용] 초대장 배경 색상 수정",
+            description = "관리자 계정만 호출할 수 있습니다. 일반 사용자 요청은 403(COMMON403_1)으로 차단됩니다.")
     @PutMapping("/{id}")
     public ApiResponse<InvitationBackgroundResponse> update(@PathVariable Long id,
                                                             @Valid @RequestBody InvitationBackgroundRequest request) {
         return ApiResponse.onSuccess(InvitationSuccessCode.BACKGROUND_UPDATE_OK, invitationBackgroundService.update(id, request));
     }
 
-    /**
-     * 배경 색상 삭제 — soft delete (엔티티 InvitationBackground.delete() 주석 참고).
-     *
-     * @deprecated 관리자 권한 체계가 아직 없어 로그인 여부만 확인한다.
-     * User 파트에서 role 체계 도입 예정 — 도입 전까지 프론트 미노출.
-     */
-    @Deprecated
-    @Operation(summary = "[관리자 전용 예정] 초대장 배경 색상 삭제",
-            description = "⚠️ 관리자 권한 체계 도입 전까지 임시로 로그인 사용자 전체에게 열려 있습니다. 프론트 연동 금지. (Soft Delete)")
+    /** 배경 색상 삭제 — 관리자 전용, soft delete (엔티티 InvitationBackground.delete() 주석 참고) */
+    @AdminOnly
+    @Operation(summary = "[관리자 전용] 초대장 배경 색상 삭제",
+            description = "관리자 계정만 호출할 수 있습니다. 일반 사용자 요청은 403(COMMON403_1)으로 차단됩니다. (Soft Delete)")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         invitationBackgroundService.delete(id);
