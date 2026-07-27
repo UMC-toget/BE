@@ -1,7 +1,11 @@
 package com.example.toget.domain.gift.service;
 
+import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.enums.FundingRole;
+import com.example.toget.domain.funding.enums.FundingType;
+import com.example.toget.domain.funding.exception.FundingException;
+import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.repository.FundingGiftVoteRepository;
 import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
@@ -22,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -209,5 +215,60 @@ public class FundingGiftService {
                     );
                 })
                 .toList();
+    }
+
+    @Transactional
+    public List<FundingGiftResponse> updateWishGifts(
+            Long userId, Long fundingId, List<FundingGiftUpsertRequest> requests
+    ) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+        if (funding.getFundingType() != FundingType.MY_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);
+        }
+
+        List<FundingGift> existingGifts = fundingGiftRepository.findAllByFundingId(fundingId);
+        Map<Long, FundingGift> existingById = existingGifts.stream()
+                .collect(Collectors.toMap(FundingGift::getId, g -> g));
+
+        Set<Long> requestedIds = requests.stream()
+                .map(FundingGiftUpsertRequest::fundingGiftId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        // 요청에서 빠진 기존 항목 삭제
+        existingGifts.stream()
+                .filter(g -> !requestedIds.contains(g.getId()))
+                .forEach(fundingGiftRepository::delete);
+
+        // upsert
+        List<FundingGift> result = requests.stream()
+                .map(req -> upsertOne(fundingId, req, existingById))
+                .toList();
+
+        return result.stream()
+                .map(g -> new FundingGiftResponse(
+                        g.getId(), g.getName(), g.getPrice(), g.getPurchaseUrl(), g.getImageUrl()
+                ))
+                .toList();
+    }
+
+    private FundingGift upsertOne(Long fundingId, FundingGiftUpsertRequest req, Map<Long, FundingGift> existingById) {
+        if (req.fundingGiftId() == null) {
+            return fundingGiftRepository.save(
+                    FundingGift.createWishGift(fundingId, req.giftName(), req.giftPrice(),
+                            req.giftPurchaseUrl(), req.giftImageUrl())
+            );
+        }
+
+        FundingGift existing = existingById.get(req.fundingGiftId());
+        if (existing == null || !existing.getFundingId().equals(fundingId)) {
+            throw new FundingException(FundingErrorCode.FUNDING_GIFT_NOT_FOUND);
+        }
+        existing.updateWishGiftInfo(req.giftName(), req.giftPrice(), req.giftPurchaseUrl(), req.giftImageUrl());
+        return existing;
     }
 }

@@ -31,6 +31,8 @@ public enum FundingErrorCode implements BaseErrorCode {
     ACCOUNT_NOT_REGISTERED(HttpStatus.NOT_FOUND, "FUNDING404_3", "아직 정산 계좌가 등록되지 않았습니다."),
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_4", "해당 멤버를 찾을 수 없습니다."),
     CONTRIBUTION_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_5", "해당 참여 기록을 찾을 수 없습니다."),
+    FUNDING_GIFT_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_6", "해당 후보 선물을 찾을 수 없습니다."),
+
     // TODO: 추후 수정 필요
     CHARACTER_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_9", "해당 캐릭터를 찾을 수 없습니다."),
     INVITATION_BACKGROUND_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_10", "해당 배경 색상을 찾을 수 없습니다."),
