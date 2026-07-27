@@ -36,4 +36,7 @@ public interface FundingContributionRepository extends JpaRepository<FundingCont
 
     @Query("SELECT COALESCE(SUM(c.amount), 0) FROM FundingContribution c WHERE c.fundingId = :fundingId")
     Long sumAmountByFundingId(@Param("fundingId") Long fundingId);
+
+
+    List<FundingContribution> findAllByFundingId(Long fundingId);
 }

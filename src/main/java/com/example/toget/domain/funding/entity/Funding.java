@@ -2,8 +2,8 @@ package com.example.toget.domain.funding.entity;
 
 import com.example.toget.domain.funding.enums.FundingStatus;
 import com.example.toget.domain.funding.enums.FundingType;
+import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
-import com.example.toget.global.apiPayload.exception.ProjectException;
 import com.example.toget.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -108,13 +108,13 @@ public class Funding extends BaseEntity {
 
     private static void validatePeriod(LocalDate startDate, LocalDate endDate) {
         if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
-            throw new ProjectException(FundingErrorCode.INVALID_FUNDING_PERIOD);
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_PERIOD);
         }
     }
 
     private static void validateTargetAmount(Long targetAmount) {
         if (targetAmount == null || targetAmount < 0) {
-            throw new ProjectException(FundingErrorCode.INVALID_TARGET_AMOUNT);
+            throw new FundingException(FundingErrorCode.INVALID_TARGET_AMOUNT);
         }
     }
 
@@ -129,7 +129,7 @@ public class Funding extends BaseEntity {
                                        String introduction, String thumbnailImageUrl,
                                        Long targetAmount) {
         if (userAccountId == null) {
-            throw new ProjectException(FundingErrorCode.ACCOUNT_REQUIRED_FOR_MY_GIFT);
+            throw new FundingException(FundingErrorCode.ACCOUNT_REQUIRED_FOR_MY_GIFT);
         }
         return Funding.builder()
                 .userId(userId)
@@ -187,7 +187,7 @@ public class Funding extends BaseEntity {
      */
     public void confirmSettlement(Long targetAmount) {
         if (this.status != FundingStatus.SELECTING) {
-            throw new ProjectException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
         }
         validateTargetAmount(targetAmount);
         this.targetAmount = targetAmount;
@@ -197,7 +197,7 @@ public class Funding extends BaseEntity {
     /** 정산 완료 후 구매 시작 — SETTLING → PURCHASING */
     public void startPurchasing() {
         if (this.status != FundingStatus.SETTLING) {
-            throw new ProjectException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
         }
         this.status = FundingStatus.PURCHASING;
     }
@@ -205,7 +205,7 @@ public class Funding extends BaseEntity {
     /** 구매 완료 후 전달 시작 — PURCHASING → DELIVERING */
     public void startDelivering() {
         if (this.status != FundingStatus.PURCHASING) {
-            throw new ProjectException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
         }
         this.status = FundingStatus.DELIVERING;
     }
@@ -218,7 +218,7 @@ public class Funding extends BaseEntity {
      */
     public void complete() {
         if (this.status == FundingStatus.ENDED) {
-            throw new ProjectException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_STATUS_TRANSITION);
         }
         this.status = FundingStatus.ENDED;
     }

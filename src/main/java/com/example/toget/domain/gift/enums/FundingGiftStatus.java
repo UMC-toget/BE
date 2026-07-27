@@ -1,4 +1,4 @@
-package com.example.toget.domain.funding.enums;
+package com.example.toget.domain.gift.enums;
 
 
 /**
