@@ -4,6 +4,7 @@ import com.example.toget.domain.funding.dto.request.*;
 import com.example.toget.domain.funding.dto.response.*;
 import com.example.toget.domain.funding.enums.ContributionSortType;
 import com.example.toget.domain.funding.exception.code.FundingSuccessCode;
+import com.example.toget.domain.funding.service.FundingQueryService;
 import com.example.toget.domain.funding.service.FundingService;
 import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.global.apiPayload.ApiResponse;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class FundingController {
 
     private final FundingService fundingService;
+    private final FundingQueryService fundingQueryService;
 
     @Operation(
             summary = "선물 준비 생성 (개최)",
@@ -257,6 +259,39 @@ public class FundingController {
                 userId, fundingId, contributionId, request
         );
         return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_CONTRIBUTION_AMOUNT_UPDATE_OK, result);
+    }
+
+    @Operation(summary = "내 선물 페이지 메인 화면 조회",
+            description = """
+                펀딩 개최자가 본인의 펀딩 제어실에서 모니터링할 정보를 반환합니다.
+                외부용 공유 조회와 달리 공개 설정과 무관하게 모금액, 참여자 수, 계좌 정보 등
+                원본 상태의 모든 상세 정보를 노출합니다. MY_GIFT 유형 전용입니다.
+                """)
+    @GetMapping("/{fundingId}/dashboards/my-gift")
+    public ApiResponse<FundingMyGiftDashboardResponse> getMyGiftDashboard(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @PathVariable Long fundingId
+    ) {
+        FundingMyGiftDashboardResponse result = fundingQueryService.getMyGiftDashboard(userId, fundingId);
+        return ApiResponse.onSuccess(FundingSuccessCode.MY_GIFT_DASHBOARD_OK, result);
+    }
+
+    @Operation(summary = "함께 선물하기 메인 화면 조회",
+            description = """
+                함께 선물하기 펀딩 제어실의 메인 화면 정보를 반환합니다. 응답은 하나의 스키마를 공유하되,
+                펀딩 상태(status)에 따라 채워지는 필드가 다릅니다.
+                - SELECTING: topGifts(실시간 득표 상위 2개)만 채워짐
+                - SETTLING/PURCHASING/DELIVERING: collectedAmount/targetAmount/confirmedGifts가 채워짐
+                - ENDED: 위와 동일 + messageIds(최근 축하 메시지 5개 ID)까지 채워짐
+                TOGETHER_GIFT 유형 전용입니다.
+                """)
+    @GetMapping("/{fundingId}/dashboards/together-gift")
+    public ApiResponse<FundingTogetherGiftDashboardResponse> getTogetherGiftDashboard(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @PathVariable Long fundingId
+    ) {
+        FundingTogetherGiftDashboardResponse result = fundingQueryService.getTogetherGiftDashboard(userId, fundingId);
+        return ApiResponse.onSuccess(FundingSuccessCode.TOGETHER_GIFT_DASHBOARD_OK, result);
     }
 
 }

@@ -3,13 +3,13 @@ package com.example.toget.domain.funding.converter;
 import com.example.toget.domain.funding.dto.MyFundingListResponse;
 import com.example.toget.domain.funding.dto.MyFundingListResponse.MyFundingSummary;
 import com.example.toget.domain.funding.dto.response.*;
-import com.example.toget.domain.funding.entity.Funding;
-import com.example.toget.domain.funding.entity.FundingContribution;
-import com.example.toget.domain.funding.entity.FundingMember;
+import com.example.toget.domain.funding.entity.*;
 import com.example.toget.domain.funding.enums.FundingRole;
+import com.example.toget.domain.gift.entity.FundingGift;
+import com.example.toget.domain.user.entity.User;
+import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
-import com.example.toget.domain.user.entity.User;
 import com.example.toget.domain.funding.dto.response.FundingAccountResponse;
 import com.example.toget.domain.funding.dto.response.FundingAccountUpdateResponse;
 import com.example.toget.domain.funding.dto.response.FundingBasicInfoResponse;
@@ -69,13 +69,15 @@ public class FundingConverter {
      * 소수점 내림(정수%), 100 초과 허용(초과 달성 그대로 노출)
      * targetAmount는 0 허용 -> 0 나눗셈을 방어
      */
-    private static int calculateProgressRate(Long collectedAmount, Long targetAmount) {
+    private static double calculateProgressRate(Long collectedAmount, Long targetAmount) {
         if (targetAmount == null || targetAmount == 0) {
-            return 0; // targetAmount는 0허용
+            return 0.0;
         }
-        return (int) (collectedAmount * PERCENT / targetAmount);
+        if (collectedAmount == null) {
+            return 0.0;
+        }
+        return Math.round(collectedAmount * 10000.0 / targetAmount) / 100.0;
     }
-
 
     public static FundingMemberManagementResponse toMemberManagementResponse(List<FundingMember> members, Map<Long, User> userMap) {
         List<FundingMemberManagementResponse.MemberInfo> admins = members.stream()
@@ -171,6 +173,50 @@ public class FundingConverter {
     }
 
 
+    public static FundingMyGiftDashboardResponse toMyGiftDashboardResponse(
+            Funding funding, Long collectedAmount, int participantCount,
+            UserAccount account, FundingVisibilitySettings visibility, List<FundingGift> gifts
+    ) {
+        double progressRate = funding.getTargetAmount() == 0 ? 0.0
+                : Math.round((collectedAmount * 10000.0 / funding.getTargetAmount())) / 100.0;
+
+        return new FundingMyGiftDashboardResponse(
+                funding.getId(), funding.getTitle(), funding.getRecipientName(),
+                funding.getAnniversaryDate(), funding.getStartDate(), funding.getEndDate(),
+                funding.getIntroduction(), funding.getThumbnailImageUrl(),
+                funding.getTargetAmount(), collectedAmount, progressRate, participantCount,
+                funding.getStatus().name(),
+                account == null ? null : new FundingMyGiftDashboardResponse.AccountInfo(
+                        account.getId(), account.getBankName().name(), account.getAccount(), account.getAccountOwner()
+                ),
+                visibility == null ? null : new FundingMyGiftDashboardResponse.VisibilityInfo(
+                        visibility.getIsProgressVisible(), visibility.getIsCollectedAmountVisible(),
+                        visibility.getIsParticipantCountVisible(), visibility.getIsParticipantNameVisible(),
+                        visibility.getIsMessageVisible()
+                ),
+                gifts.stream()
+                        .map(g -> new FundingMyGiftDashboardResponse.GiftInfo(
+                                g.getId(), g.getName(), g.getPrice(), g.getPurchaseUrl(), g.getImageUrl()
+                        ))
+                        .toList()
+        );
+    }
+
+    public static FundingTogetherGiftDashboardResponse toTogetherGiftDashboardResponse(
+            Funding funding, List<FundingTogetherGiftDashboardResponse.MemberSummary> members,
+            List<FundingTogetherGiftDashboardResponse.TopGift> topGifts,
+            Long collectedAmount, Long targetAmount,
+            List<FundingTogetherGiftDashboardResponse.ConfirmedGift> confirmedGifts,
+            List<Long> messageIds
+    ) {
+        return new FundingTogetherGiftDashboardResponse(
+                funding.getId(), funding.getStatus().name(), funding.getAnniversaryDate(),
+                funding.getRecipientName(), funding.getIntroduction(), funding.getThumbnailImageUrl(),
+                members, topGifts, collectedAmount, targetAmount, confirmedGifts, messageIds
+        );
+    }
+
+
     public static FundingContributionListResponse.ContributionItem toContributionItem(
             FundingContribution contribution, Map<Long, User> userMap
     ) {
@@ -199,6 +245,7 @@ public class FundingConverter {
 
         return new FundingContributionListResponse(
                 participantCount, totalAmount, items, page, size, slice.hasNext()
+
         );
     }
 

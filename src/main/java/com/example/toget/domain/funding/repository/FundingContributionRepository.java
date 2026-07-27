@@ -39,4 +39,7 @@ public interface FundingContributionRepository extends JpaRepository<FundingCont
 
 
     List<FundingContribution> findAllByFundingId(Long fundingId);
+
+    @Query("SELECT c.id FROM FundingContribution c WHERE c.fundingId = :fundingId ORDER BY c.createdAt DESC")
+    List<Long> findRecentIdsByFundingId(@Param("fundingId") Long fundingId, Pageable pageable);
 }

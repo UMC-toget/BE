@@ -37,13 +37,13 @@ public class FundingContributionService {
     ) {
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+
         if (funding.getFundingType() != FundingType.MY_GIFT) {
             throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);
         }
         if (funding.getStatus() == FundingStatus.ENDED || funding.getStatus() == FundingStatus.DELIVERING) {
             throw new FundingException(FundingErrorCode.CONTRIBUTION_NOT_ALLOWED_FOR_STATUS);
         }
-
 
         contributionBackgroundRepository.findById(request.backgroundId())
                 .orElseThrow(() -> new ContributionException(ContributionErrorCode.BACKGROUND_NOT_FOUND));
