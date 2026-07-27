@@ -2,6 +2,7 @@ package com.example.toget.domain.funding.entity;
 
 import com.example.toget.domain.funding.enums.FundingRole;
 import com.example.toget.domain.funding.enums.SettlementStatus;
+import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.exception.FundingException;
 

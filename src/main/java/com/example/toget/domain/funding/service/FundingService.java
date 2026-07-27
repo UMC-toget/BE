@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FundingService {
 
+
     private final FundingRepository fundingRepository;
     private final FundingMemberRepository fundingMemberRepository;
     private final FundingGiftRepository fundingGiftRepository;
@@ -293,17 +294,7 @@ public class FundingService {
         }
 
         List<FundingMember> members = fundingMemberRepository.findAllByFundingId(fundingId);
-        Map<Long, User> userMap = getUserMap(members);
-
-        List<FundingMemberManagementResponse.MemberInfo> admins = members.stream()
-                .filter(m -> m.getRole() == FundingRole.CREATOR || m.getRole() == FundingRole.ADMIN)
-                .map(m -> toMemberInfo(m, userMap))
-                .toList();
-
-        List<FundingMemberManagementResponse.MemberInfo> participants = members.stream()
-                .filter(m -> m.getRole() == FundingRole.PARTICIPANT)
-                .map(m -> toMemberInfo(m, userMap))
-                .toList();
+        Map<Long, User> userMap = getUserMapFromMembers(members);
 
         return FundingConverter.toMemberManagementResponse(members, userMap);
     }
@@ -318,11 +309,16 @@ public class FundingService {
 
         FundingMember member = fundingMemberRepository.findById(memberId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
+        if (!member.getFundingId().equals(fundingId)) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
 
         if (newRole == FundingRole.ADMIN) {
             member.promoteToAdmin();
-        } else {
+        } else if (newRole == FundingRole.PARTICIPANT) {
             member.demoteToParticipant();
+        } else {
+            throw new FundingException(FundingErrorCode.INVALID_MEMBER_ROLE);
         }
     }
 
@@ -339,7 +335,7 @@ public class FundingService {
 
         List<FundingMember> settlementMembers = fundingMemberRepository
                 .findAllByFundingIdAndAmountDueIsNotNull(fundingId);
-        Map<Long, User> userMap = getUserMap(settlementMembers);
+        Map<Long, User> userMap = getUserMapFromMembers(settlementMembers);
 
         long totalAmount = settlementMembers.stream()
                 .mapToLong(FundingMember::getAmountDue)
@@ -367,6 +363,9 @@ public class FundingService {
 
         FundingMember member = fundingMemberRepository.findById(memberId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
+        if (!member.getFundingId().equals(fundingId)) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
 
         if (!member.isSettlementTarget()) {
             throw new FundingException(FundingErrorCode.NOT_SETTLEMENT_TARGET_MEMBER);
@@ -380,18 +379,13 @@ public class FundingService {
         }
     }
 
-    private Map<Long, User> getUserMap(List<FundingMember> members) {
+    // FundingMember 목록에서 User 배치 조회 (참여자 관리/정산 내역 탭용)
+    private Map<Long, User> getUserMapFromMembers(List<FundingMember> members) {
         List<Long> userIds = members.stream().map(FundingMember::getUserId).toList();
         return userRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
     }
 
-    private FundingMemberManagementResponse.MemberInfo toMemberInfo(FundingMember m, Map<Long, User> userMap) {
-        User user = userMap.get(m.getUserId());
-        return new FundingMemberManagementResponse.MemberInfo(
-                m.getId(), m.getUserId(), user.getName(), user.getProfileImageUrl(), m.getRole().name()
-        );
-    }
 
 
     @Transactional(readOnly = true)
@@ -415,15 +409,43 @@ public class FundingService {
         int participantCount = fundingContributionRepository.countByFundingId(fundingId);
         Long totalAmount = fundingContributionRepository.sumAmountByFundingId(fundingId);
 
-        List<Long> userIds = slice.getContent().stream()
-                .map(FundingContribution::getUserId)
-                .filter(Objects::nonNull)
-                .toList();
-        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
-                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        Map<Long, User> userMap = getUserMapFromContributions(slice.getContent());
 
         return FundingConverter.toContributionListResponse(
-                slice, userMap, participantCount, totalAmount, page, size
+                slice, participantCount, totalAmount, page, size, userMap
+        );
+    }
+
+    /** 로그인 회원 참여자들의 User 정보를 배치 조회, 비회원은 필터링 (N+1 방지) */
+    private Map<Long, User> getUserMapFromContributions(List<FundingContribution> contributions) {
+        List<Long> userIds = contributions.stream()
+                .map(FundingContribution::getUserId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+        return userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+    }
+
+    private FundingContributionListResponse.ContributionItem toContributionItem(
+            FundingContribution c, Map<Long, User> userMap
+    ) {
+        if (c.getUserId() != null) {
+            // 로그인 회원 참여 — User 조회로 이름/프로필 채움
+            User user = userMap.get(c.getUserId());
+            String name = user != null ? user.getName() : null;
+            String profileImageUrl = user != null ? user.getProfileImageUrl() : null;
+            return new FundingContributionListResponse.ContributionItem(
+                    c.getId(), name, profileImageUrl, c.getAmount(), c.getCreatedAt()
+            );
+        }
+        // 비회원 참여 — guestName 그대로, 프로필 이미지는 애초에 없음
+        return new FundingContributionListResponse.ContributionItem(
+                c.getId(), c.getGuestName(), null, c.getAmount(), c.getCreatedAt()
         );
     }
 
@@ -436,6 +458,9 @@ public class FundingService {
         if (!funding.isOwnedBy(userId)) {
             throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
         }
+        if (funding.getFundingType() != FundingType.MY_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);
+        }
 
         FundingContribution contribution = fundingContributionRepository.findById(contributionId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.CONTRIBUTION_NOT_FOUND));
@@ -445,6 +470,6 @@ public class FundingService {
 
         contribution.updateAmount(request.amount());
 
-        return new FundingContributionAmountUpdateResponse(contribution.getId(), contribution.getAmount());
+        return FundingConverter.toContributionAmountUpdateResponse(contribution);
     }
 }

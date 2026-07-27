@@ -5,7 +5,7 @@ import com.example.toget.domain.invitation.dto.InvitationBackgroundCreateRespons
 import com.example.toget.domain.invitation.dto.InvitationBackgroundRequest;
 import com.example.toget.domain.invitation.dto.InvitationBackgroundResponse;
 import com.example.toget.domain.invitation.entity.InvitationBackground;
-import com.example.toget.domain.invitation.exception.InvitationErrorCode;
+import com.example.toget.domain.invitation.exception.code.InvitationErrorCode;
 import com.example.toget.domain.invitation.exception.InvitationException;
 import com.example.toget.domain.invitation.repository.InvitationBackgroundRepository;
 import java.util.List;

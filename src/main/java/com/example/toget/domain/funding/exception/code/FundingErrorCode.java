@@ -24,6 +24,7 @@ public enum FundingErrorCode implements BaseErrorCode {
     NOT_MY_GIFT_TYPE(HttpStatus.BAD_REQUEST, "FUNDING400_13", "내 선물 준비하기 전용 기능입니다."),
     NOT_TOGETHER_GIFT_TYPE(HttpStatus.BAD_REQUEST, "FUNDING400_14", "함께 선물 준비하기 전용 기능입니다."),
     CONTRIBUTION_NOT_ALLOWED_FOR_STATUS(HttpStatus.BAD_REQUEST, "FUNDING400_15", "현재 펀딩 상태에서는 후원할 수 없습니다."),
+    INVALID_MEMBER_ROLE(HttpStatus.BAD_REQUEST, "FUNDING400_16", "유효하지 않은 멤버 역할입니다."),
 
     FUNDING_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_1", "해당 펀딩을 찾을 수 없습니다."),
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_2", "정산 계좌를 찾을 수 없습니다."),

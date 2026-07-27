@@ -7,8 +7,13 @@ import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingContribution;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.enums.FundingRole;
+import com.example.toget.domain.funding.exception.FundingException;
+import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.user.entity.User;
-import com.example.toget.domain.funding.entity.Funding;
+import com.example.toget.domain.funding.dto.response.FundingAccountResponse;
+import com.example.toget.domain.funding.dto.response.FundingAccountUpdateResponse;
+import com.example.toget.domain.funding.dto.response.FundingBasicInfoResponse;
+import com.example.toget.domain.funding.dto.response.FundingCreateResponse;
 import com.example.toget.domain.user.entity.UserAccount;
 
 import org.springframework.data.domain.Slice;
@@ -71,12 +76,6 @@ public class FundingConverter {
         return (int) (collectedAmount * PERCENT / targetAmount);
     }
 
-    public static FundingMemberManagementResponse.MemberInfo toMemberInfo(FundingMember member, Map<Long, User> userMap) {
-        User user = userMap.get(member.getUserId());
-        return new FundingMemberManagementResponse.MemberInfo(
-                member.getId(), member.getUserId(), user.getName(), user.getProfileImageUrl(), member.getRole().name()
-        );
-    }
 
     public static FundingMemberManagementResponse toMemberManagementResponse(List<FundingMember> members, Map<Long, User> userMap) {
         List<FundingMemberManagementResponse.MemberInfo> admins = members.stream()
@@ -94,11 +93,26 @@ public class FundingConverter {
         );
     }
 
+
+
     public static FundingSettlementListResponse.SettlementInfo toSettlementInfo(FundingMember member, Map<Long, User> userMap) {
         User user = userMap.get(member.getUserId());
+        if (user == null) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
         return new FundingSettlementListResponse.SettlementInfo(
                 member.getId(), member.getUserId(), user.getName(), user.getProfileImageUrl(),
                 member.getAmountDue(), member.getSettlementStatus().name()
+        );
+    }
+
+    public static FundingMemberManagementResponse.MemberInfo toMemberInfo(FundingMember member, Map<Long, User> userMap) {
+        User user = userMap.get(member.getUserId());
+        if (user == null) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
+        return new FundingMemberManagementResponse.MemberInfo(
+                member.getId(), member.getUserId(), user.getName(), user.getProfileImageUrl(), member.getRole().name()
         );
     }
 
@@ -156,21 +170,44 @@ public class FundingConverter {
         );
     }
 
-    private static FundingContributionListResponse.ContributionItem toContributionItem(
-            FundingContribution c, Map<Long, User> userMap
+
+    public static FundingContributionListResponse.ContributionItem toContributionItem(
+            FundingContribution contribution, Map<Long, User> userMap
     ) {
-        if (c.getUserId() != null) {
-            User user = userMap.get(c.getUserId());
+        if (contribution.getUserId() != null) {
+            User user = userMap.get(contribution.getUserId());
             String name = user != null ? user.getName() : null;
             String profileImageUrl = user != null ? user.getProfileImageUrl() : null;
             return new FundingContributionListResponse.ContributionItem(
-                    c.getId(), name, profileImageUrl, c.getAmount(), c.getCreatedAt()
+                    contribution.getId(), name, profileImageUrl,
+                    contribution.getAmount(), contribution.getCreatedAt()
             );
         }
         return new FundingContributionListResponse.ContributionItem(
-                c.getId(), c.getGuestName(), null, c.getAmount(), c.getCreatedAt()
+                contribution.getId(), contribution.getGuestName(), null,
+                contribution.getAmount(), contribution.getCreatedAt()
         );
     }
 
+    public static FundingContributionListResponse toContributionListResponse(
+            Slice<FundingContribution> slice, int participantCount, Long totalAmount,
+            int page, int size, Map<Long, User> userMap
+    ) {
+        List<FundingContributionListResponse.ContributionItem> items = slice.getContent().stream()
+                .map(c -> toContributionItem(c, userMap))
+                .toList();
+
+        return new FundingContributionListResponse(
+                participantCount, totalAmount, items, page, size, slice.hasNext()
+        );
+    }
+
+    public static FundingContributionAmountUpdateResponse toContributionAmountUpdateResponse(
+            FundingContribution contribution
+    ) {
+        return new FundingContributionAmountUpdateResponse(
+                contribution.getId(), contribution.getAmount()
+        );
+    }
 
 }
