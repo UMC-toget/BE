@@ -7,6 +7,8 @@ import com.example.toget.domain.gift.dto.response.WishlistCreateResponse;
 import com.example.toget.domain.gift.dto.response.WishlistListResponse;
 import com.example.toget.domain.gift.dto.response.WishlistUpdateResponse;
 import com.example.toget.domain.gift.entity.WishlistItem;
+import com.example.toget.domain.gift.enums.WishlistSort;
+import com.example.toget.domain.gift.enums.WishlistType;
 import com.example.toget.domain.gift.exception.WishlistException;
 import com.example.toget.domain.gift.exception.code.WishlistErrorCode;
 import com.example.toget.domain.gift.repository.WishlistItemRepository;
@@ -16,8 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.example.toget.domain.gift.enums.WishlistSort;
 
 @Service
 @RequiredArgsConstructor
@@ -37,16 +37,29 @@ public class WishlistService {
     }
 
     public WishlistListResponse getWishlist(Long userId, int page, int size, WishlistSort sort) {
+        return getWishlist(userId, null, page, size, sort);
+    }
+
+    public WishlistListResponse getWishlist(Long userId, WishlistType type, int page, int size, WishlistSort sort) {
         int safePage = Math.max(page, 0);
         int safeSize = (size <= 0) ? DEFAULT_PAGE_SIZE : Math.min(size, MAX_PAGE_SIZE);
 
         Pageable pageable = PageRequest.of(safePage, safeSize);
         Slice<WishlistItem> slice;
         WishlistSort sortType = (sort != null) ? sort : WishlistSort.LATEST;
-        if (sortType == WishlistSort.OLDEST) {
-            slice = wishlistItemRepository.findByUserIdOrderByIdAsc(userId, pageable);
+
+        if (type != null) {
+            if (sortType == WishlistSort.OLDEST) {
+                slice = wishlistItemRepository.findByUserIdAndTypeOrderByIdAsc(userId, type, pageable);
+            } else {
+                slice = wishlistItemRepository.findByUserIdAndTypeOrderByIdDesc(userId, type, pageable);
+            }
         } else {
-            slice = wishlistItemRepository.findByUserIdOrderByIdDesc(userId, pageable);
+            if (sortType == WishlistSort.OLDEST) {
+                slice = wishlistItemRepository.findByUserIdOrderByIdAsc(userId, pageable);
+            } else {
+                slice = wishlistItemRepository.findByUserIdOrderByIdDesc(userId, pageable);
+            }
         }
         return WishlistConverter.toListResponse(slice);
     }
@@ -60,7 +73,7 @@ public class WishlistService {
             throw new WishlistException(WishlistErrorCode.WISHLIST_NOT_OWNER);
         }
 
-        item.update(request.name(), request.price(), request.purchaseUrl(), request.imageUrl());
+        item.update(request.name(), request.price(), request.purchaseUrl(), request.imageUrl(), request.type());
         return WishlistConverter.toUpdateResponse(item);
     }
 
