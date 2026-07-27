@@ -1,17 +1,23 @@
 package com.example.toget.domain.funding.service;
 
 import com.example.toget.domain.funding.dto.request.FundingContributionAmountUpdateRequest;
+import com.example.toget.domain.funding.dto.request.FundingVisibilityUpdateRequest;
 import com.example.toget.domain.funding.dto.response.FundingContributionAmountUpdateResponse;
+import com.example.toget.domain.funding.dto.response.FundingVisibilityUpdateResponse;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingContribution;
+import com.example.toget.domain.funding.entity.FundingVisibilitySettings;
+import com.example.toget.domain.funding.enums.FundingStatus;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.repository.FundingContributionRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
+import com.example.toget.domain.funding.repository.FundingVisibilitySettingsRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,11 +28,14 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * FundingService(쓰기 로직) 단위 테스트.
- * 기본정보/기여금액 수정 등 write 트랜잭션을 검증한다.
+ * 기본정보/기여금액/공개 설정 수정 등 write 트랜잭션을 검증한다.
  */
 @ExtendWith(MockitoExtension.class)
 class FundingServiceTest {
@@ -36,6 +45,9 @@ class FundingServiceTest {
 
     @Mock
     private FundingContributionRepository fundingContributionRepository;
+
+    @Mock
+    private FundingVisibilitySettingsRepository fundingVisibilitySettingsRepository;
 
     @InjectMocks
     private FundingService fundingService;
@@ -168,6 +180,171 @@ class FundingServiceTest {
                     .isInstanceOf(FundingException.class)
                     .extracting(e -> ((FundingException) e).getCode())
                     .isEqualTo(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+    }
+
+    @Nested
+    @DisplayName("공개 설정 수정")
+    class UpdateVisibility {
+
+        private static final Long OWNER_ID = 1L;
+        private static final Long FUNDING_ID = 10L;
+
+        private Funding myGiftFunding(Long ownerId) {
+            Funding funding = Funding.createMyGift(ownerId, 5L, "제목", "홍길동",
+                    LocalDate.now(), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "소개", "url", 100000L);
+            ReflectionTestUtils.setField(funding, "id", FUNDING_ID);
+            return funding;
+        }
+
+        /** 5개 값을 전부 다르게 조합해, 순서가 틀어지면 반드시 깨지도록 만든 요청 */
+        private FundingVisibilityUpdateRequest distinctRequest() {
+            return new FundingVisibilityUpdateRequest(
+                    true,   // showProgress
+                    false,  // showAmount
+                    true,   // showParticipantCount
+                    false,  // showParticipantNames
+                    true    // showMessages
+            );
+        }
+
+        /**
+         * 인자 순서 회귀 방지 테스트.
+         * 엔티티 update()는 (진행률, 참여자 수, 참여자 이름, 메시지, 모금액) 순이고 DTO는 모금액이 2번째라,
+         * 호출부를 DTO 순서로 "정리"하면 값이 엉뚱한 컬럼에 저장된다.
+         * 5개가 모두 Boolean이라 컴파일러가 못 잡으므로 이 테스트가 매핑을 고정한다.
+         */
+        @Test
+        @DisplayName("각 토글 값이 대응하는 컬럼에 저장된다")
+        void updateVisibility_success_fieldMapping() {
+            Funding funding = myGiftFunding(OWNER_ID);
+            FundingVisibilitySettings settings = FundingVisibilitySettings.create(
+                    FUNDING_ID, false, false, false, false, false  // 전부 false에서 시작
+            );
+            ReflectionTestUtils.setField(settings, "id", 7L);
+
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding));
+            given(fundingVisibilitySettingsRepository.findByFundingId(FUNDING_ID))
+                    .willReturn(Optional.of(settings));
+
+            FundingVisibilityUpdateResponse result =
+                    fundingService.updateVisibility(OWNER_ID, FUNDING_ID, distinctRequest());
+
+            // 엔티티(컬럼) 기준 검증 — 순서가 밀리면 여기서 깨진다
+            assertThat(settings.getIsProgressVisible()).isTrue();
+            assertThat(settings.getIsCollectedAmountVisible()).isFalse();
+            assertThat(settings.getIsParticipantCountVisible()).isTrue();
+            assertThat(settings.getIsParticipantNameVisible()).isFalse();
+            assertThat(settings.getIsMessageVisible()).isTrue();
+
+            // 응답 DTO 기준 검증 — 컨버터가 getter를 잘못 짝지어도 잡힌다
+            assertThat(result.fundingVisibilitySettingId()).isEqualTo(7L);
+            assertThat(result.showProgress()).isTrue();
+            assertThat(result.showAmount()).isFalse();
+            assertThat(result.showParticipantCount()).isTrue();
+            assertThat(result.showParticipantNames()).isFalse();
+            assertThat(result.showMessages()).isTrue();
+        }
+
+        @Test
+        @DisplayName("설정 행이 없으면 생성해서 저장한다(upsert)")
+        void updateVisibility_success_upsertWhenMissing() {
+            Funding funding = myGiftFunding(OWNER_ID);
+
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding));
+            given(fundingVisibilitySettingsRepository.findByFundingId(FUNDING_ID))
+                    .willReturn(Optional.empty());
+            given(fundingVisibilitySettingsRepository.save(any(FundingVisibilitySettings.class)))
+                    .willAnswer(invocation -> invocation.getArgument(0));
+
+            FundingVisibilityUpdateResponse result =
+                    fundingService.updateVisibility(OWNER_ID, FUNDING_ID, distinctRequest());
+
+            ArgumentCaptor<FundingVisibilitySettings> captor =
+                    ArgumentCaptor.forClass(FundingVisibilitySettings.class);
+            verify(fundingVisibilitySettingsRepository).save(captor.capture());
+
+            FundingVisibilitySettings saved = captor.getValue();
+            assertThat(saved.getFundingId()).isEqualTo(FUNDING_ID);
+            // 새로 만든 행에도 동일한 매핑이 적용되어야 한다
+            assertThat(saved.getIsProgressVisible()).isTrue();
+            assertThat(saved.getIsCollectedAmountVisible()).isFalse();
+            assertThat(saved.getIsParticipantCountVisible()).isTrue();
+            assertThat(saved.getIsParticipantNameVisible()).isFalse();
+            assertThat(saved.getIsMessageVisible()).isTrue();
+
+            assertThat(result.showProgress()).isTrue();
+            assertThat(result.showAmount()).isFalse();
+        }
+
+        @Test
+        @DisplayName("종료된 펀딩도 수정할 수 있다")
+        void updateVisibility_success_whenEnded() {
+            Funding funding = myGiftFunding(OWNER_ID);
+            ReflectionTestUtils.setField(funding, "status", FundingStatus.ENDED);
+
+            FundingVisibilitySettings settings = FundingVisibilitySettings.create(
+                    FUNDING_ID, true, true, true, true, true
+            );
+            ReflectionTestUtils.setField(settings, "id", 7L);
+
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding));
+            given(fundingVisibilitySettingsRepository.findByFundingId(FUNDING_ID))
+                    .willReturn(Optional.of(settings));
+
+            FundingVisibilityUpdateResponse result =
+                    fundingService.updateVisibility(OWNER_ID, FUNDING_ID, distinctRequest());
+
+            assertThat(result.showParticipantNames()).isFalse();
+            assertThat(settings.getIsParticipantNameVisible()).isFalse();
+        }
+
+        @Test
+        @DisplayName("펀딩이 없으면 FUNDING_NOT_FOUND 예외가 발생한다")
+        void updateVisibility_fail_fundingNotFound() {
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() ->
+                    fundingService.updateVisibility(OWNER_ID, FUNDING_ID, distinctRequest()))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.FUNDING_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("개설자가 아니면 NOT_FUNDING_OWNER 예외가 발생한다")
+        void updateVisibility_fail_notOwner() {
+            Long requesterId = 2L;
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(myGiftFunding(OWNER_ID)));
+
+            assertThatThrownBy(() ->
+                    fundingService.updateVisibility(requesterId, FUNDING_ID, distinctRequest()))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.NOT_FUNDING_OWNER);
+
+            verify(fundingVisibilitySettingsRepository, never()).findByFundingId(any());
+        }
+
+        @Test
+        @DisplayName("TOGETHER_GIFT 펀딩이면 NOT_MY_GIFT_TYPE 예외가 발생한다")
+        void updateVisibility_fail_notMyGiftType() {
+            Funding funding = Funding.createTogetherGift(OWNER_ID, null, "제목", "홍길동",
+                    LocalDate.now(), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "소개", "url", 100000L);
+            ReflectionTestUtils.setField(funding, "id", FUNDING_ID);
+
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding));
+
+            assertThatThrownBy(() ->
+                    fundingService.updateVisibility(OWNER_ID, FUNDING_ID, distinctRequest()))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.NOT_MY_GIFT_TYPE);
+
+            // 유형 검증에서 막히므로 설정 행을 건드리지 않아야 한다
+            verify(fundingVisibilitySettingsRepository, never()).findByFundingId(any());
         }
     }
 }
