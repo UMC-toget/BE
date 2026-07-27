@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 @Getter
 @RequiredArgsConstructor
 public enum FundingGiftErrorCode implements BaseErrorCode {
-
+    DUPLICATE_GIFT_ID_IN_REQUEST(HttpStatus.BAD_REQUEST, "GIFT400_3", "요청에 동일한 선물 ID가 중복으로 포함되어 있습니다."),
     NOT_FUNDING_MEMBER(HttpStatus.FORBIDDEN, "GIFT403_1", "해당 펀딩의 멤버가 아닙니다."),
     NOT_CREATOR_OR_ADMIN(HttpStatus.FORBIDDEN, "GIFT403_2", "개설자 또는 관리자만 가능한 작업입니다."),
 

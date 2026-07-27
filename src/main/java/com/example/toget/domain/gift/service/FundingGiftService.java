@@ -24,10 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -230,6 +227,8 @@ public class FundingGiftService {
             throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);
         }
 
+        validateNoDuplicateIds(requests);
+
         List<FundingGift> existingGifts = fundingGiftRepository.findAllByFundingId(fundingId);
         Map<Long, FundingGift> existingById = existingGifts.stream()
                 .collect(Collectors.toMap(FundingGift::getId, g -> g));
@@ -239,10 +238,12 @@ public class FundingGiftService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        // 요청에서 빠진 기존 항목 삭제
-        existingGifts.stream()
+        List<FundingGift> toDelete = existingGifts.stream()
                 .filter(g -> !requestedIds.contains(g.getId()))
-                .forEach(fundingGiftRepository::delete);
+                .toList();
+        if (!toDelete.isEmpty()) {
+            fundingGiftRepository.deleteAllInBatch(toDelete);
+        }
 
         // upsert
         List<FundingGift> result = requests.stream()
@@ -254,6 +255,17 @@ public class FundingGiftService {
                         g.getId(), g.getName(), g.getPrice(), g.getPurchaseUrl(), g.getImageUrl()
                 ))
                 .toList();
+    }
+
+    private void validateNoDuplicateIds(List<FundingGiftUpsertRequest> requests) {
+        List<Long> ids = requests.stream()
+                .map(FundingGiftUpsertRequest::fundingGiftId)
+                .filter(Objects::nonNull)
+                .toList();
+        Set<Long> uniqueIds = new HashSet<>(ids);
+        if (uniqueIds.size() != ids.size()) {
+            throw new FundingGiftException(FundingGiftErrorCode.DUPLICATE_GIFT_ID_IN_REQUEST);
+        }
     }
 
     private FundingGift upsertOne(Long fundingId, FundingGiftUpsertRequest req, Map<Long, FundingGift> existingById) {
