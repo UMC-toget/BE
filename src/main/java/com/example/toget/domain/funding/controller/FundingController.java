@@ -329,5 +329,20 @@ public class FundingController {
         return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_LIST_UPDATE_OK, result);
     }
 
-
+    @Operation(summary = "[TOGETHER_GIFT] 선물 및 정산 참여자 확정하기",
+            description = """
+                후보 선물 중 최종 선물을 확정하고 정산 참여자를 확정합니다.
+                총 정산 금액은 확정된 선물 가격 합계로 자동 계산되며, 정산 참여자에게 균등 분배됩니다.
+                나머지는 펀딩 참여 등록일이 빠른 순서대로 1원씩 추가 배정됩니다.
+                처리 후 펀딩 상태가 SETTLING으로 전환됩니다.
+                """)
+    @PostMapping("/{fundingId}/confirm-settlement")
+    public ApiResponse<FundingConfirmSettlementResponse> confirmSettlement(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @PathVariable Long fundingId,
+            @Valid @RequestBody FundingConfirmSettlementRequest request
+    ) {
+        FundingConfirmSettlementResponse result = fundingService.confirmSettlement(userId, fundingId, request);
+        return ApiResponse.onSuccess(FundingSuccessCode.CONFIRM_SETTLEMENT_OK, result);
+    }
 }
