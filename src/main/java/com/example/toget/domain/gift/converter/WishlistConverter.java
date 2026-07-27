@@ -22,6 +22,7 @@ public class WishlistConverter {
                 .price(request.price())
                 .purchaseUrl(request.purchaseUrl())
                 .imageUrl(request.imageUrl())
+                .type(request.type())
                 .build();
     }
 
@@ -36,6 +37,7 @@ public class WishlistConverter {
                 item.getPrice(),
                 item.getPurchaseUrl(),
                 item.getImageUrl(),
+                item.getType(),
                 item.getCreatedAt()
         );
     }
@@ -59,7 +61,8 @@ public class WishlistConverter {
                 item.getName(),
                 item.getPrice(),
                 item.getPurchaseUrl(),
-                item.getImageUrl()
+                item.getImageUrl(),
+                item.getType()
         );
     }
 }

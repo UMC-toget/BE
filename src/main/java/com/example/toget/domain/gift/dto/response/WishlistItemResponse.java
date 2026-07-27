@@ -1,5 +1,6 @@
 package com.example.toget.domain.gift.dto.response;
 
+import com.example.toget.domain.gift.enums.WishlistType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
@@ -19,6 +20,9 @@ public record WishlistItemResponse(
 
     @Schema(description = "상품 이미지 URL", example = "https://image.com/macbook.png")
     String imageUrl,
+
+    @Schema(description = "선물 유형 (GIVE: 주고싶은 선물, RECEIVE: 받고싶은 선물)", example = "RECEIVE")
+    WishlistType type,
 
     @Schema(description = "생성 일시", example = "2026-07-05T01:28:20")
     LocalDateTime createdAt
