@@ -1,6 +1,7 @@
 package com.example.toget.domain.gift.service;
 
 import com.example.toget.domain.gift.enums.WishlistSort;
+import com.example.toget.domain.gift.enums.WishlistType;
 import com.example.toget.domain.gift.dto.request.WishlistCreateRequest;
 import com.example.toget.domain.gift.dto.request.WishlistUpdateRequest;
 import com.example.toget.domain.gift.dto.response.WishlistCreateResponse;
@@ -48,7 +49,7 @@ public class WishlistServiceTest {
         // given
         Long userId = 1L;
         WishlistCreateRequest request = new WishlistCreateRequest(
-                "맥북 프로 14", 2490000L, "https://apple.com", "https://image.com/macbook.png"
+                "맥북 프로 14", 2490000L, "https://apple.com", "https://image.com/macbook.png", WishlistType.RECEIVE
         );
 
         WishlistItem saved = WishlistItem.builder()
@@ -57,6 +58,7 @@ public class WishlistServiceTest {
                 .price(request.price())
                 .purchaseUrl(request.purchaseUrl())
                 .imageUrl(request.imageUrl())
+                .type(request.type())
                 .build();
         ReflectionTestUtils.setField(saved, "id", 10L);
 
@@ -81,6 +83,7 @@ public class WishlistServiceTest {
                 .price(2490000L)
                 .purchaseUrl("https://apple.com")
                 .imageUrl("https://image.com/macbook.png")
+                .type(WishlistType.RECEIVE)
                 .build();
         ReflectionTestUtils.setField(item, "id", 10L);
 
@@ -95,9 +98,39 @@ public class WishlistServiceTest {
         // then
         assertThat(response.wishlistItems()).hasSize(1);
         assertThat(response.wishlistItems().get(0).wishlistItemId()).isEqualTo(10L);
+        assertThat(response.wishlistItems().get(0).type()).isEqualTo(WishlistType.RECEIVE);
         assertThat(response.currentPage()).isEqualTo(0);
         assertThat(response.pageSize()).isEqualTo(10);
         assertThat(response.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("위시리스트 목록 조회 성공 - 유형 필터링 (GIVE)")
+    public void getWishlist_withTypeFilter_success() {
+        // given
+        Long userId = 1L;
+        WishlistItem item = WishlistItem.builder()
+                .userId(userId)
+                .name("생일 선물 상자")
+                .price(50000L)
+                .purchaseUrl("https://gift.com")
+                .imageUrl("https://image.com/gift.png")
+                .type(WishlistType.GIVE)
+                .build();
+        ReflectionTestUtils.setField(item, "id", 11L);
+
+        Pageable pageable = PageRequest.of(0, 10);
+        Slice<WishlistItem> slice = new SliceImpl<>(List.of(item), pageable, false);
+
+        given(wishlistItemRepository.findByUserIdAndTypeOrderByIdDesc(userId, WishlistType.GIVE, pageable)).willReturn(slice);
+
+        // when
+        WishlistListResponse response = wishlistService.getWishlist(userId, WishlistType.GIVE, 0, 10, WishlistSort.LATEST);
+
+        // then
+        assertThat(response.wishlistItems()).hasSize(1);
+        assertThat(response.wishlistItems().get(0).wishlistItemId()).isEqualTo(11L);
+        assertThat(response.wishlistItems().get(0).type()).isEqualTo(WishlistType.GIVE);
     }
 
     @Test
@@ -112,13 +145,14 @@ public class WishlistServiceTest {
                 .price(2490000L)
                 .purchaseUrl("https://apple.com")
                 .imageUrl("https://image.com/macbook.png")
+                .type(WishlistType.RECEIVE)
                 .build();
         ReflectionTestUtils.setField(item, "id", wishlistItemId);
 
         given(wishlistItemRepository.findById(wishlistItemId)).willReturn(Optional.of(item));
 
         WishlistUpdateRequest request = new WishlistUpdateRequest(
-                "맥북 프로 14 (M3)", 2390000L, "https://apple.com", "https://image.com/macbook-updated.png"
+                "맥북 프로 14 (M3)", 2390000L, "https://apple.com", "https://image.com/macbook-updated.png", WishlistType.GIVE
         );
 
         // when
@@ -129,6 +163,7 @@ public class WishlistServiceTest {
         assertThat(response.name()).isEqualTo("맥북 프로 14 (M3)");
         assertThat(response.price()).isEqualTo(2390000L);
         assertThat(response.imageUrl()).isEqualTo("https://image.com/macbook-updated.png");
+        assertThat(response.type()).isEqualTo(WishlistType.GIVE);
     }
 
     @Test
@@ -140,7 +175,7 @@ public class WishlistServiceTest {
         given(wishlistItemRepository.findById(wishlistItemId)).willReturn(Optional.empty());
 
         WishlistUpdateRequest request = new WishlistUpdateRequest(
-                "맥북", 1000L, "https://apple.com", null
+                "맥북", 1000L, "https://apple.com", null, WishlistType.RECEIVE
         );
 
         // when & then
@@ -163,13 +198,14 @@ public class WishlistServiceTest {
                 .price(2490000L)
                 .purchaseUrl("https://apple.com")
                 .imageUrl(null)
+                .type(WishlistType.RECEIVE)
                 .build();
         ReflectionTestUtils.setField(item, "id", wishlistItemId);
 
         given(wishlistItemRepository.findById(wishlistItemId)).willReturn(Optional.of(item));
 
         WishlistUpdateRequest request = new WishlistUpdateRequest(
-                "맥북", 1000L, "https://apple.com", null
+                "맥북", 1000L, "https://apple.com", null, WishlistType.RECEIVE
         );
 
         // when & then
@@ -191,6 +227,7 @@ public class WishlistServiceTest {
                 .price(2490000L)
                 .purchaseUrl("https://apple.com")
                 .imageUrl(null)
+                .type(WishlistType.RECEIVE)
                 .build();
         ReflectionTestUtils.setField(item, "id", wishlistItemId);
 
@@ -233,6 +270,7 @@ public class WishlistServiceTest {
                 .price(2490000L)
                 .purchaseUrl("https://apple.com")
                 .imageUrl(null)
+                .type(WishlistType.RECEIVE)
                 .build();
         ReflectionTestUtils.setField(item, "id", wishlistItemId);
 
