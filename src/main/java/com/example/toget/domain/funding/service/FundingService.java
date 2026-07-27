@@ -458,11 +458,15 @@ public class FundingService {
             throw new FundingException(FundingErrorCode.MAX_SETTLEMENT_MEMBER_EXCEEDED);
         }
 
-
         List<FundingGift> selectedGifts = confirmGifts(fundingId, request.giftIds());
         long totalAmount = selectedGifts.stream().mapToLong(FundingGift::getPrice).sum();
 
-        List<FundingMember> settlementMembers = confirmSettlementMembers(fundingId, request.settlementMemberIds());
+        List<Long> settlementMemberIds = includeCreator(fundingId, userId, request.settlementMemberIds());
+        if (settlementMemberIds.size() > MAX_SETTLEMENT_MEMBER_COUNT) {
+            throw new FundingException(FundingErrorCode.MAX_SETTLEMENT_MEMBER_EXCEEDED);
+        }
+
+        List<FundingMember> settlementMembers = confirmSettlementMembers(fundingId, settlementMemberIds);
         assignSettlementAmounts(settlementMembers, totalAmount);
 
         funding.confirmSettlement(totalAmount);
