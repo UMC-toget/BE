@@ -2,6 +2,7 @@ package com.example.toget.domain.gift.controller;
 
 import com.example.toget.domain.gift.dto.request.FundingGiftCandidateCreateRequest;
 import com.example.toget.domain.gift.dto.request.FundingGiftCommentCreateRequest;
+import com.example.toget.domain.gift.dto.request.FundingGiftUpsertRequest;
 import com.example.toget.domain.gift.dto.response.*;
 import com.example.toget.domain.gift.exception.code.FundingGiftSuccessCode;
 import com.example.toget.domain.gift.service.FundingGiftService;
@@ -13,6 +14,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Tag(name = "펀딩 - 참여자용", description = "참여자/방문자용 펀딩 참여 API")
 @RestController
@@ -72,4 +75,5 @@ public class FundingGiftController {
                 fundingGiftService.createComment(userId, fundingId, fundingGiftId, request);
         return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_COMMENT_CREATE_OK, result);
     }
+
 }

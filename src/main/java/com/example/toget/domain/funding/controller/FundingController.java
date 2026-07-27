@@ -7,9 +7,12 @@ import com.example.toget.domain.funding.exception.code.FundingSuccessCode;
 import com.example.toget.domain.funding.service.FundingQueryService;
 import com.example.toget.domain.funding.service.FundingService;
 import com.example.toget.domain.gift.dto.request.FundingGiftCandidateCreateRequest;
+import com.example.toget.domain.gift.dto.request.FundingGiftUpsertRequest;
 import com.example.toget.domain.gift.dto.response.FundingGiftCandidateCreateResponse;
+import com.example.toget.domain.gift.dto.response.FundingGiftResponse;
 import com.example.toget.domain.gift.exception.code.FundingGiftSuccessCode;
 import com.example.toget.domain.gift.service.FundingGiftService;
+import com.example.toget.domain.gift.dto.response.FundingGiftResponse;
 import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +24,8 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Tag(name = "펀딩 - 개설자/공동관리자용 API", description = "개설자/공동관리자 전용 펀딩 관리 API")
 @RestController
@@ -48,7 +53,7 @@ public class FundingController {
     )
     @PostMapping
     public ApiResponse<FundingCreateResponse> create(
-            @LoginUserId Long userId,
+            @Parameter(hidden = true) @LoginUserId Long userId,
             @Valid @RequestBody FundingCreateRequest request
     ) {
         FundingCreateResponse result = fundingService.create(userId, request);
@@ -135,7 +140,7 @@ public class FundingController {
     }
 
     @Operation(
-            summary = "참여자 관리 탭 조회",
+            summary = "[TOGETHER_GIFT] 참여자 관리 탭 조회",
             description = """
                 함께 선물하기 펀딩이 선물을 고르는 중(`SELECTING`)일 때, 전체 참여자 목록을 \
                 역할별로(개설자·관리자 / 일반참여자) 구분해 반환합니다.
@@ -155,7 +160,7 @@ public class FundingController {
     }
 
     @Operation(
-            summary = "멤버 역할 변경",
+            summary = "[TOGETHER_GIFT] 멤버 역할 변경",
             description = """
                 개설자가 특정 참여자를 관리자(`ADMIN`)로 위임하거나, 관리자를 일반 참여자(`PARTICIPANT`)로 \
                 강등합니다.
@@ -175,7 +180,7 @@ public class FundingController {
     }
 
     @Operation(
-            summary = "정산 내역 탭 조회",
+            summary = "[TOGETHER_GIFT] 정산 내역 탭 조회",
             description = """
                 최종 선물이 확정되어 정산이 진행 중(`SETTLING` 이상)일 때, 정산 대상으로 확정된 참여자 목록과 \
                 각자의 입금 상태를 반환합니다.
@@ -197,7 +202,7 @@ public class FundingController {
 
 
     @Operation(
-            summary = "정산 입금 상태 수정",
+            summary = "[TOGETHER_GIFT] 정산 입금 상태 수정",
             description = """
                 개설자가 정산 대상자의 입금 상태를 직접 조정합니다.
                 
@@ -227,7 +232,7 @@ public class FundingController {
     }
 
     @Operation(
-            summary = "참여자 목록 탭 조회 (내 선물 준비하기)",
+            summary = "[MY_GIFT] 참여자 목록 탭 조회",
             description = """
                 MY_GIFT 펀딩의 후원 기록을 페이지네이션으로 조회합니다.
                 
@@ -248,7 +253,7 @@ public class FundingController {
     }
 
     @Operation(
-            summary = "기여 금액 수정",
+            summary = "[MY_GIFT] 기여 금액 수정",
             description = """
                 개설자가 제출된 후원 내역의 금액을 수정합니다. 0원 이상만 허용됩니다.
                 """
@@ -266,11 +271,11 @@ public class FundingController {
         return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_CONTRIBUTION_AMOUNT_UPDATE_OK, result);
     }
 
-    @Operation(summary = "내 선물 페이지 메인 화면 조회",
+    @Operation(summary = "[MY_GIFT] 내 선물 페이지 메인 화면 조회",
             description = """
                 펀딩 개최자가 본인의 펀딩 제어실에서 모니터링할 정보를 반환합니다.
                 외부용 공유 조회와 달리 공개 설정과 무관하게 모금액, 참여자 수, 계좌 정보 등
-                원본 상태의 모든 상세 정보를 노출합니다. MY_GIFT 유형 전용입니다.
+                원본 상태의 모든 상세 정보를 노출합니다.
                 """)
     @GetMapping("/{fundingId}/dashboards/my-gift")
     public ApiResponse<FundingMyGiftDashboardResponse> getMyGiftDashboard(
@@ -281,7 +286,7 @@ public class FundingController {
         return ApiResponse.onSuccess(FundingSuccessCode.MY_GIFT_DASHBOARD_OK, result);
     }
 
-    @Operation(summary = "함께 선물하기 메인 화면 조회",
+    @Operation(summary = "[TOGETHER_GIFT] 함께 선물하기 메인 화면 조회",
             description = """
                 함께 선물하기 펀딩 제어실의 메인 화면 정보를 반환합니다. 응답은 하나의 스키마를 공유하되,
                 펀딩 상태(status)에 따라 채워지는 필드가 다릅니다.
@@ -299,7 +304,7 @@ public class FundingController {
         return ApiResponse.onSuccess(FundingSuccessCode.TOGETHER_GIFT_DASHBOARD_OK, result);
     }
 
-    @Operation(summary = "선물 후보 등록하기",
+    @Operation(summary = "[TOGETHER_GIFT] 선물 후보 등록하기",
             description = "개설자 또는 관리자가 투표 후보로 선물을 등록합니다. 후보(CANDIDATE) 상태로 생성됩니다.")
     @PostMapping("/{fundingId}/gift-candidates")
     public ApiResponse<FundingGiftCandidateCreateResponse> createCandidate(
@@ -310,5 +315,19 @@ public class FundingController {
         FundingGiftCandidateCreateResponse result = fundingGiftService.createCandidate(userId, fundingId, request);
         return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_CANDIDATE_CREATE_OK, result);
     }
+
+    @Operation(summary = "[MY_GIFT] 수령희망 선물 목록 수정",
+            description = "MY_GIFT의 수령 희망 선물 목록을 갱신합니다. fundingGiftId가 있으면 수정, " +
+                    "없으면 신규 생성, 요청에서 빠진 기존 항목은 삭제됩니다.")
+    @PutMapping("/{fundingId}/gifts")
+    public ApiResponse<List<FundingGiftResponse>> updateWishGifts(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @PathVariable Long fundingId,
+            @Valid @RequestBody List<@Valid FundingGiftUpsertRequest> requests
+    ) {
+        List<FundingGiftResponse> result = fundingGiftService.updateWishGifts(userId, fundingId, requests);
+        return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_LIST_UPDATE_OK, result);
+    }
+
 
 }
