@@ -20,7 +20,9 @@ import java.util.UUID;
  * 인증(로그인/토큰 재발급) 비즈니스 로직.
  *
  * [소셜 로그인 전체 흐름]
- *  1. 프론트가 카카오/구글 SDK로 로그인하고 identityToken(카카오는 access token, 구글은 ID token)을 받아옴
+ *  1. 프론트가 카카오/구글 SDK로 로그인하고 identityToken(둘 다 access token)을 받아옴
+ *     (구글이 ID token에서 access token으로 바뀐 배경과, 전환 기간 동안 구버전 ID token도 함께
+ *      받아들이는 이유는 GoogleOAuthClient 주석 참고 — issue #65)
  *  2. 프론트 → 우리 서버 POST /api/v1/auth/tokens/{provider} 로 그 토큰을 전달
  *  3. 서버는 OAuthClient로 공급자 서버에 "이 토큰 진짜야?"라고 검증 요청
  *  4. 진짜면 우리 DB에서 사용자를 찾고(없으면 자동 회원가입) 우리 서비스 전용 JWT를 발급
