@@ -106,6 +106,33 @@ public class FundingController {
         return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_BASIC_INFO_UPDATE_OK, result);
     }
 
+    @Operation(
+            summary = "선물 공개 범위 설정 수정",
+            description = """
+                외부 참여자 및 방문자에게 펀딩 정보의 어떤 영역을 노출할지 제어합니다. \
+                개설자 본인만 호출할 수 있습니다.
+
+                **제약**
+                - **MY_GIFT 유형 전용입니다.** 함께 선물 준비하기(TOGETHER_GIFT)는 공개 설정 자체를 \
+                  사용하지 않으므로 요청 시 400 에러가 반환됩니다.
+                - 전체 교체(PUT) 방식이라 5개 필드를 모두 보내야 합니다. 일부만 보내면 400 에러입니다.
+                - 종료(`ENDED`)된 펀딩도 수정할 수 있습니다. 기본정보 수정과 달리 정산 정합성에 \
+                  영향을 주지 않기 때문입니다.
+
+                ⚠️ 현재 이 설정을 실제로 반영하는 외부 방문자용 조회 API는 아직 구현되지 않았습니다. \
+                설정값 저장과 개설자 대시보드 조회까지만 동작합니다.
+                """
+    )
+    @PutMapping("/{fundingId}/visibility-settings")
+    public ApiResponse<FundingVisibilityUpdateResponse> updateVisibility(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @Parameter(description = "펀딩 ID", example = "1") @PathVariable Long fundingId,
+            @Valid @RequestBody FundingVisibilityUpdateRequest request
+    ) {
+        FundingVisibilityUpdateResponse result = fundingService.updateVisibility(userId, fundingId, request);
+        return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_VISIBILITY_UPDATE_OK, result);
+    }
+
     @Operation(summary = "선물 준비 페이지 정산 계좌 조회",
             description = "정산금이 입금될 계좌 정보를 조회합니다.")
     @GetMapping("/{fundingId}/account")

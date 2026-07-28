@@ -5,6 +5,7 @@ import com.example.toget.domain.funding.dto.request.FundingAccountUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingBasicInfoUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingContributionAmountUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingCreateRequest;
+import com.example.toget.domain.funding.dto.request.FundingVisibilityUpdateRequest;
 import com.example.toget.domain.funding.dto.response.*;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingContribution;
@@ -245,6 +246,51 @@ public class FundingService {
 
     private boolean isPeriodEditable(FundingStatus status) {
         return status == FundingStatus.SELECTING || status == FundingStatus.SETTLING;
+    }
+
+    /**
+     * 펀딩 공개 설정 수정 — 외부 참여자/방문자에게 어떤 영역을 노출할지 제어한다.
+     *
+     * [설계 포인트]
+     *  - MY_GIFT 전용. TOGETHER_GIFT는 생성 시점에 공개 설정 행을 만들지 않고(create() 참고),
+     *    초대된 멤버끼리 서로의 참여·정산 현황을 모두 봐야 하는 구조라 가릴 대상이 없다.
+     *  - 기본정보 수정(updateBasicInfo)과 달리 ENDED 상태에서도 허용한다.
+     *    종료 후 "이제 참여자 이름은 가리고 싶다" 같은 요구가 자연스럽고,
+     *    금액·기간과 달리 정산 정합성에 영향을 주지 않기 때문.
+     */
+    @Transactional
+    public FundingVisibilityUpdateResponse updateVisibility(Long userId, Long fundingId,
+                                                            FundingVisibilityUpdateRequest request) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+        if (funding.getFundingType() != FundingType.MY_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);
+        }
+
+        // MY_GIFT는 생성 시 항상 함께 만들어지므로 정상 흐름에선 비어 있을 수 없지만,
+        // 설정 행이 없는 기존 데이터를 대비해 없으면 이 시점에 빈 행을 만든다(upsert).
+        // 값은 아래 update()가 채우므로 여기서는 요청값을 넘기지 않는다 — 순서 민감한 호출을 한 곳으로 모으기 위함.
+        FundingVisibilitySettings settings = fundingVisibilitySettingsRepository.findByFundingId(fundingId)
+                .orElseGet(() -> fundingVisibilitySettingsRepository.save(
+                        FundingVisibilitySettings.createDefault(fundingId)
+                ));
+
+        // ⚠️ 인자 순서 주의 — 엔티티는 (진행률, 참여자 수, 참여자 이름, 메시지, 모금액) 순이라 모금액이 맨 뒤다.
+        //    DTO/화면 순서(진행률, 모금액, ...)와 다르므로 임의로 재정렬하지 말 것.
+        //    5개가 전부 Boolean이라 순서가 틀려도 컴파일 에러가 나지 않는다.
+        //    (FundingServiceTest의 "각 토글 값이 대응하는 컬럼에 저장된다" 테스트가 이 매핑을 고정한다)
+        settings.update(
+                request.showProgress(),
+                request.showParticipantCount(),
+                request.showParticipantNames(),
+                request.showMessages(),
+                request.showAmount()
+        );
+
+        return FundingConverter.toVisibilityUpdateResponse(settings);
     }
 
     @Transactional(readOnly = true)

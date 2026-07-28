@@ -173,6 +173,18 @@ public class FundingConverter {
     }
 
 
+    public static FundingVisibilityUpdateResponse toVisibilityUpdateResponse(FundingVisibilitySettings settings) {
+        return new FundingVisibilityUpdateResponse(
+                settings.getId(),
+                settings.getIsProgressVisible(),
+                settings.getIsCollectedAmountVisible(),
+                settings.getIsParticipantCountVisible(),
+                settings.getIsParticipantNameVisible(),
+                settings.getIsMessageVisible()
+        );
+    }
+
+
     public static FundingMyGiftDashboardResponse toMyGiftDashboardResponse(
             Funding funding, Long collectedAmount, int participantCount,
             UserAccount account, FundingVisibilitySettings visibility, List<FundingGift> gifts
