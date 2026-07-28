@@ -21,6 +21,7 @@ import com.example.toget.domain.funding.repository.FundingRepository;
 import com.example.toget.domain.funding.repository.FundingReviewImageRepository;
 import com.example.toget.domain.funding.repository.FundingReviewRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,7 +51,7 @@ public class FundingReviewService {
                 request.invitationTitle(), request.invitationContent(),
                 request.invitationCharacterId(), request.invitationBackgroundId()
         );
-        FundingReview saved = fundingReviewRepository.save(review);
+        FundingReview saved = saveReviewSafely(review);
         saveImages(saved.getId(), request.images());
 
         return new FundingReviewCreateResponse(saved.getId());
@@ -68,7 +69,7 @@ public class FundingReviewService {
                 request.invitationTitle(), request.invitationContent(),
                 request.invitationCharacterId(), request.invitationBackgroundId()
         );
-        FundingReview saved = fundingReviewRepository.save(review);
+        FundingReview saved = saveReviewSafely(review);
         saveImages(saved.getId(), request.images());
 
         return new FundingReviewCreateResponse(saved.getId());
@@ -86,10 +87,19 @@ public class FundingReviewService {
                 request.invitationTitle(), request.invitationContent(),
                 request.invitationCharacterId(), request.invitationBackgroundId()
         );
-        FundingReview saved = fundingReviewRepository.save(review);
+        FundingReview saved = saveReviewSafely(review);
         saveImages(saved.getId(), request.images());
 
+
         return new FundingReviewCreateResponse(saved.getId());
+    }
+
+    private FundingReview saveReviewSafely(FundingReview review) {
+        try {
+            return fundingReviewRepository.save(review);
+        } catch (DataIntegrityViolationException e) {
+            throw new FundingException(FundingErrorCode.REVIEW_ALREADY_EXISTS);
+        }
     }
 
     @Transactional(readOnly = true)
