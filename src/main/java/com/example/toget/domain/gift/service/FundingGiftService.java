@@ -3,6 +3,7 @@ package com.example.toget.domain.gift.service;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.enums.FundingRole;
+import com.example.toget.domain.funding.enums.FundingStatus;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.repository.FundingGiftVoteRepository;
@@ -21,6 +22,7 @@ import com.example.toget.domain.gift.repository.*;
 import com.example.toget.domain.user.entity.User;
 import com.example.toget.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -225,8 +227,11 @@ public class FundingGiftService {
         if (!funding.isOwnedBy(userId)) {
             throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
         }
+        if (funding.getStatus() == FundingStatus.SELECTING) {
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_STATUS_FOR_PURCHASE);
+        }
 
-        FundingGift gift = fundingGiftRepository.findById(fundingGiftId)
+            FundingGift gift = fundingGiftRepository.findById(fundingGiftId)
                 .orElseThrow(() -> new FundingGiftException(FundingGiftErrorCode.FUNDING_GIFT_NOT_FOUND));
         if (!gift.getFundingId().equals(fundingId)) {
             throw new FundingGiftException(FundingGiftErrorCode.FUNDING_GIFT_NOT_FOUND);
@@ -241,7 +246,13 @@ public class FundingGiftService {
         FundingGiftPurchase purchase = FundingGiftPurchase.create(
                 fundingGiftId, request.purchaseUrl(), request.receiptImageUrl()
         );
-        FundingGiftPurchase saved = fundingGiftPurchaseRepository.save(purchase);
+
+        FundingGiftPurchase saved;
+        try {
+            saved = fundingGiftPurchaseRepository.save(purchase);
+        } catch (DataIntegrityViolationException e) {
+            throw new FundingException(FundingErrorCode.PURCHASE_ALREADY_EXISTS);
+        }
 
         return new FundingGiftPurchaseResponse(saved.getId(), fundingGiftId);
     }

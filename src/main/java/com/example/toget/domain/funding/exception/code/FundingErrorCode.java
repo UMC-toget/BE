@@ -52,6 +52,7 @@ public enum FundingErrorCode implements BaseErrorCode {
     GIFT_NOT_CONFIRMED(HttpStatus.CONFLICT, "FUNDING409_8", "확정되지 않은 선물에는 구매 내역을 등록할 수 없습니다."),
     PURCHASE_ALREADY_EXISTS(HttpStatus.CONFLICT, "FUNDING409_9", "이미 구매 내역이 등록된 선물입니다."),
     REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "FUNDING409_10", "이미 작성된 게시물입니다."),
+    INVALID_FUNDING_STATUS_FOR_PURCHASE(HttpStatus.CONFLICT, "FUNDING409_12", "정산이 시작된 이후에만 구매 내역을 등록할 수 있습니다.")
 
     ;
 
