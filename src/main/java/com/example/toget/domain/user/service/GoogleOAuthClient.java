@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static com.example.toget.domain.user.service.OAuthApiCaller.getJson;
+import static com.example.toget.domain.user.service.OAuthApiCaller.requireToken;   // ← 추가
 import static com.example.toget.domain.user.service.OAuthApiCaller.textOrNull;
 
 /**
@@ -63,6 +64,10 @@ public class GoogleOAuthClient implements OAuthClient {
 
     @Override
     public OAuthUserInfo verify(String identityToken) {
+        // 토큰이 비어 있으면 아래 looksLikeIdToken()의 split()에서 NPE가 나 401이 아닌 500이 된다.
+        // 형태 판별보다 반드시 먼저 검사할 것.
+        requireToken(identityToken);                                       // ← 추가
+
         // client-id가 없으면 어떤 응답이 와도 aud를 대조할 수 없다 → 외부 호출 전에 즉시 거부(fail-closed).
         // 설정 누락 상태에서 구글 API를 두드리는 것 자체가 낭비이므로 검사를 맨 앞에 둔다.
         if (clientId.isBlank()) {
@@ -92,7 +97,7 @@ public class GoogleOAuthClient implements OAuthClient {
     }
 
     /**
-     * 토큰이 ID token(JWT)인지 판별한다.
+     * 토큰이 ID token(JWT)인지 판별한다. (호출 전 requireToken()으로 non-blank가 보장된다)
      *
      * <p>구글 access token은 불투명 문자열(ya29.…)이라 형식 보장이 없지만, ID token은 반드시
      * "header.payload.signature" 3조각의 JWT이고 헤더가 base64url JSON이다. 그래서 조각 수만 세지 않고
@@ -168,4 +173,4 @@ public class GoogleOAuthClient implements OAuthClient {
                 .retrieve()
                 .body(JsonNode.class));
     }
-}
+}   
