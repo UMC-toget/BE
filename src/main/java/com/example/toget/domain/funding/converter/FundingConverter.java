@@ -69,7 +69,7 @@ public class FundingConverter {
      * 소수점 내림(정수%), 100 초과 허용(초과 달성 그대로 노출)
      * targetAmount는 0 허용 -> 0 나눗셈을 방어
      */
-    private static double calculateProgressRate(Long collectedAmount, Long targetAmount) {
+    public static double calculateProgressRate(Long collectedAmount, Long targetAmount) {
         if (targetAmount == null || targetAmount == 0) {
             return 0.0;
         }
@@ -184,6 +184,58 @@ public class FundingConverter {
         );
     }
 
+
+    /**
+     * 외부 방문자용 선물 준비 상세 응답 변환.
+     *
+     * [설계 포인트]
+     *  - 공개 설정에 따른 null 마스킹을 이 한 곳에 모은다. 서비스에 if를 흩뿌리면
+     *    "어떤 토글이 어떤 필드를 가리는지" 규칙이 흩어져 추적이 어려워진다.
+     *  - visibility가 null이면 전체 공개로 간주한다. 공개 설정 행은 MY_GIFT 생성 시 항상 만들어지므로
+     *    정상 흐름에선 비어 있을 수 없지만, 이상 데이터로 화면이 통째로 비는 것보다 안전하다.
+     *    (축하 메시지 조회의 처리 방식과 동일한 규칙)
+     *  - 마스킹 여부와 무관하게 visibility 플래그는 원본 그대로 내려간다.
+     *    프론트가 "비공개"와 "값이 0/없음"을 구분해 안내 문구를 띄우는 데 쓴다.
+     */
+    public static SharedFundingDetailResponse toSharedFundingDetailResponse(
+            Funding funding, Long collectedAmount, int participantCount,
+            FundingVisibilitySettings visibility, List<FundingGift> gifts
+    ) {
+        boolean showProgress = isVisible(visibility == null ? null : visibility.getIsProgressVisible());
+        boolean showAmount = isVisible(visibility == null ? null : visibility.getIsCollectedAmountVisible());
+        boolean showParticipantCount = isVisible(visibility == null ? null : visibility.getIsParticipantCountVisible());
+        boolean showParticipantNames = isVisible(visibility == null ? null : visibility.getIsParticipantNameVisible());
+        boolean showMessages = isVisible(visibility == null ? null : visibility.getIsMessageVisible());
+
+        return new SharedFundingDetailResponse(
+                funding.getId(),
+                funding.getTitle(),
+                funding.getRecipientName(),
+                funding.getAnniversaryDate(),
+                funding.getStartDate(),
+                funding.getEndDate(),
+                funding.getIntroduction(),
+                funding.getThumbnailImageUrl(),
+                funding.getTargetAmount(),
+                showAmount ? collectedAmount : null,
+                showProgress ? calculateProgressRate(collectedAmount, funding.getTargetAmount()) : null,
+                showParticipantCount ? participantCount : null,
+                funding.getStatus().name(),
+                new SharedFundingDetailResponse.VisibilityInfo(
+                        showProgress, showAmount, showParticipantCount, showParticipantNames, showMessages
+                ),
+                gifts.stream()
+                        .map(g -> new SharedFundingDetailResponse.GiftInfo(
+                                g.getId(), g.getName(), g.getPrice(), g.getPurchaseUrl(), g.getImageUrl()
+                        ))
+                        .toList()
+        );
+    }
+
+    /** 공개 설정값이 없으면(null) 공개로 간주한다 */
+    private static boolean isVisible(Boolean flag) {
+        return !Boolean.FALSE.equals(flag);
+    }
 
     public static FundingMyGiftDashboardResponse toMyGiftDashboardResponse(
             Funding funding, Long collectedAmount, int participantCount,
