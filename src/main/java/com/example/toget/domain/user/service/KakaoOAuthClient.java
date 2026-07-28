@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 
+import static com.example.toget.domain.user.service.OAuthApiCaller.getJson;
+import static com.example.toget.domain.user.service.OAuthApiCaller.textOrNull;
+
 /**
  * 카카오 로그인 토큰 검증기.
  * 프론트가 카카오 SDK로 받은 access token을 카카오 사용자 정보 API(/v2/user/me)에 넣어 호출해 본다.
@@ -18,6 +21,8 @@ import tools.jackson.databind.JsonNode;
  * 유효성 검사만으로는 부족하다 — 토큰 정보 API(/v1/user/access_token_info)의 app_id가
  * 우리 앱의 ID와 일치하는지도 확인해야 타 서비스용 토큰으로 로그인하는 것을 막을 수 있다.
  * (구글 쪽의 aud 검증과 같은 역할)
+ *
+ * [실패 분류] 카카오 장애·타임아웃은 401이 아니라 502로 나간다 — OAuthApiCaller 참고.
  */
 @Component
 public class KakaoOAuthClient implements OAuthClient {
@@ -46,21 +51,19 @@ public class KakaoOAuthClient implements OAuthClient {
 
     @Override
     public OAuthUserInfo verify(String identityToken) {
-        verifyAppId(identityToken); // 우리 앱에서 발급된 토큰인지 먼저 확인
-
-        JsonNode body;
-        try {
-            body = restClient.get()
-                    .uri(userInfoUri)
-                    .header("Authorization", "Bearer " + identityToken) // 카카오 API도 Bearer 방식
-                    .retrieve() // 요청 실행 — 4xx/5xx 응답이면 예외 발생
-                    .body(JsonNode.class);
-        } catch (Exception e) {
-            // 네트워크 오류든 카카오의 401이든, 클라이언트 입장에서는 "인증 실패" 하나로 취급
+        // app-id가 없으면 어떤 응답이 와도 발급 앱을 대조할 수 없다 → 외부 호출 전에 즉시 거부(fail-closed)
+        if (appId.isBlank()) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
+        verifyAppId(identityToken); // 우리 앱에서 발급된 토큰인지 먼저 확인
+
+        JsonNode body = getJson(() -> restClient.get()
+                .uri(userInfoUri)
+                .header("Authorization", "Bearer " + identityToken) // 카카오 API도 Bearer 방식
+                .retrieve() // 요청 실행 — 4xx/5xx 응답이면 예외 발생
+                .body(JsonNode.class));
         // path(): 키가 없어도 예외 대신 missing node를 반환 → null 체크 없이 안전하게 탐색 가능
-        if (body == null || body.path("id").isMissingNode()) {
+        if (body.path("id").isMissingNode()) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
         // 카카오 응답 구조: { id, kakao_account: { email, profile: { nickname, profile_image_url } } }
@@ -82,38 +85,21 @@ public class KakaoOAuthClient implements OAuthClient {
     }
 
     /**
-     * JSON 필드를 문자열로 읽되, 없거나 null이면 null을 반환한다.
-     *
-     * <p>path()는 필드가 없을 때 MissingNode를 반환하는데, Jackson 3부터는 그 위에
-     * textValue()/stringValue()를 호출하면 JsonNodeException을 던진다(Jackson 2는 null 반환).
-     * 카카오는 동의하지 않은 항목을 응답에서 아예 생략하므로 이 경로를 반드시 방어해야 한다.
-     */
-    private static String textOrNull(JsonNode node, String field) {
-        JsonNode value = node.get(field);
-        return (value == null || value.isNull()) ? null : value.asString();
-    }
-
-    /**
      * 발급 앱 검증 — 토큰 정보 API의 app_id가 설정된 우리 앱 ID와 다르면 거부.
-     * app-id 미설정(빈 값) 시에도 거부해, 검증 없이 열리는 일이 없도록 한다.
+     * app_id 필드가 없어도 null != appId이므로 거부된다 (fail-closed).
      */
     private void verifyAppId(String identityToken) {
-        JsonNode body;
-        try {
-            body = restClient.get()
-                    .uri(tokenInfoUri)
-                    .header("Authorization", "Bearer " + identityToken)
-                    .retrieve()
-                    .body(JsonNode.class);
-        } catch (Exception e) {
-            throw new UserException(UserErrorCode.UNAUTHORIZED);
-        }
+        JsonNode body = getJson(() -> restClient.get()
+                .uri(tokenInfoUri)
+                .header("Authorization", "Bearer " + identityToken)
+                .retrieve()
+                .body(JsonNode.class));
 
-        JsonNode appIdNode = body == null ? null : body.get("app_id");
+        JsonNode appIdNode = body.get("app_id");
         String tokenAppId = appIdNode == null || appIdNode.isNull() ? null
                 : appIdNode.isNumber() ? String.valueOf(appIdNode.asLong())
                 : appIdNode.asString();
-        if (appId.isBlank() || !appId.equals(tokenAppId)) {
+        if (!appId.equals(tokenAppId)) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
     }
