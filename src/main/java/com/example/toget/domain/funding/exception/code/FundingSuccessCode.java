@@ -33,9 +33,9 @@ public enum FundingSuccessCode implements BaseSuccessCode {
 
     MY_GIFT_DASHBOARD_OK(HttpStatus.OK, "FUNDING200_18", "내 선물 페이지 대시보드를 성공적으로 조회했습니다."),
     TOGETHER_GIFT_DASHBOARD_OK(HttpStatus.OK, "FUNDING200_19", "함께 선물하기 대시보드를 성공적으로 조회했습니다."),
-    REVIEW_CREATE_OK(HttpStatus.OK, "FUNDING200_21", "게시물이 성공적으로 작성되었습니다."),
-    REVIEW_GET_OK(HttpStatus.OK, "FUNDING200_22", "게시물을 성공적으로 조회했습니다."),
-    REVIEW_INVITATION_GET_OK(HttpStatus.OK, "FUNDING200_23", "초대장을 성공적으로 조회했습니다.")
+    REVIEW_CREATE_OK(HttpStatus.OK, "FUNDING200_20", "게시물이 성공적으로 작성되었습니다."),
+    REVIEW_GET_OK(HttpStatus.OK, "FUNDING200_21", "게시물을 성공적으로 조회했습니다."),
+    REVIEW_INVITATION_GET_OK(HttpStatus.OK, "FUNDING200_22", "초대장을 성공적으로 조회했습니다.")
     ;
     private final HttpStatus status;
     private final String code;
