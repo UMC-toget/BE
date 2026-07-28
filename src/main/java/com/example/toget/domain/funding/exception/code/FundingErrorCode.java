@@ -27,7 +27,6 @@ public enum FundingErrorCode implements BaseErrorCode {
     INVALID_MEMBER_ROLE(HttpStatus.BAD_REQUEST, "FUNDING400_16", "유효하지 않은 멤버 역할입니다."),
     REVIEW_CONTENT_REQUIRED(HttpStatus.BAD_REQUEST, "FUNDING400_17", "후기 내용은 필수입니다."),
     REVIEW_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "FUNDING400_18", "제목은 필수입니다."),
-    REVIEW_TYPE_NOT_ALLOWED_FOR_FUNDING_TYPE(HttpStatus.BAD_REQUEST, "FUNDING400_19", "이 펀딩 유형에서는 작성할 수 없는 게시물 종류입니다."),
 
     FUNDING_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_1", "해당 펀딩을 찾을 수 없습니다."),
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_2", "정산 계좌를 찾을 수 없습니다."),
