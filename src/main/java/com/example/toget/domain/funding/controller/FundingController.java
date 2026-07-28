@@ -6,7 +6,9 @@ import com.example.toget.domain.funding.enums.ContributionSortType;
 import com.example.toget.domain.funding.exception.code.FundingSuccessCode;
 import com.example.toget.domain.funding.service.FundingQueryService;
 import com.example.toget.domain.funding.service.FundingService;
+import com.example.toget.domain.gift.dto.request.FundingGiftCandidateCreateRequest;
 import com.example.toget.domain.gift.dto.request.FundingGiftPurchaseRequest;
+import com.example.toget.domain.gift.dto.response.FundingGiftCandidateCreateResponse;
 import com.example.toget.domain.gift.dto.response.FundingGiftPurchaseResponse;
 import com.example.toget.domain.gift.exception.code.FundingGiftSuccessCode;
 import com.example.toget.domain.gift.service.FundingGiftService;
@@ -324,6 +326,18 @@ public class FundingController {
     ) {
         FundingTogetherGiftDashboardResponse result = fundingQueryService.getTogetherGiftDashboard(userId, fundingId);
         return ApiResponse.onSuccess(FundingSuccessCode.TOGETHER_GIFT_DASHBOARD_OK, result);
+    }
+
+    @Operation(summary = "선물 후보 등록하기",
+            description = "개설자 또는 관리자가 투표 후보로 선물을 등록합니다. 후보(CANDIDATE) 상태로 생성됩니다.")
+    @PostMapping("/{fundingId}/gift-candidates")
+    public ApiResponse<FundingGiftCandidateCreateResponse> createCandidate(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @PathVariable Long fundingId,
+            @Valid @RequestBody FundingGiftCandidateCreateRequest request
+    ) {
+        FundingGiftCandidateCreateResponse result = fundingGiftService.createCandidate(userId, fundingId, request);
+        return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_CANDIDATE_CREATE_OK, result);
     }
 
     @Operation(summary = "구매 내역 업로드",
