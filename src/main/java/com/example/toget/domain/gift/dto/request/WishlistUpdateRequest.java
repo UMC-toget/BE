@@ -1,5 +1,6 @@
 package com.example.toget.domain.gift.dto.request;
 
+import com.example.toget.domain.gift.enums.WishlistType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -23,6 +24,10 @@ public record WishlistUpdateRequest(
     String purchaseUrl,
 
     @Schema(description = "상품 이미지 URL", example = "https://image.com/macbook-updated.png")
-    String imageUrl
+    String imageUrl,
+
+    @Schema(description = "선물 유형 (GIVE: 주고싶은 선물, RECEIVE: 받고싶은 선물)", example = "GIVE")
+    @NotNull(message = "선물 유형은 필수입니다.")
+    WishlistType type
 ) {
 }

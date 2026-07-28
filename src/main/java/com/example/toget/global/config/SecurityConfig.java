@@ -1,13 +1,10 @@
 package com.example.toget.global.config;
 
-import com.example.toget.global.apiPayload.ApiResponse;
 import com.example.toget.global.apiPayload.code.GeneralErrorCode;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -19,10 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -31,10 +25,12 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final SecurityErrorResponseWriter errorResponseWriter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          SecurityErrorResponseWriter errorResponseWriter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.errorResponseWriter = errorResponseWriter;
     }
 
     // 인증 없이 모든 HTTP 메소드를 접근할 수 있는 Public API 경로 정의
@@ -71,9 +67,9 @@ public class SecurityConfig {
         // 시큐리티 단계에서 거부된 요청도 ApiResponse 포맷으로 응답 (기본값은 빈 본문 403)
         .exceptionHandling(handling -> handling
                 .authenticationEntryPoint((request, response, e) ->
-                        writeErrorResponse(response, GeneralErrorCode.UNAUTHORIZED))
+                        errorResponseWriter.write(response, GeneralErrorCode.UNAUTHORIZED))
                 .accessDeniedHandler((request, response, e) ->
-                        writeErrorResponse(response, GeneralErrorCode.FORBIDDEN)))
+                        errorResponseWriter.write(response, GeneralErrorCode.FORBIDDEN)))
 
         // HTTP 요청에 대한 접근 제어 설정
         .authorizeHttpRequests(requests -> requests
@@ -85,16 +81,21 @@ public class SecurityConfig {
                 .requestMatchers(allowAllUris).permitAll()
 
                 // 비회원(게스트)도 참여/조회할 수 있는 공유용 API 명세 반영
+                // ant 패턴의 *는 경로 세그먼트 한 칸만 매칭하므로 목록(.../contributions)과
+                // 상세(.../contributions/{contributionId})는 각각 따로 열어줘야 한다.
+                // 상세 조회는 GET만 허용 — 같은 경로의 PATCH(기여 금액 수정)는 개설자 전용이라
+                // 아래 anyRequest().authenticated()에 그대로 걸린다.
                 .requestMatchers(HttpMethod.GET, "/api/v1/shared-fundings/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/fundings/*/contributions").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/fundings/*/contributions/*").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/fundings/*/contributions").permitAll()
 
                 // 공통 리소스 정보 조회는 인증 없이 가능하도록 설정.
-                // contribution-backgrounds의 POST·PUT·DELETE는 아래 anyRequest().authenticated()로 로그인을
-                // 요구하고, 그 위에 @AdminOnly + AdminOnlyInterceptor가 "관리자 계정인가"를 한 겹 더 검사한다.
+                // contribution-backgrounds / characters / invitation-backgrounds의 POST·PUT·DELETE는
+                // 아래 anyRequest().authenticated()로 로그인을 요구하고, 그 위에
+                // @AdminOnly + AdminOnlyInterceptor가 "관리자 계정인가"를 한 겹 더 검사한다.
                 // (JWT에 role 클레임이 없어 hasRole("ADMIN")을 쓸 수 없으므로 인터셉터 방식을 택했다.
                 //  관리자가 여러 명/등급으로 확장되면 role 컬럼 + GrantedAuthority 매핑으로 교체 예정)
-                // TODO: 캐릭터/초대장 배경색도 동일한 마스터 데이터이므로 @AdminOnly 적용 검토 (별도 이슈)
                 .requestMatchers(HttpMethod.GET, "/api/v1/products", "/api/v1/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/characters/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/invitation-backgrounds", "/api/v1/invitation-backgrounds/**").permitAll()
@@ -115,14 +116,6 @@ public class SecurityConfig {
         FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
         registration.setEnabled(false);
         return registration;
-    }
-
-    // 시큐리티 필터 단계는 GeneralExceptionAdvice가 닿지 않으므로 직접 ApiResponse JSON을 작성
-    private void writeErrorResponse(HttpServletResponse response, GeneralErrorCode errorCode) throws IOException {
-        response.setStatus(errorCode.getStatus().value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.onFailure(errorCode, null)));
     }
 
     // CORS 설정을 처리하는 Bean 정의

@@ -1,6 +1,7 @@
 package com.example.toget.domain.gift.controller;
 
 import com.example.toget.domain.gift.enums.WishlistSort;
+import com.example.toget.domain.gift.enums.WishlistType;
 import com.example.toget.domain.gift.dto.request.WishlistCreateRequest;
 import com.example.toget.domain.gift.dto.request.WishlistUpdateRequest;
 import com.example.toget.domain.gift.dto.response.WishlistCreateResponse;
@@ -29,15 +30,16 @@ public class WishlistController {
 
     private final WishlistService wishlistService;
 
-    @Operation(summary = "위시리스트 조회", description = "현재 로그인한 사용자의 위시리스트 항목 목록을 페이징 및 정렬(latest/oldest) 조회합니다.")
+    @Operation(summary = "위시리스트 조회", description = "현재 로그인한 사용자의 위시리스트 항목 목록을 유형(GIVE/RECEIVE), 페이징 및 정렬(latest/oldest) 조회합니다.")
     @GetMapping
     public ApiResponse<WishlistListResponse> getWishlist(
             @Parameter(hidden = true) @LoginUserId Long userId,
+            @Parameter(description = "선물 유형 필터 (GIVE: 주고싶은 선물, RECEIVE: 받고싶은 선물)") @RequestParam(required = false) WishlistType type,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
             @RequestParam(defaultValue = "LATEST") WishlistSort sort
     ) {
-        return ApiResponse.onSuccess(GeneralSuccessCode.OK, wishlistService.getWishlist(userId, page, size, sort));
+        return ApiResponse.onSuccess(GeneralSuccessCode.OK, wishlistService.getWishlist(userId, type, page, size, sort));
     }
 
     @Operation(summary = "위시리스트 아이템 생성", description = "현재 로그인한 사용자의 새로운 선물 위시리스트 항목을 생성합니다.")
