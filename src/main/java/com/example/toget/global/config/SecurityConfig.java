@@ -101,6 +101,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/invitation-backgrounds", "/api/v1/invitation-backgrounds/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/contribution-backgrounds", "/api/v1/contribution-backgrounds/**").permitAll()
 
+                // 후기/소식/마음전하기 조회 및 초대장 조회는 개설자 검증 없이 링크를 아는 누구나 조회 가능
+                .requestMatchers(HttpMethod.GET, "/api/v1/fundings/*/reviews/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/fundings/*/reviews/*/invitation").permitAll()
                 // 그 외의 API 및 리소스 요청은 로그인 필요
                 .anyRequest().authenticated()
         );

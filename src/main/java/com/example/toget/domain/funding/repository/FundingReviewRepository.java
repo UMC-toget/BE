@@ -1,6 +1,8 @@
 package com.example.toget.domain.funding.repository;
 
 
+import com.example.toget.domain.funding.entity.FundingReview;
+import com.example.toget.domain.funding.enums.FundingReviewType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

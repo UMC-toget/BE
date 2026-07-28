@@ -6,6 +6,10 @@ import com.example.toget.domain.funding.enums.ContributionSortType;
 import com.example.toget.domain.funding.exception.code.FundingSuccessCode;
 import com.example.toget.domain.funding.service.FundingQueryService;
 import com.example.toget.domain.funding.service.FundingService;
+import com.example.toget.domain.gift.dto.request.FundingGiftPurchaseRequest;
+import com.example.toget.domain.gift.dto.response.FundingGiftPurchaseResponse;
+import com.example.toget.domain.gift.exception.code.FundingGiftSuccessCode;
+import com.example.toget.domain.gift.service.FundingGiftService;
 import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +31,7 @@ public class FundingController {
 
     private final FundingService fundingService;
     private final FundingQueryService fundingQueryService;
+    private final FundingGiftService fundingGiftService;
 
     @Operation(
             summary = "선물 준비 생성 (개최)",
@@ -319,6 +324,19 @@ public class FundingController {
     ) {
         FundingTogetherGiftDashboardResponse result = fundingQueryService.getTogetherGiftDashboard(userId, fundingId);
         return ApiResponse.onSuccess(FundingSuccessCode.TOGETHER_GIFT_DASHBOARD_OK, result);
+    }
+
+    @Operation(summary = "구매 내역 업로드",
+            description = "개설자가 확정된 선물의 실제 구매 내역(구매링크, 영수증 이미지)을 업로드합니다.")
+    @PostMapping("/{fundingId}/gifts/{fundingGiftId}/purchase")
+    public ApiResponse<FundingGiftPurchaseResponse> uploadPurchase(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @PathVariable Long fundingId,
+            @PathVariable Long fundingGiftId,
+            @Valid @RequestBody FundingGiftPurchaseRequest request
+    ) {
+        FundingGiftPurchaseResponse result = fundingGiftService.uploadPurchase(userId, fundingId, fundingGiftId, request);
+        return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_PURCHASE_UPLOAD_OK, result);
     }
 
 }
