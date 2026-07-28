@@ -77,6 +77,11 @@ public class SecurityConfig {
                 // 로그아웃은 /auth/tokens/** permitAll 패턴에 걸리지만 인증이 필요하므로 먼저 예외 처리
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/auth/tokens/me").authenticated()
 
+                // 회원가입 완료 — 아직 회원이 아닌 사람이 호출하므로 인증을 요구할 수 없다.
+                // 신원 확인은 요청 본문의 서명된 가입 토큰(signup token)으로 수행한다.
+                // POST 하나만 열고 /users/me 등 나머지는 아래 anyRequest().authenticated()에 그대로 걸린다. (issue #61)
+                .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
+
                 // Swagger 및 소셜 로그인 API 무조건 허용
                 .requestMatchers(allowAllUris).permitAll()
 

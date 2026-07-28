@@ -70,6 +70,12 @@ public class User extends BaseEntity {
 
     // @Builder를 생성자에 붙이면 빌더가 이 파라미터들만 받는다.
     // id(자동 생성), status(아래에서 고정), refreshToken(로그인 시 별도 설정)은 빌더에서 제외됨.
+    //
+    // [중요] 이 생성자가 호출되는 시점 = 회원가입이 확정되는 시점이다.
+    // 소셜 인증만 끝난 사람은 users 레코드를 만들지 않고 가입 토큰만 발급받으며(JwtProvider 참고),
+    // 프로필 설정을 마쳐야 비로소 여기까지 온다. 그래서 nickname은 항상 채워져 있고 status는 ACTIVE다.
+    // 과거에는 소셜 인증 직후 바로 생성해서, 프로필 설정 화면에서 이탈해도 "소셜 이름 + 기본 프로필"로
+    // 계정이 확정되고 재로그인 시 온보딩이 다시 뜨지 않는 문제가 있었다. (issue #61)
     @Builder
     private User(OAuthProvider oAuthProvider, String oAuthId, String email, String name,
                  String nickname, String profileImageUrl) {
@@ -79,7 +85,7 @@ public class User extends BaseEntity {
         this.name = name;
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
-        this.status = UserStatus.ACTIVE; // 신규 가입자는 항상 활성 상태로 시작
+        this.status = UserStatus.ACTIVE; // 프로필 설정까지 마치고 생성되므로 곧바로 활성 상태
     }
 
     /** null인 필드는 건드리지 않는 부분 수정(PATCH) 방식. 공백 문자열("") 입력 시 프로필 이미지 초기화 */

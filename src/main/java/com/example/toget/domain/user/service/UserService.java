@@ -28,6 +28,10 @@ public class UserService {
         return UserConverter.toProfileResponse(activeUserReader.getActiveUser(userId));
     }
 
+    /**
+     * 내 프로필 수정 — 이미 가입을 마친 회원의 닉네임·이미지 변경 전용이다.
+     * 최초 프로필 설정(=회원가입 완료)은 {@code POST /api/v1/users}(SignupService)가 담당한다. (issue #61)
+     */
     @Transactional
     public UserProfileUpdateResponse updateMyProfile(Long userId, UserProfileUpdateRequest request) {
         User user = activeUserReader.getActiveUser(userId);

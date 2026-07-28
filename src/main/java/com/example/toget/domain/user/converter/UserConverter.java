@@ -1,5 +1,7 @@
 package com.example.toget.domain.user.converter;
 
+import com.example.toget.domain.user.dto.OAuthUserInfo;
+import com.example.toget.domain.user.dto.SignupCompleteResponse;
 import com.example.toget.domain.user.dto.SocialLoginResponse;
 import com.example.toget.domain.user.dto.UserProfileResponse;
 import com.example.toget.domain.user.dto.UserProfileUpdateResponse;
@@ -31,9 +33,24 @@ public class UserConverter {
         return new UserProfileUpdateResponse(user.getId(), user.getNickname(), user.getProfileImageUrl());
     }
 
-    public static SocialLoginResponse toSocialLoginResponse(User user, String accessToken, String refreshToken,
-                                                            boolean isNewUser) {
+    /** 기존 회원 로그인 — 토큰을 그대로 실어 보낸다 */
+    public static SocialLoginResponse toSocialLoginResponse(User user, String accessToken, String refreshToken) {
         return new SocialLoginResponse(user.getId(), user.getEmail(), user.getName(),
-                accessToken, refreshToken, isNewUser);
+                accessToken, refreshToken, null, true);
+    }
+
+    /**
+     * 미가입자 로그인 — 아직 User 엔티티가 없으므로 소셜에서 받아온 정보로만 응답을 만든다.
+     * userId·accessToken·refreshToken이 모두 null인 것이 정상이며,
+     * 프론트는 isProfileCompleted=false를 보고 프로필 설정 화면으로 이동해야 한다. (issue #61)
+     */
+    public static SocialLoginResponse toSignupRequiredResponse(OAuthUserInfo info, String signupToken) {
+        return new SocialLoginResponse(null, info.email(), info.name(),
+                null, null, signupToken, false);
+    }
+
+    public static SignupCompleteResponse toSignupCompleteResponse(User user, String accessToken, String refreshToken) {
+        return new SignupCompleteResponse(user.getId(), user.getEmail(), user.getName(),
+                user.getNickname(), user.getProfileImageUrl(), accessToken, refreshToken);
     }
 }

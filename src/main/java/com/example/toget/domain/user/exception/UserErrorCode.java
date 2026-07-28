@@ -18,6 +18,11 @@ public enum UserErrorCode implements BaseErrorCode {
     // 401 Unauthorized — 인증 정보 없음/무효, 토큰 만료·위조, refresh 토큰 재사용 감지 등
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "USER401_1", "인증 정보가 올바르지 않습니다."),
 
+    // 409 Conflict — 이미 가입된 소셜 계정으로 가입 완료를 다시 요청한 경우.
+    // 뒤로가기·중복 제출로 같은 가입 토큰이 두 번 들어오면 발생한다.
+    // 프론트는 이 코드를 받으면 가입 실패가 아니라 "이미 가입됨"으로 보고 재로그인시키면 된다. (issue #61)
+    ALREADY_REGISTERED(HttpStatus.CONFLICT, "USER409_1", "이미 가입이 완료된 계정입니다. 다시 로그인해주세요."),
+
     // 400 Bad Request — 지원하지 않는 소셜 로그인 공급자
     UNSUPPORTED_PROVIDER(HttpStatus.BAD_REQUEST, "USER400_1", "지원하지 않는 소셜 로그인 공급자입니다."),
 
