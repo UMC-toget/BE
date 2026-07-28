@@ -11,6 +11,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.SocketTimeoutException;
 
@@ -129,6 +132,16 @@ class GoogleOAuthClientTest {
         assertRejectedWith(UserErrorCode.UNAUTHORIZED, () -> client("").verify(ACCESS_TOKEN));
         server.verify(); // expectation을 하나도 걸지 않았으므로, 호출이 나갔다면 여기서 실패함
     }
+    
+    @ParameterizedTest(name = "토큰이 [{0}]이면 거부")
+    @NullSource
+    @ValueSource(strings = {"", "   "})
+    @DisplayName("토큰이 비어 있으면 구글을 호출하지 않고 401로 거부한다")
+    void rejectsBlankToken(String token) {
+        assertRejectedWith(UserErrorCode.UNAUTHORIZED, () -> client(CLIENT_ID).verify(token));
+        server.verify(); // expectation을 걸지 않았으므로, 외부 호출이 나갔다면 여기서 실패함
+    }
+    
 
     @Test
     @DisplayName("scope에 없는 항목이 응답에서 빠져도 sub만 있으면 null로 받아들인다")
