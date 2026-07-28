@@ -44,7 +44,10 @@ public enum FundingErrorCode implements BaseErrorCode {
     SETTLEMENT_LOCKED(HttpStatus.CONFLICT, "FUNDING409_3", "이미 입금 절차가 시작되어 정산 인원과 금액을 변경할 수 없습니다."),
     GIFT_UPDATE_NOT_ALLOWED(HttpStatus.CONFLICT, "FUNDING409_4", "최종 선물이 확정되었거나 수정 가능 기간이 아니어서 후보 선물을 변경할 수 없습니다."),
     DASHBOARD_STATUS_MISMATCH(HttpStatus.CONFLICT, "FUNDING409_5", "현재 펀딩 상태에서는 조회할 수 없습니다."),
-    NOT_SETTLEMENT_TARGET_MEMBER(HttpStatus.CONFLICT, "FUNDING409_7", "정산 대상자가 아닙니다.");
+    NOT_SETTLEMENT_TARGET_MEMBER(HttpStatus.CONFLICT, "FUNDING409_7", "정산 대상자가 아닙니다."),
+    GIFT_NOT_CONFIRMED(HttpStatus.CONFLICT, "FUNDING409_8", "확정되지 않은 선물에는 구매 내역을 등록할 수 없습니다."),
+    PURCHASE_ALREADY_EXISTS(HttpStatus.CONFLICT, "FUNDING409_9", "이미 구매 내역이 등록된 선물입니다.")
+    ;
 
 
     private final HttpStatus status;
