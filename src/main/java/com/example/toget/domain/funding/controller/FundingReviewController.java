@@ -7,6 +7,10 @@ import com.example.toget.domain.funding.dto.response.FundingReviewDetailResponse
 import com.example.toget.domain.funding.dto.response.FundingReviewInvitationResponse;
 import com.example.toget.domain.funding.exception.code.FundingSuccessCode;
 import com.example.toget.domain.funding.service.FundingReviewService;
+import com.example.toget.domain.gift.dto.request.FundingGiftPurchaseRequest;
+import com.example.toget.domain.gift.dto.response.FundingGiftPurchaseResponse;
+import com.example.toget.domain.gift.exception.code.FundingGiftSuccessCode;
+import com.example.toget.domain.gift.service.FundingGiftService;
 import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,13 +20,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "펀딩 - 개설자/공동관리자용 API", description = "개설자 전용 펀딩 관리 API")
+@Tag(name = "펀딩 - 후기 API", description = "선물 후기, 전달 소식, 마음 전하기 작성 및 조회 API")
 @RestController
 @RequestMapping("/api/v1/fundings")
 @RequiredArgsConstructor
 public class FundingReviewController {
 
     private final FundingReviewService fundingReviewService;
+    private final FundingGiftService fundingGiftService;
 
     @Operation(summary = "[MY_GIFT] 선물 후기 작성",
             description = "개설자가 선물 후기를 작성합니다. 펀딩당 1개만 작성 가능합니다.")
@@ -81,4 +86,18 @@ public class FundingReviewController {
         FundingReviewInvitationResponse result = fundingReviewService.getInvitation(fundingId, type);
         return ApiResponse.onSuccess(FundingSuccessCode.REVIEW_INVITATION_GET_OK, result);
     }
+
+    @Operation(summary = "구매 내역 업로드",
+            description = "개설자가 확정된 선물의 실제 구매 내역(구매링크, 영수증 이미지)을 업로드합니다.")
+    @PostMapping("/{fundingId}/gifts/{fundingGiftId}/purchase")
+    public ApiResponse<FundingGiftPurchaseResponse> uploadPurchase(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @PathVariable Long fundingId,
+            @PathVariable Long fundingGiftId,
+            @Valid @RequestBody FundingGiftPurchaseRequest request
+    ) {
+        FundingGiftPurchaseResponse result = fundingGiftService.uploadPurchase(userId, fundingId, fundingGiftId, request);
+        return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_PURCHASE_UPLOAD_OK, result);
+    }
+
 }

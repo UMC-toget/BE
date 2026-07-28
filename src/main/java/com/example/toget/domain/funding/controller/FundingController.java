@@ -340,17 +340,4 @@ public class FundingController {
         return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_CANDIDATE_CREATE_OK, result);
     }
 
-    @Operation(summary = "구매 내역 업로드",
-            description = "개설자가 확정된 선물의 실제 구매 내역(구매링크, 영수증 이미지)을 업로드합니다.")
-    @PostMapping("/{fundingId}/gifts/{fundingGiftId}/purchase")
-    public ApiResponse<FundingGiftPurchaseResponse> uploadPurchase(
-            @Parameter(hidden = true) @LoginUserId Long userId,
-            @PathVariable Long fundingId,
-            @PathVariable Long fundingGiftId,
-            @Valid @RequestBody FundingGiftPurchaseRequest request
-    ) {
-        FundingGiftPurchaseResponse result = fundingGiftService.uploadPurchase(userId, fundingId, fundingGiftId, request);
-        return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_PURCHASE_UPLOAD_OK, result);
-    }
-
 }

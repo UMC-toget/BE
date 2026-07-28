@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
  * user 담당자와 함께 리졸버에 required=false 옵션을 추가하는 작업이 선행되어야 한다.
  * 그 전까지는 로그인 필수로 우선 동작시킨다.
  */
-@Tag(name = "펀딩 - 참여자용", description = "참여자/방문자용 펀딩 참여 API")
+@Tag(name = "펀딩 - 참여자용 API", description = "참여자/방문자용 펀딩 참여 API")
 @RestController
 @RequestMapping("/api/v1/fundings")
 @RequiredArgsConstructor
