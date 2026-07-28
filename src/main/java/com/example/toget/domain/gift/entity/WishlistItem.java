@@ -1,5 +1,6 @@
 package com.example.toget.domain.gift.entity;
 
+import com.example.toget.domain.gift.enums.WishlistType;
 import com.example.toget.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -32,10 +33,15 @@ public class WishlistItem extends BaseEntity {
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
-    public void update(String name, Long price, String purchaseUrl, String imageUrl) {
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false, length = 20)
+    private WishlistType type;
+
+    public void update(String name, Long price, String purchaseUrl, String imageUrl, WishlistType type) {
         this.name = name;
         this.price = price;
         this.purchaseUrl = purchaseUrl;
         this.imageUrl = imageUrl;
+        this.type = type;
     }
 }
