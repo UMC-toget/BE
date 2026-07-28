@@ -42,7 +42,8 @@ admin:
 oauth:
   google:
     token-info-uri: ${GOOGLE_TOKEN_INFO_URI:https://oauth2.googleapis.com/tokeninfo}
-    client-id: ${GOOGLE_CLIENT_ID:} # ID 토큰의 aud 검증용 — 미설정 시 구글 로그인 불가
+    user-info-uri: ${GOOGLE_USER_INFO_URI:https://openidconnect.googleapis.com/v1/userinfo}
+    client-id: ${GOOGLE_CLIENT_ID:} # access token의 aud 검증용 — 미설정 시 구글 로그인 불가
   kakao:
     user-info-uri: ${KAKAO_USER_INFO_URI:https://kapi.kakao.com/v2/user/me}
     token-info-uri: ${KAKAO_TOKEN_INFO_URI:https://kapi.kakao.com/v1/user/access_token_info}
