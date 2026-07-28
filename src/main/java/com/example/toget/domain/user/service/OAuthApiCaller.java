@@ -30,6 +30,20 @@ final class OAuthApiCaller {
     private OAuthApiCaller() {
     }
 
+    /**                                                                    // ← 추가 (메서드 전체)
+     * 토큰이 비어 있으면 외부 호출 없이 즉시 401로 거부한다.
+     *
+     * <p>컨트롤러의 @NotBlank가 먼저 걸러주지만, 서비스 계층이 단독으로 호출될 수 있으므로
+     * 여기서도 방어한다. 이 검사가 없으면 null 토큰이 공급자마다 제각각 실패한다 —
+     * 구글은 토큰 형태 판별(String.split)에서 NPE가 나 500이 되고,
+     * 카카오는 "Bearer null"로 무의미한 외부 호출을 한 번 한 뒤에야 401이 된다.
+     */
+    static void requireToken(String token) {
+        if (token == null || token.isBlank()) {
+            throw new UserException(UserErrorCode.UNAUTHORIZED);
+        }
+    }
+
     /**
      * 공급자 API를 호출하고, 실패를 위 기준대로 UserException으로 변환한다.
      * 응답 본문이 비어 있으면(null) 정상 응답으로 볼 수 없으므로 502로 처리한다.
@@ -56,15 +70,21 @@ final class OAuthApiCaller {
     }
 
     /**
-     * JSON 필드를 문자열로 읽되, 없거나 null이면 null을 반환한다.
+     * JSON 필드를 문자열로 읽되, 노드나 필드가 없거나 null이면 null을 반환한다.
      *
      * <p>path()는 필드가 없을 때 MissingNode를 반환하는데, Jackson 3부터는 그 위에
      * textValue()/stringValue()를 호출하면 JsonNodeException을 던진다(Jackson 2는 null 반환).
      * 반면 get()은 필드가 없으면 null을 주므로 누락과 명시적 null을 함께 걸러낼 수 있다.
      * 카카오·구글 모두 동의하지 않았거나 scope에 없는 항목을 응답에서 아예 생략하므로
      * 이 경로를 반드시 방어해야 한다.
+     *
+     * <p>node 자체가 null인 경우는 현재 호출부에는 없지만(getJson이 non-null을 보장하고
+     * path()는 MissingNode를 준다), 공용 헬퍼라 호출부가 늘어날 수 있어 함께 방어한다.
      */
     static String textOrNull(JsonNode node, String field) {
+        if (node == null) {                                                // ← 추가
+            return null;                                                   // ← 추가
+        }                                                                  // ← 추가
         JsonNode value = node.get(field);
         return (value == null || value.isNull()) ? null : value.asString();
     }
