@@ -465,9 +465,11 @@ public class FundingService {
         List<FundingGift> gifts = validateAndFetchGifts(fundingId, request.giftIds());
         List<Long> settlementMemberIds = includeCreator(fundingId, userId, request.settlementMemberIds());
 
-        if (request.settlementMemberIds().size() > MAX_SETTLEMENT_MEMBER_COUNT) {
+        if (settlementMemberIds.size() > MAX_SETTLEMENT_MEMBER_COUNT) {
             throw new FundingException(FundingErrorCode.MAX_SETTLEMENT_MEMBER_EXCEEDED);
         }
+
+
         List<FundingMember> settlementMembers = validateAndFetchMembers(fundingId, settlementMemberIds);
 
         // 2단계: 검증이 전부 끝났으니 이제 안전하게 상태 변경
