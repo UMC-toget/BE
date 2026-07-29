@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
  *  - type으로 REVIEW(MY_GIFT 후기)/NEWS(전달 소식)/HEARTFELT(마음전하기)를 구분한다.
  *  - REVIEW는 title 없이 backgroundId를 사용, NEWS/HEARTFELT는 title 필수에 backgroundId 없음.
  *  - 개설자만 작성 가능. 펀딩당 타입별 최대 1개(UNIQUE(funding_id, type)).
- *  - 후기 전용 초대장은 이 콘텐츠와 1:1이라 별도 테이블 대신 컬럼으로 내장했
+ *  - 후기 전용 초대장은 이 콘텐츠와 1:1이라 별도 테이블 대신 컬럼으로 내장했다.
  *
  * [배경색 참조 — 두 필드가 서로 다른 테이블을 가리키니 혼동 주의]
  *  - backgroundId: 후기 카드 자체의 배경색. contribution_backgrounds 참조 (REVIEW만 사용).
