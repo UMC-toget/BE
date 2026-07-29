@@ -12,7 +12,8 @@ import com.example.toget.domain.funding.entity.FundingContribution;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.entity.FundingVisibilitySettings;
 import com.example.toget.domain.funding.enums.*;
-import com.example.toget.domain.funding.exception.FundingException;
+import com.example.toget.domain
+        .funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.repository.FundingContributionRepository;
 import com.example.toget.domain.funding.repository.FundingMemberRepository;

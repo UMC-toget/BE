@@ -2,6 +2,7 @@ package com.example.toget.domain.funding.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.List;
@@ -28,10 +29,10 @@ public record FundingReviewTitledCreateRequest(
         String invitationContent,
 
         @Schema(description = "초대장 캐릭터 ID")
-        @NotBlank(message = "초대장 캐릭터 선택은 필수입니다.")
+        @NotNull(message = "초대장 캐릭터 선택은 필수입니다.")
         Long invitationCharacterId,
 
         @Schema(description = "초대장 배경 ID")
-        @NotBlank(message = "초대장 배경 선택은 필수입니다.")
+        @NotNull(message = "초대장 배경 선택은 필수입니다.")
         Long invitationBackgroundId
 ) {}
