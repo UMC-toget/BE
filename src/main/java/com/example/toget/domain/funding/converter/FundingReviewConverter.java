@@ -8,6 +8,9 @@ import java.util.List;
 
 public class FundingReviewConverter {
 
+    private FundingReviewConverter() {
+    }
+
     public static FundingReviewDetailResponse toDetailResponse(FundingReview review, List<String> images) {
         return new FundingReviewDetailResponse(
                 review.getId(), review.getType().name(), review.getTitle(),
