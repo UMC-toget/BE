@@ -4,6 +4,7 @@ import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.enums.FundingRole;
 import com.example.toget.domain.funding.enums.FundingStatus;
+import com.example.toget.domain.funding.enums.FundingType;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.repository.FundingGiftVoteRepository;
@@ -26,8 +27,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -220,8 +220,7 @@ public class FundingGiftService {
 
     @Transactional
     public FundingGiftPurchaseResponse uploadPurchase(
-            Long userId, Long fundingId, Long fundingGiftId, FundingGiftPurchaseRequest request
-    ) {
+            Long userId, Long fundingId, Long fundingGiftId, FundingGiftPurchaseRequest request) {
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
         if (!funding.isOwnedBy(userId)) {
@@ -231,7 +230,7 @@ public class FundingGiftService {
             throw new FundingException(FundingErrorCode.INVALID_FUNDING_STATUS_FOR_PURCHASE);
         }
 
-            FundingGift gift = fundingGiftRepository.findById(fundingGiftId)
+        FundingGift gift = fundingGiftRepository.findById(fundingGiftId)
                 .orElseThrow(() -> new FundingGiftException(FundingGiftErrorCode.FUNDING_GIFT_NOT_FOUND));
         if (!gift.getFundingId().equals(fundingId)) {
             throw new FundingGiftException(FundingGiftErrorCode.FUNDING_GIFT_NOT_FOUND);
@@ -257,4 +256,73 @@ public class FundingGiftService {
         return new FundingGiftPurchaseResponse(saved.getId(), fundingGiftId);
     }
 
+    public List<FundingGiftResponse> updateWishGifts(
+            Long userId, Long fundingId, List<FundingGiftUpsertRequest> requests
+    ) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+        if (funding.getFundingType() != FundingType.MY_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);
+        }
+
+        validateNoDuplicateIds(requests);
+
+
+        List<FundingGift> existingGifts = fundingGiftRepository.findAllByFundingId(fundingId);
+        Map<Long, FundingGift> existingById = existingGifts.stream()
+                .collect(Collectors.toMap(FundingGift::getId, g -> g));
+
+        Set<Long> requestedIds = requests.stream()
+                .map(FundingGiftUpsertRequest::fundingGiftId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        List<FundingGift> toDelete = existingGifts.stream()
+                .filter(g -> !requestedIds.contains(g.getId()))
+                .toList();
+        if (!toDelete.isEmpty()) {
+            fundingGiftRepository.deleteAllInBatch(toDelete);
+        }
+
+        // upsert
+        List<FundingGift> result = requests.stream()
+                .map(req -> upsertOne(fundingId, req, existingById))
+                .toList();
+
+        return result.stream()
+                .map(g -> new FundingGiftResponse(
+                        g.getId(), g.getName(), g.getPrice(), g.getPurchaseUrl(), g.getImageUrl()
+                ))
+                .toList();
+    }
+
+    private void validateNoDuplicateIds(List<FundingGiftUpsertRequest> requests) {
+        List<Long> ids = requests.stream()
+                .map(FundingGiftUpsertRequest::fundingGiftId)
+                .filter(Objects::nonNull)
+                .toList();
+        Set<Long> uniqueIds = new HashSet<>(ids);
+        if (uniqueIds.size() != ids.size()) {
+            throw new FundingGiftException(FundingGiftErrorCode.DUPLICATE_GIFT_ID_IN_REQUEST);
+        }
+    }
+
+    private FundingGift upsertOne(Long fundingId, FundingGiftUpsertRequest req, Map<Long, FundingGift> existingById) {
+        if (req.fundingGiftId() == null) {
+            return fundingGiftRepository.save(
+                    FundingGift.createWishGift(fundingId, req.giftName(), req.giftPrice(),
+                            req.giftPurchaseUrl(), req.giftImageUrl())
+            );
+        }
+
+        FundingGift existing = existingById.get(req.fundingGiftId());
+        if (existing == null || !existing.getFundingId().equals(fundingId)) {
+            throw new FundingException(FundingErrorCode.FUNDING_GIFT_NOT_FOUND);
+        }
+        existing.updateWishGiftInfo(req.giftName(), req.giftPrice(), req.giftPurchaseUrl(), req.giftImageUrl());
+        return existing;
+    }
 }

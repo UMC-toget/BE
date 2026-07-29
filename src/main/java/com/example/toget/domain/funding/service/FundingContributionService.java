@@ -8,6 +8,7 @@ import com.example.toget.domain.funding.dto.response.FundingContributionDetailRe
 import com.example.toget.domain.funding.dto.response.FundingContributionRollingPaperResponse;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingContribution;
+import com.example.toget.domain.funding.entity.FundingVisibilitySettings;
 import com.example.toget.domain.funding.enums.FundingStatus;
 import com.example.toget.domain.funding.enums.FundingType;
 import com.example.toget.domain.funding.exception.ContributionException;
@@ -17,6 +18,7 @@ import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.repository.ContributionBackgroundRepository;
 import com.example.toget.domain.funding.repository.FundingContributionRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
+import com.example.toget.domain.funding.repository.FundingVisibilitySettingsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +32,7 @@ public class FundingContributionService {
     private final FundingRepository fundingRepository;
     private final FundingContributionRepository fundingContributionRepository;
     private final ContributionBackgroundRepository contributionBackgroundRepository;
+    private final FundingVisibilitySettingsRepository fundingVisibilitySettingsRepository;
 
     @Transactional
     public FundingContributionCreateResponse createContribution(
@@ -72,8 +75,9 @@ public class FundingContributionService {
 
         List<FundingContribution> contributions = fundingContributionRepository.findAllByFundingId(fundingId);
 
-
-        return FundingContributionConverter.toRollingPaperResponse(contributions, isOwner);
+        return FundingContributionConverter.toRollingPaperResponse(
+                contributions, isOwner, findVisibility(fundingId)
+        );
     }
 
     @Transactional(readOnly = true)
@@ -88,7 +92,19 @@ public class FundingContributionService {
         }
 
         boolean isOwner = viewerId != null && funding.isOwnedBy(viewerId);
-        return FundingContributionConverter.toDetailResponse(contribution, isOwner);
+        return FundingContributionConverter.toDetailResponse(contribution, isOwner, findVisibility(fundingId));
+    }
+
+    /**
+     * 개설자가 설정한 공개 범위를 조회한다. 없으면 null.
+     *
+     * [설계 포인트]
+     *  - 공개 설정 행은 MY_GIFT 펀딩에만 생성되므로(FundingService.create 참고),
+     *    TOGETHER_GIFT이거나 설정 이전 데이터면 비어 있는 게 정상이다.
+     *  - null은 "전체 공개"로 해석한다. 조회를 막는 방향이 아니라 기존 동작을 유지하는 방향이 안전하다.
+     */
+    private FundingVisibilitySettings findVisibility(Long fundingId) {
+        return fundingVisibilitySettingsRepository.findByFundingId(fundingId).orElse(null);
     }
 
 }

@@ -1,6 +1,8 @@
 package com.example.toget.domain.funding.service;
 
 import com.example.toget.domain.funding.converter.FundingConverter;
+import com.example.toget.domain.funding.dto.request.*;
+
 import com.example.toget.domain.funding.dto.request.FundingAccountUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingBasicInfoUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingContributionAmountUpdateRequest;
@@ -20,6 +22,9 @@ import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
 import com.example.toget.domain.funding.repository.FundingVisibilitySettingsRepository;
 import com.example.toget.domain.gift.entity.FundingGift;
+import com.example.toget.domain.gift.enums.FundingGiftStatus;
+import com.example.toget.domain.gift.exception.FundingGiftException;
+import com.example.toget.domain.gift.exception.code.FundingGiftErrorCode;
 import com.example.toget.domain.gift.repository.FundingGiftRepository;
 import com.example.toget.domain.invitation.entity.CharacterEntity;
 import com.example.toget.domain.invitation.entity.InvitationBackground;
@@ -39,9 +44,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -49,6 +52,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FundingService {
 
+    private static final int MAX_SETTLEMENT_MEMBER_COUNT = 50;
 
     private final FundingRepository fundingRepository;
     private final FundingMemberRepository fundingMemberRepository;
@@ -385,10 +389,6 @@ public class FundingService {
                 .findAllByFundingIdAndAmountDueIsNotNull(fundingId);
         Map<Long, User> userMap = fundingMemberUserResolver.resolve(settlementMembers);
 
-        long totalAmount = settlementMembers.stream()
-                .mapToLong(FundingMember::getAmountDue)
-                .sum();
-
         List<FundingSettlementListResponse.SettlementInfo> settlements = settlementMembers.stream()
                 .map(m -> new FundingSettlementListResponse.SettlementInfo(
                         m.getId(), m.getUserId(),
@@ -471,24 +471,6 @@ public class FundingService {
                 .collect(Collectors.toMap(User::getId, Function.identity()));
     }
 
-    private FundingContributionListResponse.ContributionItem toContributionItem(
-            FundingContribution c, Map<Long, User> userMap
-    ) {
-        if (c.getUserId() != null) {
-            // 로그인 회원 참여 — User 조회로 이름/프로필 채움
-            User user = userMap.get(c.getUserId());
-            String name = user != null ? user.getName() : null;
-            String profileImageUrl = user != null ? user.getProfileImageUrl() : null;
-            return new FundingContributionListResponse.ContributionItem(
-                    c.getId(), name, profileImageUrl, c.getAmount(), c.getCreatedAt()
-            );
-        }
-        // 비회원 참여 — guestName 그대로, 프로필 이미지는 애초에 없음
-        return new FundingContributionListResponse.ContributionItem(
-                c.getId(), c.getGuestName(), null, c.getAmount(), c.getCreatedAt()
-        );
-    }
-
     @Transactional
     public FundingContributionAmountUpdateResponse updateContributionAmount(
             Long userId, Long fundingId, Long contributionId, FundingContributionAmountUpdateRequest request
@@ -511,5 +493,102 @@ public class FundingService {
         contribution.updateAmount(request.amount());
 
         return FundingConverter.toContributionAmountUpdateResponse(contribution);
+    }
+
+    @Transactional
+    public FundingConfirmSettlementResponse confirmSettlement(
+            Long userId, Long fundingId, FundingConfirmSettlementRequest request
+    ) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+        if (funding.getFundingType() != FundingType.TOGETHER_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
+        }
+
+        if (funding.getStatus() != FundingStatus.SELECTING) {
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_STATUS_FOR_SETTLEMENT);
+        }
+
+
+        // 1단계: 존재/상태 검증만 먼저 전부 끝낸다 (아직 아무것도 mutate하지 않음)
+        List<FundingGift> gifts = validateAndFetchGifts(fundingId, request.giftIds());
+        List<Long> settlementMemberIds = includeCreator(fundingId, userId, request.settlementMemberIds());
+
+        if (settlementMemberIds.size() > MAX_SETTLEMENT_MEMBER_COUNT) {
+            throw new FundingException(FundingErrorCode.MAX_SETTLEMENT_MEMBER_EXCEEDED);
+        }
+
+
+        List<FundingMember> settlementMembers = validateAndFetchMembers(fundingId, settlementMemberIds);
+
+        // 2단계: 검증이 전부 끝났으니 이제 안전하게 상태 변경
+        long totalAmount = gifts.stream().mapToLong(FundingGift::getPrice).sum();
+        gifts.forEach(FundingGift::select);
+        assignSettlementAmounts(settlementMembers, totalAmount);
+        funding.confirmSettlement(totalAmount);
+
+        return new FundingConfirmSettlementResponse(funding.getId());
+    }
+
+    private List<FundingGift> validateAndFetchGifts(Long fundingId, List<Long> giftIds) {
+        List<FundingGift> gifts = fundingGiftRepository.findAllById(giftIds);
+        if (gifts.size() != giftIds.size()) {
+            throw new FundingGiftException(FundingGiftErrorCode.FUNDING_GIFT_NOT_FOUND);
+        }
+        for (FundingGift gift : gifts) {
+            if (!gift.getFundingId().equals(fundingId)) {
+                throw new FundingGiftException(FundingGiftErrorCode.FUNDING_GIFT_NOT_FOUND);
+            }
+            if (gift.getStatus() != FundingGiftStatus.CANDIDATE) {
+                throw new FundingGiftException(FundingGiftErrorCode.GIFT_ALREADY_SELECTED);
+            }
+        }
+        return gifts;
+    }
+
+
+    /** 요청 배열에 개설자가 없으면 자동으로 추가. 이미 포함되어 있으면 중복 없이 그대로 사용 */
+    private List<Long> includeCreator(Long fundingId, Long userId, List<Long> requestedMemberIds) {
+        FundingMember creator = fundingMemberRepository.findByFundingIdAndUserId(fundingId, userId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
+
+        if (requestedMemberIds.contains(creator.getId())) {
+            return requestedMemberIds;
+        }
+
+        List<Long> merged = new ArrayList<>(requestedMemberIds);
+        merged.add(creator.getId());
+        return merged;
+    }
+
+    private List<FundingMember> validateAndFetchMembers(Long fundingId, List<Long> memberIds) {
+        List<FundingMember> members = fundingMemberRepository.findAllById(memberIds);
+        if (members.size() != memberIds.size()) {
+            throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
+        for (FundingMember member : members) {
+            if (!member.getFundingId().equals(fundingId)) {
+                throw new FundingException(FundingErrorCode.MEMBER_NOT_FOUND);
+            }
+        }
+        return members;
+    }
+
+
+    private void assignSettlementAmounts(List<FundingMember> members, long totalAmount) {
+        List<FundingMember> sorted = members.stream()
+                .sorted(Comparator.comparing(FundingMember::getCreatedAt))
+                .toList();
+
+        long base = totalAmount / sorted.size();
+        long remainder = totalAmount % sorted.size();
+
+        for (int i = 0; i < sorted.size(); i++) {
+            long amount = base + (i < remainder ? 1 : 0);
+            sorted.get(i).confirmSettlement(amount);
+        }
     }
 }

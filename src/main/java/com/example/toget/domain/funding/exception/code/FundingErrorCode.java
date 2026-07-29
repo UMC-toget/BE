@@ -27,6 +27,7 @@ public enum FundingErrorCode implements BaseErrorCode {
     INVALID_MEMBER_ROLE(HttpStatus.BAD_REQUEST, "FUNDING400_16", "유효하지 않은 멤버 역할입니다."),
     REVIEW_CONTENT_REQUIRED(HttpStatus.BAD_REQUEST, "FUNDING400_17", "후기 내용은 필수입니다."),
     REVIEW_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "FUNDING400_18", "제목은 필수입니다."),
+    MAX_SETTLEMENT_MEMBER_EXCEEDED(HttpStatus.BAD_REQUEST, "FUNDING400_17", "정산 참여자는 개설자를 포함해 최대 50명까지 가능합니다."),
 
     FUNDING_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_1", "해당 펀딩을 찾을 수 없습니다."),
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_2", "정산 계좌를 찾을 수 없습니다."),
@@ -34,7 +35,7 @@ public enum FundingErrorCode implements BaseErrorCode {
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_4", "해당 멤버를 찾을 수 없습니다."),
     CONTRIBUTION_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_5", "해당 참여 기록을 찾을 수 없습니다."),
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_6", "해당 게시물을 찾을 수 없습니다."),
-
+    FUNDING_GIFT_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_6", "해당 후보 선물을 찾을 수 없습니다."),
     // TODO: 추후 수정 필요
     CHARACTER_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_9", "해당 캐릭터를 찾을 수 없습니다."),
     INVITATION_BACKGROUND_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_10", "해당 배경 색상을 찾을 수 없습니다."),
@@ -48,14 +49,12 @@ public enum FundingErrorCode implements BaseErrorCode {
     SETTLEMENT_LOCKED(HttpStatus.CONFLICT, "FUNDING409_3", "이미 입금 절차가 시작되어 정산 인원과 금액을 변경할 수 없습니다."),
     GIFT_UPDATE_NOT_ALLOWED(HttpStatus.CONFLICT, "FUNDING409_4", "최종 선물이 확정되었거나 수정 가능 기간이 아니어서 후보 선물을 변경할 수 없습니다."),
     DASHBOARD_STATUS_MISMATCH(HttpStatus.CONFLICT, "FUNDING409_5", "현재 펀딩 상태에서는 조회할 수 없습니다."),
-    NOT_SETTLEMENT_TARGET_MEMBER(HttpStatus.CONFLICT, "FUNDING409_7", "정산 대상자가 아닙니다."),
-    GIFT_NOT_CONFIRMED(HttpStatus.CONFLICT, "FUNDING409_8", "확정되지 않은 선물에는 구매 내역을 등록할 수 없습니다."),
-    PURCHASE_ALREADY_EXISTS(HttpStatus.CONFLICT, "FUNDING409_9", "이미 구매 내역이 등록된 선물입니다."),
-    REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "FUNDING409_10", "이미 작성된 게시물입니다."),
-    INVALID_FUNDING_STATUS_FOR_PURCHASE(HttpStatus.CONFLICT, "FUNDING409_12", "정산이 시작된 이후에만 구매 내역을 등록할 수 있습니다.")
-
-    ;
-
+    NOT_SETTLEMENT_TARGET_MEMBER(HttpStatus.CONFLICT, "FUNDING409_6", "정산 대상자가 아닙니다."),
+    GIFT_NOT_CONFIRMED(HttpStatus.CONFLICT, "FUNDING409_7", "확정되지 않은 선물에는 구매 내역을 등록할 수 없습니다."),
+    PURCHASE_ALREADY_EXISTS(HttpStatus.CONFLICT, "FUNDING409_8", "이미 구매 내역이 등록된 선물입니다."),
+    REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "FUNDING409_9", "이미 작성된 게시물입니다."),
+    INVALID_FUNDING_STATUS_FOR_PURCHASE(HttpStatus.CONFLICT, "FUNDING409_10", "정산이 시작된 이후에만 구매 내역을 등록할 수 있습니다."),
+    INVALID_FUNDING_STATUS_FOR_SETTLEMENT(HttpStatus.CONFLICT, "FUNDING409_11", "SELECTING 상태에서만 확정할 수 있습니다.");
 
     private final HttpStatus status;
     private final String code;

@@ -26,7 +26,12 @@ public enum UserErrorCode implements BaseErrorCode {
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "USER404_2", "존재하지 않는 계좌입니다."),
 
     // 403 Forbidden — 본인 소유가 아닌 계좌에 대한 접근
-    ACCOUNT_FORBIDDEN(HttpStatus.FORBIDDEN, "USER403_1", "해당 계좌에 대한 권한이 없습니다.");
+    ACCOUNT_FORBIDDEN(HttpStatus.FORBIDDEN, "USER403_1", "해당 계좌에 대한 권한이 없습니다."),
+
+    // 502 Bad Gateway — 카카오/구글 서버 장애·타임아웃으로 토큰을 검증하지 못한 경우.
+    // 401과 반드시 구분해야 한다: 401을 주면 프론트가 "토큰 만료"로 오해해 사용자를 로그아웃시키지만,
+    // 이 경우는 사용자 잘못이 아니므로 "잠시 후 재시도"가 올바른 안내다.
+    OAUTH_PROVIDER_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "USER502_1", "소셜 로그인 서버와 통신할 수 없습니다. 잠시 후 다시 시도해주세요.");
 
     private final HttpStatus status;
     private final String code;
