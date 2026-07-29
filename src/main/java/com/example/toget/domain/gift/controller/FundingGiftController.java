@@ -2,6 +2,7 @@ package com.example.toget.domain.gift.controller;
 
 import com.example.toget.domain.gift.dto.request.FundingGiftCandidateCreateRequest;
 import com.example.toget.domain.gift.dto.request.FundingGiftCommentCreateRequest;
+import com.example.toget.domain.gift.dto.request.FundingGiftUpsertRequest;
 import com.example.toget.domain.gift.dto.response.*;
 import com.example.toget.domain.gift.exception.code.FundingGiftSuccessCode;
 import com.example.toget.domain.gift.service.FundingGiftService;
@@ -13,6 +14,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Tag(name = "펀딩 - 참여자용", description = "참여자/방문자용 펀딩 참여 API")
 @RestController
@@ -33,17 +36,6 @@ public class FundingGiftController {
         return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_CANDIDATE_LIST_OK, result);
     }
 
-    @Operation(summary = "선물 후보 등록하기",
-            description = "개설자 또는 관리자가 투표 후보로 선물을 등록합니다. 후보(CANDIDATE) 상태로 생성됩니다.")
-    @PostMapping("/{fundingId}/gift-candidates")
-    public ApiResponse<FundingGiftCandidateCreateResponse> createCandidate(
-            @Parameter(hidden = true) @LoginUserId Long userId,
-            @PathVariable Long fundingId,
-            @Valid @RequestBody FundingGiftCandidateCreateRequest request
-    ) {
-        FundingGiftCandidateCreateResponse result = fundingGiftService.createCandidate(userId, fundingId, request);
-        return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_CANDIDATE_CREATE_OK, result);
-    }
 
     @Operation(summary = "선물 후보 상세 조회",
             description = "특정 선물 후보의 상세 정보와 댓글 목록을 반환합니다.")
@@ -83,4 +75,5 @@ public class FundingGiftController {
                 fundingGiftService.createComment(userId, fundingId, fundingGiftId, request);
         return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_COMMENT_CREATE_OK, result);
     }
+
 }
