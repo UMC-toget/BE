@@ -364,7 +364,7 @@ public class FundingController {
                 나머지는 펀딩 참여 등록일이 빠른 순서대로 1원씩 추가 배정됩니다.
                 처리 후 펀딩 상태가 SETTLING으로 전환됩니다.
                 """)
-    @PostMapping("/{fundingId}/confirm-settlement")
+    @PostMapping("/{fundingId}/final-selections")
     public ApiResponse<FundingConfirmSettlementResponse> confirmSettlement(
             @Parameter(hidden = true) @LoginUserId Long userId,
             @PathVariable Long fundingId,
