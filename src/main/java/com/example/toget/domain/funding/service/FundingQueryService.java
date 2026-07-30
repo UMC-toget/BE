@@ -5,6 +5,7 @@ import com.example.toget.domain.funding.dto.FundingCollectedAmount;
 import com.example.toget.domain.funding.dto.MyFundingListResponse;
 import com.example.toget.domain.funding.dto.response.FundingMyGiftDashboardResponse;
 import com.example.toget.domain.funding.dto.response.FundingTogetherGiftDashboardResponse;
+import com.example.toget.domain.funding.dto.response.SharedFundingDetailResponse;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.entity.FundingVisibilitySettings;
@@ -106,6 +107,37 @@ public class FundingQueryService {
 
         return FundingConverter.toMyGiftDashboardResponse(
                 funding, collectedAmount, participantCount, account, visibility, gifts
+        );
+    }
+
+
+    /**
+     * 외부 방문자용 선물 준비 상세 조회 — 초대장 링크로 들어온 비회원에게 제공한다.
+     *
+     * [설계 포인트]
+     *  - 개설자용 getMyGiftDashboard와 달리 소유자 검증(isOwnedBy)을 하지 않는다.
+     *    누구나 볼 수 있는 공개 화면이라는 점이 이 API의 존재 이유다.
+     *  - 대신 개설자가 지정한 공개 범위에 따라 값이 가려진다. 마스킹 판단은 컨버터에 위임한다.
+     *  - MY_GIFT 전용이다. 함께 선물하기는 공개 설정 자체를 사용하지 않는다.
+     */
+    @Transactional(readOnly = true)
+    public SharedFundingDetailResponse getSharedFundingDetail(Long fundingId) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (funding.getFundingType() != FundingType.MY_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);
+        }
+
+        Long collectedAmount = fundingContributionRepository.sumAmountByFundingId(fundingId);
+        int participantCount = fundingContributionRepository.countByFundingId(fundingId);
+
+        FundingVisibilitySettings visibility = fundingVisibilitySettingsRepository
+                .findByFundingId(fundingId).orElse(null);
+
+        List<FundingGift> gifts = fundingGiftRepository.findAllByFundingId(fundingId);
+
+        return FundingConverter.toSharedFundingDetailResponse(
+                funding, collectedAmount, participantCount, visibility, gifts
         );
     }
 
