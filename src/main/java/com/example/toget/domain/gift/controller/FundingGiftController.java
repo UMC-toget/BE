@@ -4,6 +4,7 @@ import com.example.toget.domain.gift.dto.request.FundingGiftCommentCreateRequest
 import com.example.toget.domain.gift.dto.request.FundingGiftUpsertRequest;
 import com.example.toget.domain.gift.dto.response.*;
 import com.example.toget.domain.gift.exception.code.FundingGiftSuccessCode;
+import com.example.toget.domain.gift.service.FundingGiftService;
 import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;

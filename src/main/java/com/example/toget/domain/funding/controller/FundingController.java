@@ -11,6 +11,7 @@ import com.example.toget.domain.gift.dto.response.FundingGiftCandidateCreateResp
 import com.example.toget.domain.gift.exception.code.FundingGiftSuccessCode;
 import com.example.toget.domain.gift.dto.request.FundingGiftUpsertRequest;
 import com.example.toget.domain.gift.dto.response.FundingGiftResponse;
+import com.example.toget.domain.gift.service.FundingGiftService;
 import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -329,11 +330,8 @@ public class FundingController {
         return ApiResponse.onSuccess(FundingSuccessCode.TOGETHER_GIFT_DASHBOARD_OK, result);
     }
 
-<<<<<<< HEAD
-    @Operation(summary = "선물 후보 등록하기",
-=======
+
     @Operation(summary = "[TOGETHER_GIFT] 선물 후보 등록하기",
->>>>>>> develop
             description = "개설자 또는 관리자가 투표 후보로 선물을 등록합니다. 후보(CANDIDATE) 상태로 생성됩니다.")
     @PostMapping("/{fundingId}/gift-candidates")
     public ApiResponse<FundingGiftCandidateCreateResponse> createCandidate(

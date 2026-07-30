@@ -32,6 +32,6 @@ public record FundingReviewCreateRequest(
         Long invitationCharacterId,
 
         @Schema(description = "초대장 배경 ID (invitation_backgrounds 참조)")
-        @NotNull(message = "초대장 캐릭터 선택은 필수입니다.")
+        @NotNull(message = "초대장 배경 선택은 필수입니다.")
         Long invitationBackgroundId
 ) {}
