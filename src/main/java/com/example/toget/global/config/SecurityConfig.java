@@ -104,6 +104,9 @@ public class SecurityConfig {
                 // 후기/소식/마음전하기 조회 및 초대장 조회는 개설자 검증 없이 링크를 아는 누구나 조회 가능
                 .requestMatchers(HttpMethod.GET, "/api/v1/fundings/*/reviews/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/fundings/*/reviews/*/invitation").permitAll()
+                // 초대장 카드 조회 — GET만 허용. 같은 경로의 PUT(초대장 수정)은 개설자 전용이므로
+                // HttpMethod를 지정하지 않으면 수정 API까지 열리니 주의.
+                .requestMatchers(HttpMethod.GET, "/api/v1/fundings/*/invitations").permitAll()
                 // 그 외의 API 및 리소스 요청은 로그인 필요
                 .anyRequest().authenticated()
         );
