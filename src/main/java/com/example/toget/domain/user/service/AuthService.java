@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * 인증(로그인/토큰 재발급) 비즈니스 로직.
@@ -25,7 +24,10 @@ import java.util.UUID;
  *      받아들이는 이유는 GoogleOAuthClient 주석 참고 — issue #65)
  *  2. 프론트 → 우리 서버 POST /api/v1/auth/tokens/{provider} 로 그 토큰을 전달
  *  3. 서버는 OAuthClient로 공급자 서버에 "이 토큰 진짜야?"라고 검증 요청
- *  4. 진짜면 우리 DB에서 사용자를 찾고(없으면 자동 회원가입) 우리 서비스 전용 JWT를 발급
+ *  4. 진짜면 우리 DB에서 사용자를 찾는다
+ *     - 기존 회원 → 우리 서비스 전용 JWT(access/refresh) 발급
+ *     - 미가입자 → users에 저장하지 않고 가입 토큰만 발급.
+ *       POST /api/v1/users(SignupService)에서 닉네임과 함께 보내야 비로소 회원이 된다. (issue #61)
  *  → 이후 API 호출은 공급자와 무관하게 우리 JWT로만 인증한다
  */
 @Service
@@ -34,13 +36,25 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final JwtProvider jwtProvider;
+    private final TokenIssuer tokenIssuer;
     // 같은 인터페이스(OAuthClient)의 빈이 여러 개면 스프링이 List로 전부 모아서 주입해 준다.
     // 새 공급자가 생겨도 OAuthClient 구현체만 추가하면 이 클래스는 수정할 필요가 없다.
     private final List<OAuthClient> oauthClients;
 
     /**
-     * 소셜 로그인 및 자동 회원가입.
-     * 미가입 oauth_id면 users에 새 레코드를 적재하고 isNewUser=true를 반환한다.
+     * 소셜 로그인 — 이미 가입한 회원인지에 따라 응답이 갈린다.
+     *
+     * <ul>
+     *   <li><b>기존 회원</b>: access/refresh 토큰을 발급하고 isProfileCompleted=true로 응답한다.</li>
+     *   <li><b>미가입자</b>: <b>users 레코드를 만들지 않고</b> 가입 토큰만 발급하며
+     *       isProfileCompleted=false로 응답한다. 프론트는 이 값을 보고 프로필 설정 화면으로 보내고,
+     *       {@code POST /api/v1/users}에서 가입 토큰과 닉네임을 함께 보내면 그때 회원이 생성된다.</li>
+     * </ul>
+     *
+     * <p>[왜 미가입자를 저장하지 않는가] 예전에는 소셜 인증만 끝나도 곧바로 users에 적재해
+     * 가입이 확정됐다. 그래서 프로필 설정 화면에서 새로고침하거나 이탈하면 "소셜 이름 + 기본 프로필"로
+     * 계정이 남고, 재로그인해도 온보딩이 뜨지 않아 닉네임이 고정됐다. 아예 저장하지 않으면
+     * 이탈한 사람의 흔적(이메일·이름 등 개인정보 포함)이 DB에 남지 않는다. (issue #61)
      */
     @Transactional // 메서드 전체가 하나의 DB 트랜잭션 — 도중 예외 시 롤백, 정상 종료 시 커밋
     public SocialLoginResponse socialLogin(String providerName, String identityToken) {
@@ -52,28 +66,25 @@ public class AuthService {
                 .orElseThrow(() -> new UserException(UserErrorCode.UNSUPPORTED_PROVIDER));
         OAuthUserInfo info = client.verify(identityToken); // 공급자 서버에 실검증 (위조 토큰이면 여기서 401)
 
-        var existing = userRepository.findByOAuthProviderAndOAuthId(provider, info.oAuthId());
-        boolean isNewUser = existing.isEmpty();
-        // orElseGet: Optional이 비어 있을 때만 람다 실행 → 기존 회원이면 조회 결과, 신규면 저장 후 반환
-        // (동시에 같은 계정이 첫 로그인하면 유니크 제약 위반 → GeneralExceptionAdvice가 409로 변환)
-        User user = existing
-                .orElseGet(() -> userRepository.save(User.builder()
-                        .oAuthProvider(provider)
-                        .oAuthId(info.oAuthId())
-                        .email(info.email())
-                        .name(info.name())
-                        .nickname(info.name()) // 초기 닉네임은 소셜 프로필 이름으로
-                        .profileImageUrl(info.profileImageUrl())
-                        .build()));
+        User user = userRepository.findByOAuthProviderAndOAuthId(provider, info.oAuthId())
+                .orElse(null);
+
+        if (user == null) {
+            // 아직 회원이 아니다 — 소셜 인증 결과를 서명된 가입 토큰에 담아 클라이언트에 넘긴다.
+            // 서명이 있으므로 클라이언트가 남의 소셜 식별자로 바꿔치기할 수 없다.
+            String signupToken = jwtProvider.createSignupToken(new SignupClaims(
+                    provider.name(), info.oAuthId(), info.email(), info.name(), info.profileImageUrl()));
+            return UserConverter.toSignupRequiredResponse(info, signupToken);
+        }
 
         // 안전망 — 탈퇴 시 oauth_id가 익명화되므로 WITHDRAWN 계정이 여기서 조회될 일은 없지만,
-        // 익명화 이전 데이터나 SUSPENDED/PENDING 상태를 대비해 활성 상태를 한 번 더 확인한다
+        // 익명화 이전 데이터나 SUSPENDED 상태를 대비해 활성 상태를 한 번 더 확인한다
         if (!user.isActive()) {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
 
-        TokenResponse tokens = issueTokens(user);
-        return UserConverter.toSocialLoginResponse(user, tokens.accessToken(), tokens.refreshToken(), isNewUser);
+        TokenResponse tokens = tokenIssuer.issue(user);
+        return UserConverter.toSocialLoginResponse(user, tokens.accessToken(), tokens.refreshToken());
     }
 
     /**
@@ -104,7 +115,7 @@ public class AuthService {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
 
-        return issueTokens(user);
+        return tokenIssuer.issue(user);
     }
 
     /**
@@ -118,17 +129,5 @@ public class AuthService {
                 .orElseThrow(() -> new UserException(UserErrorCode.UNAUTHORIZED));
         // 트랜잭션 안에서 필드만 비우면 커밋 시 dirty checking으로 UPDATE가 자동 실행된다.
         user.clearRefreshToken();
-    }
-
-    /** 토큰 발급 — 새 refresh 토큰의 jti를 users.refresh_token에 저장(Rotation) */
-    private TokenResponse issueTokens(User user) {
-        String tokenId = UUID.randomUUID().toString();
-        // 트랜잭션 안에서 엔티티 필드만 바꾸면 커밋 시점에 JPA가 변경을 감지(dirty checking)해
-        // UPDATE 쿼리를 자동 실행한다 — save()를 다시 부를 필요가 없다
-        user.updateRefreshToken(tokenId);
-        return new TokenResponse(
-                jwtProvider.createAccessToken(user.getId()),
-                jwtProvider.createRefreshToken(user.getId(), tokenId)
-        );
     }
 }

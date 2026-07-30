@@ -28,6 +28,8 @@ jwt:
   secret: ${JWT_SECRET} # 기본값 없음 — 미설정 시 기동 실패 (공개된 기본 키로 토큰이 서명되는 사고 방지)
   access-token-validity-seconds: ${JWT_ACCESS_TOKEN_VALIDITY_SECONDS:3600}
   refresh-token-validity-seconds: ${JWT_REFRESH_TOKEN_VALIDITY_SECONDS:1209600}
+  # 가입 토큰 — 소셜 인증 직후 프로필 설정 화면에서만 쓰이므로 짧게 잡는다 (기본 10분)
+  signup-token-validity-seconds: ${JWT_SIGNUP_TOKEN_VALIDITY_SECONDS:600}
 
 encryption:
   key: ${ENCRYPTION_KEY} # 기본값 없음 — 미설정 시 기동 실패 (공개된 기본 키로 계좌번호가 암호화되는 사고 방지)
