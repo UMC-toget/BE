@@ -7,12 +7,11 @@ import com.example.toget.domain.funding.exception.code.FundingSuccessCode;
 import com.example.toget.domain.funding.service.FundingQueryService;
 import com.example.toget.domain.funding.service.FundingService;
 import com.example.toget.domain.gift.dto.request.FundingGiftCandidateCreateRequest;
-import com.example.toget.domain.gift.dto.request.FundingGiftUpsertRequest;
 import com.example.toget.domain.gift.dto.response.FundingGiftCandidateCreateResponse;
-import com.example.toget.domain.gift.dto.response.FundingGiftResponse;
 import com.example.toget.domain.gift.exception.code.FundingGiftSuccessCode;
-import com.example.toget.domain.gift.service.FundingGiftService;
+import com.example.toget.domain.gift.dto.request.FundingGiftUpsertRequest;
 import com.example.toget.domain.gift.dto.response.FundingGiftResponse;
+import com.example.toget.domain.gift.service.FundingGiftService;
 import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -331,6 +330,7 @@ public class FundingController {
         return ApiResponse.onSuccess(FundingSuccessCode.TOGETHER_GIFT_DASHBOARD_OK, result);
     }
 
+
     @Operation(summary = "[TOGETHER_GIFT] 선물 후보 등록하기",
             description = "개설자 또는 관리자가 투표 후보로 선물을 등록합니다. 후보(CANDIDATE) 상태로 생성됩니다.")
     @PostMapping("/{fundingId}/gift-candidates")
@@ -342,6 +342,7 @@ public class FundingController {
         FundingGiftCandidateCreateResponse result = fundingGiftService.createCandidate(userId, fundingId, request);
         return ApiResponse.onSuccess(FundingGiftSuccessCode.GIFT_CANDIDATE_CREATE_OK, result);
     }
+
 
     @Operation(summary = "[MY_GIFT] 수령희망 선물 목록 수정",
             description = "MY_GIFT의 수령 희망 선물 목록을 갱신합니다. fundingGiftId가 있으면 수정, " +
@@ -363,7 +364,7 @@ public class FundingController {
                 나머지는 펀딩 참여 등록일이 빠른 순서대로 1원씩 추가 배정됩니다.
                 처리 후 펀딩 상태가 SETTLING으로 전환됩니다.
                 """)
-    @PostMapping("/{fundingId}/confirm-settlement")
+    @PostMapping("/{fundingId}/final-selections")
     public ApiResponse<FundingConfirmSettlementResponse> confirmSettlement(
             @Parameter(hidden = true) @LoginUserId Long userId,
             @PathVariable Long fundingId,

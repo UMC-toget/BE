@@ -1,6 +1,5 @@
 package com.example.toget.domain.gift.controller;
 
-import com.example.toget.domain.gift.dto.request.FundingGiftCandidateCreateRequest;
 import com.example.toget.domain.gift.dto.request.FundingGiftCommentCreateRequest;
 import com.example.toget.domain.gift.dto.request.FundingGiftUpsertRequest;
 import com.example.toget.domain.gift.dto.response.*;

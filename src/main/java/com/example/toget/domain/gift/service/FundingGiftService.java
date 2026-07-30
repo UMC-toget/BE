@@ -3,6 +3,7 @@ package com.example.toget.domain.gift.service;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.enums.FundingRole;
+import com.example.toget.domain.funding.enums.FundingStatus;
 import com.example.toget.domain.funding.enums.FundingType;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
@@ -13,6 +14,7 @@ import com.example.toget.domain.gift.dto.request.*;
 import com.example.toget.domain.gift.dto.response.*;
 import com.example.toget.domain.gift.entity.FundingGift;
 import com.example.toget.domain.gift.entity.FundingGiftComment;
+import com.example.toget.domain.gift.entity.FundingGiftPurchase;
 import com.example.toget.domain.gift.entity.FundingGiftVote;
 import com.example.toget.domain.gift.enums.FundingGiftStatus;
 import com.example.toget.domain.gift.exception.FundingGiftException;
@@ -21,6 +23,7 @@ import com.example.toget.domain.gift.repository.*;
 import com.example.toget.domain.user.entity.User;
 import com.example.toget.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +40,7 @@ public class FundingGiftService {
     private final FundingGiftRepository fundingGiftRepository;
     private final FundingGiftVoteRepository fundingGiftVoteRepository;
     private final FundingGiftCommentRepository fundingGiftCommentRepository;
+    private final FundingGiftPurchaseRepository fundingGiftPurchaseRepository;
     private final UserRepository userRepository;
 
     private static final int MAX_VOTE_COUNT = 3;
@@ -215,6 +219,43 @@ public class FundingGiftService {
     }
 
     @Transactional
+    public FundingGiftPurchaseResponse uploadPurchase(
+            Long userId, Long fundingId, Long fundingGiftId, FundingGiftPurchaseRequest request) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (!funding.isOwnedBy(userId)) {
+            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
+        }
+        if (funding.getStatus() == FundingStatus.SELECTING) {
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_STATUS_FOR_PURCHASE);
+        }
+
+        FundingGift gift = fundingGiftRepository.findById(fundingGiftId)
+                .orElseThrow(() -> new FundingGiftException(FundingGiftErrorCode.FUNDING_GIFT_NOT_FOUND));
+        if (!gift.getFundingId().equals(fundingId)) {
+            throw new FundingGiftException(FundingGiftErrorCode.FUNDING_GIFT_NOT_FOUND);
+        }
+        if (gift.getStatus() != FundingGiftStatus.SELECTED) {
+            throw new FundingException(FundingErrorCode.GIFT_NOT_CONFIRMED);
+        }
+        if (fundingGiftPurchaseRepository.existsByFundingGiftId(fundingGiftId)) {
+            throw new FundingException(FundingErrorCode.PURCHASE_ALREADY_EXISTS);
+        }
+
+        FundingGiftPurchase purchase = FundingGiftPurchase.create(
+                fundingGiftId, request.purchaseUrl(), request.receiptImageUrl()
+        );
+
+        FundingGiftPurchase saved;
+        try {
+            saved = fundingGiftPurchaseRepository.save(purchase);
+        } catch (DataIntegrityViolationException e) {
+            throw new FundingException(FundingErrorCode.PURCHASE_ALREADY_EXISTS);
+        }
+
+        return new FundingGiftPurchaseResponse(saved.getId(), fundingGiftId);
+    }
+
     public List<FundingGiftResponse> updateWishGifts(
             Long userId, Long fundingId, List<FundingGiftUpsertRequest> requests
     ) {
@@ -228,6 +269,7 @@ public class FundingGiftService {
         }
 
         validateNoDuplicateIds(requests);
+
 
         List<FundingGift> existingGifts = fundingGiftRepository.findAllByFundingId(fundingId);
         Map<Long, FundingGift> existingById = existingGifts.stream()

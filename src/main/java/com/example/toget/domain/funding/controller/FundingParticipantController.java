@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
  *  - userId는 개설자 본인 여부(isOwner) 판정에만 쓰인다. 비회원은 항상 isOwner=false로 떨어져
  *    익명·비밀편지·공개 설정에 따른 은닉이 그대로 적용된다.
  */
-@Tag(name = "펀딩 - 참여자용", description = "참여자/방문자용 펀딩 참여 API")
+@Tag(name = "펀딩 - 참여자용 API", description = "참여자/방문자용 펀딩 참여 API")
 @RestController
 @RequestMapping("/api/v1/fundings")
 @RequiredArgsConstructor
