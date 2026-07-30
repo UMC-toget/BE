@@ -25,6 +25,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * 축하 메시지 제출·조회 비즈니스 로직.
+ *
+ * [설계 포인트]
+ *  - 세 엔드포인트 모두 비회원이 호출할 수 있어 펀딩 조회에 findByIdAndDeletedAtIsNull을 쓴다.
+ *    삭제된 펀딩의 링크가 계속 유효해 메시지가 노출되면 안 된다.
+ */
 @Service
 @RequiredArgsConstructor
 public class FundingContributionService {
@@ -38,7 +45,7 @@ public class FundingContributionService {
     public FundingContributionCreateResponse createContribution(
             Long userId, Long fundingId, FundingContributionCreateRequest request
     ) {
-        Funding funding = fundingRepository.findById(fundingId)
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
 
         if (funding.getFundingType() != FundingType.MY_GIFT) {
@@ -68,7 +75,7 @@ public class FundingContributionService {
 
     @Transactional(readOnly = true)
     public FundingContributionRollingPaperResponse getContributions(Long fundingId, Long viewerId) {
-        Funding funding = fundingRepository.findById(fundingId)
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
 
         boolean isOwner = viewerId != null && funding.isOwnedBy(viewerId);
@@ -82,7 +89,7 @@ public class FundingContributionService {
 
     @Transactional(readOnly = true)
     public FundingContributionDetailResponse getContributionDetail(Long fundingId, Long contributionId, Long viewerId) {
-        Funding funding = fundingRepository.findById(fundingId)
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
 
         FundingContribution contribution = fundingContributionRepository.findById(contributionId)

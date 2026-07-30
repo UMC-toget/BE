@@ -144,7 +144,7 @@ class FundingQueryServiceTest {
         private static final Long FUNDING_ID = 12L;
 
         private void givenFundingWithAggregates(Funding funding) {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding));
             given(fundingContributionRepository.sumAmountByFundingId(FUNDING_ID)).willReturn(650_000L);
             given(fundingContributionRepository.countByFundingId(FUNDING_ID)).willReturn(12);
             given(fundingGiftRepository.findAllByFundingId(FUNDING_ID)).willReturn(List.of());
@@ -248,7 +248,7 @@ class FundingQueryServiceTest {
         @Test
         @DisplayName("펀딩이 없으면 FUNDING_NOT_FOUND 예외가 발생한다")
         void fundingNotFound() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.empty());
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> fundingQueryService.getSharedFundingDetail(FUNDING_ID))
                     .isInstanceOf(FundingException.class)
@@ -263,7 +263,7 @@ class FundingQueryServiceTest {
                     LocalDate.now(), LocalDate.now(), LocalDate.now().plusDays(30),
                     "소개", "url", 100_000L);
             ReflectionTestUtils.setField(together, "id", FUNDING_ID);
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(together));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(together));
 
             assertThatThrownBy(() -> fundingQueryService.getSharedFundingDetail(FUNDING_ID))
                     .isInstanceOf(FundingException.class)

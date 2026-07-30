@@ -119,10 +119,11 @@ public class FundingQueryService {
      *    누구나 볼 수 있는 공개 화면이라는 점이 이 API의 존재 이유다.
      *  - 대신 개설자가 지정한 공개 범위에 따라 값이 가려진다. 마스킹 판단은 컨버터에 위임한다.
      *  - MY_GIFT 전용이다. 함께 선물하기는 공개 설정 자체를 사용하지 않는다.
+     *  - soft delete된 펀딩은 없는 것으로 취급한다. 외부에 공개되는 API라 삭제된 펀딩의 링크가 계속 유효하면 안 된다.
      */
     @Transactional(readOnly = true)
     public SharedFundingDetailResponse getSharedFundingDetail(Long fundingId) {
-        Funding funding = fundingRepository.findById(fundingId)
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
         if (funding.getFundingType() != FundingType.MY_GIFT) {
             throw new FundingException(FundingErrorCode.NOT_MY_GIFT_TYPE);

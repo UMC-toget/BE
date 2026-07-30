@@ -86,7 +86,7 @@ class FundingContributionServiceTest {
                     FUNDING_ID, 1L, "친구", true, 50000L, "축하해!", true  // 익명 참여
             );
 
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding()));
             given(fundingContributionRepository.findAllByFundingId(FUNDING_ID))
                     .willReturn(List.of(anonymous));
             given(fundingVisibilitySettingsRepository.findByFundingId(FUNDING_ID))
@@ -101,7 +101,7 @@ class FundingContributionServiceTest {
         @Test
         @DisplayName("showParticipantNames=false면 익명이 아닌 참여자 이름도 가려진다")
         void hidesSenderName_whenOwnerTurnedOff() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding()));
             given(fundingContributionRepository.findAllByFundingId(FUNDING_ID))
                     .willReturn(List.of(openContribution()));
             given(fundingVisibilitySettingsRepository.findByFundingId(FUNDING_ID))
@@ -118,7 +118,7 @@ class FundingContributionServiceTest {
         @Test
         @DisplayName("showMessages=false면 비밀편지가 아닌 메시지도 가려진다")
         void hidesContent_whenOwnerTurnedOff() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding()));
             given(fundingContributionRepository.findAllByFundingId(FUNDING_ID))
                     .willReturn(List.of(openContribution()));
             given(fundingVisibilitySettingsRepository.findByFundingId(FUNDING_ID))
@@ -139,7 +139,7 @@ class FundingContributionServiceTest {
                     FUNDING_ID, 1L, "친구", true, 50000L, "축하해!", false  // 익명 + 비밀편지
             );
 
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding()));
             given(fundingContributionRepository.findAllByFundingId(FUNDING_ID))
                     .willReturn(List.of(anonymousPrivate));
             given(fundingVisibilitySettingsRepository.findByFundingId(FUNDING_ID))
@@ -155,7 +155,7 @@ class FundingContributionServiceTest {
         @Test
         @DisplayName("공개 설정이 없는 펀딩은 전체 공개로 처리된다")
         void noVisibilitySettings_treatedAsFullyOpen() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding()));
             given(fundingContributionRepository.findAllByFundingId(FUNDING_ID))
                     .willReturn(List.of(openContribution()));
             given(fundingVisibilitySettingsRepository.findByFundingId(FUNDING_ID))
@@ -175,7 +175,7 @@ class FundingContributionServiceTest {
                     FUNDING_ID, 1L, "친구", true, 50000L, "축하해!", true  // 익명이지만 편지는 공개
             );
 
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding()));
             given(fundingContributionRepository.findAllByFundingId(FUNDING_ID))
                     .willReturn(List.of(anonymous));
             // 개설자는 이름 공개를 켜뒀지만, 참여자가 익명을 택했으므로 이름은 여전히 가려져야 한다
@@ -201,7 +201,7 @@ class FundingContributionServiceTest {
         @Test
         @DisplayName("showMessages=false면 상세 조회로도 내용을 볼 수 없다")
         void cannotBypassViaDetail() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding()));
             given(fundingContributionRepository.findById(CONTRIBUTION_ID))
                     .willReturn(Optional.of(openContribution()));
             given(fundingVisibilitySettingsRepository.findByFundingId(FUNDING_ID))
@@ -216,7 +216,7 @@ class FundingContributionServiceTest {
         @Test
         @DisplayName("개설자 본인은 상세 조회에서 원본을 그대로 본다")
         void owner_seesOriginal() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding()));
             given(fundingContributionRepository.findById(CONTRIBUTION_ID))
                     .willReturn(Optional.of(openContribution()));
             given(fundingVisibilitySettingsRepository.findByFundingId(FUNDING_ID))
@@ -231,7 +231,7 @@ class FundingContributionServiceTest {
         @Test
         @DisplayName("공개 설정이 켜져 있으면 비회원도 내용을 볼 수 있다")
         void guest_seesContent_whenVisible() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding()));
             given(fundingContributionRepository.findById(CONTRIBUTION_ID))
                     .willReturn(Optional.of(openContribution()));
             given(fundingVisibilitySettingsRepository.findByFundingId(FUNDING_ID))
