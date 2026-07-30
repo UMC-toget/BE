@@ -10,8 +10,14 @@ import com.example.toget.domain.invitation.exception.code.InvitationErrorCode;
 import com.example.toget.domain.invitation.repository.CharacterRepository;
 import com.example.toget.domain.invitation.repository.InvitationBackgroundRepository;
 import com.example.toget.domain.invitation.repository.InvitationCardRepository;
+import com.example.toget.domain.invitation.dto.InvitationCardResponse;
+import com.example.toget.domain.invitation.entity.InvitationBackground;
+import com.example.toget.domain.user.entity.User;
+import com.example.toget.domain.user.enums.OAuthProvider;
+import com.example.toget.domain.user.repository.UserRepository;
 import com.example.toget.domain.user.service.ActiveUserReader;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -46,6 +52,8 @@ class InvitationCardServiceTest {
     private InvitationBackgroundRepository invitationBackgroundRepository;
     @Mock
     private ActiveUserReader activeUserReader;
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private InvitationCardService invitationCardService;
@@ -129,5 +137,102 @@ class InvitationCardServiceTest {
                 .content("기존 본문")
                 .url("https://toget.app/i/abc")
                 .build();
+    }
+
+    /**
+     * 초대장 카드 조회(GET) — 비회원이 초대장 링크로 들어왔을 때 쓰는 공개 API.
+     *
+     * [설계 포인트]
+     *  - 로그인 정보를 받지 않으므로 권한 검증이 없다. 대신 개설자 이름 조회가 추가된다.
+     *  - 개설자가 탈퇴/삭제되어도 초대장 자체는 보여야 한다. 이름만 null로 내린다.
+     */
+    @Nested
+    @DisplayName("초대장 카드 조회")
+    class GetInvitationCard {
+
+        private static final Long OWNER_ID = 7L;
+
+        /** 캐릭터·배경이 채워진 카드 — 컨버터가 두 연관 엔티티의 id를 읽으므로 필수 */
+        private InvitationCard cardWithRelations() {
+            return InvitationCard.builder()
+                    .fundingId(FUNDING_ID)
+                    .character(CharacterEntity.builder().name("고양이").imageUrl("https://img/cat.png").build())
+                    .background(InvitationBackground.builder().name("핑크").hexCode("#FFB6C1").build())
+                    .title("생일 초대장이 도착했어요")
+                    .content("안뇽!! 내가 이번 생일에 진짜 필요한 선물을 사고 싶은데...")
+                    .url("https://toget.app/i/abc")
+                    .build();
+        }
+
+        @Test
+        @DisplayName("정상 조회 시 개설자 이름이 함께 내려간다")
+        void success_withCreatorName() {
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID))
+                    .willReturn(Optional.of(fundingOwnedBy(OWNER_ID)));
+            given(invitationCardRepository.findByFundingId(FUNDING_ID))
+                    .willReturn(Optional.of(cardWithRelations()));
+            given(userRepository.findById(OWNER_ID)).willReturn(Optional.of(
+                    User.builder().oAuthProvider(OAuthProvider.GOOGLE).oAuthId("oauth-1").name("희주").build()
+            ));
+
+            InvitationCardResponse result = invitationCardService.getInvitationCard(FUNDING_ID);
+
+            assertThat(result.creatorName()).isEqualTo("희주");
+            assertThat(result.title()).isEqualTo("생일 초대장이 도착했어요");
+            assertThat(result.content()).startsWith("안뇽!!");
+        }
+
+        /**
+         * 개설자 조회에 ActiveUserReader를 쓰면 탈퇴 시 401이 던져진다.
+         * 로그인도 하지 않은 방문자에게 "인증 정보가 올바르지 않습니다"가 나가면 안 되므로,
+         * UserRepository로 직접 조회해 이름만 null로 내린다.
+         */
+        @Test
+        @DisplayName("개설자를 찾을 수 없어도 초대장은 조회되고 이름만 null이 된다")
+        void success_creatorNameNull_whenUserMissing() {
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID))
+                    .willReturn(Optional.of(fundingOwnedBy(OWNER_ID)));
+            given(invitationCardRepository.findByFundingId(FUNDING_ID))
+                    .willReturn(Optional.of(cardWithRelations()));
+            given(userRepository.findById(OWNER_ID)).willReturn(Optional.empty());
+
+            InvitationCardResponse result = invitationCardService.getInvitationCard(FUNDING_ID);
+
+            assertThat(result.creatorName()).isNull();
+            assertThat(result.title()).isEqualTo("생일 초대장이 도착했어요");
+        }
+
+        @Test
+        @DisplayName("펀딩이 없거나 soft delete되었으면 INVITATION_NOT_FOUND(404)를 던진다")
+        void fundingNotFoundOrDeleted() {
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> invitationCardService.getInvitationCard(FUNDING_ID))
+                    .isInstanceOf(InvitationException.class)
+                    .extracting(e -> ((InvitationException) e).getCode())
+                    .isEqualTo(InvitationErrorCode.INVITATION_NOT_FOUND);
+
+            verify(invitationCardRepository, never()).findByFundingId(any());
+        }
+
+        /**
+         * 펀딩 생성 시 초대장도 함께 만들어지고 funding_id에 UNIQUE 제약이 있어
+         * 정상 데이터에선 도달할 수 없는 분기다. 500(NPE) 대신 404로 드러내기 위한 방어 코드이므로,
+         * 누군가 "필요 없는 분기"로 판단해 제거하면 이 테스트가 실패한다.
+         */
+        @Test
+        @DisplayName("초대장 행이 없으면 INVITATION_NOT_FOUND(404)를 던진다 (데이터 이상 방어)")
+        void invitationCardMissing() {
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID))
+                    .willReturn(Optional.of(fundingOwnedBy(OWNER_ID)));
+            given(invitationCardRepository.findByFundingId(FUNDING_ID)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> invitationCardService.getInvitationCard(FUNDING_ID))
+                    .isInstanceOf(InvitationException.class)
+                    .extracting(e -> ((InvitationException) e).getCode())
+                    .isEqualTo(InvitationErrorCode.INVITATION_NOT_FOUND);
+
+            verify(userRepository, never()).findById(any());
+        }
     }
 }
