@@ -10,6 +10,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,6 +29,23 @@ import org.springframework.web.bind.annotation.RestController;
 public class InvitationCardController {
 
     private final InvitationCardService invitationCardService;
+
+    // 초대장 카드 조회 — 초대장 링크로 들어온 비회원도 호출 가능 (로그인 불필요)
+    @Operation(summary = "초대장 카드 조회",
+            description = """
+                    특정 펀딩의 초대장 카드 정보를 조회합니다. 로그인 없이 호출할 수 있습니다.
+                    creatorName은 개설자 이름이며, 개설자 정보를 찾을 수 없으면 null로 내려갑니다.
+                    characterId/backgroundId는 ID만 반환하므로 캐릭터·배경 목록 API로 매핑해 사용하세요.
+                    """)
+    @GetMapping
+    public ApiResponse<InvitationCardResponse> get(
+            @Parameter(description = "펀딩 ID", example = "12") @PathVariable Long fundingId
+    ) {
+        return ApiResponse.onSuccess(
+                InvitationSuccessCode.INVITATION_GET_OK,
+                invitationCardService.getInvitationCard(fundingId)
+        );
+    }
 
     // 초대장 카드 수정 — 대표 캐릭터, 색상 테마, 제목, 본문 갱신 (개최자 전용)
     @Operation(summary = "초대장 카드 수정",

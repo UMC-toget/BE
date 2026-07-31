@@ -27,7 +27,8 @@ public enum InvitationSuccessCode implements BaseSuccessCode {
     BACKGROUND_CREATE_OK(HttpStatus.CREATED, "BACKGROUND201_1", "초대장 배경 색상을 성공적으로 생성했습니다."),
 
     // 초대장 카드
-    INVITATION_UPDATE_OK(HttpStatus.OK, "INVITATION200_1", "초대장을 성공적으로 수정했습니다.");
+    INVITATION_UPDATE_OK(HttpStatus.OK, "INVITATION200_1", "초대장을 성공적으로 수정했습니다."),
+    INVITATION_GET_OK(HttpStatus.OK, "INVITATION200_2", "초대장을 성공적으로 조회했습니다.");
 
     private final HttpStatus status;
     private final String code;

@@ -13,13 +13,15 @@ import com.example.toget.domain.invitation.exception.code.InvitationErrorCode;
 import com.example.toget.domain.invitation.repository.CharacterRepository;
 import com.example.toget.domain.invitation.repository.InvitationBackgroundRepository;
 import com.example.toget.domain.invitation.repository.InvitationCardRepository;
+import com.example.toget.domain.user.entity.User;
+import com.example.toget.domain.user.repository.UserRepository;
 import com.example.toget.domain.user.service.ActiveUserReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 초대장 카드 수정 비즈니스 로직.
+ * 초대장 카드 조회·수정 비즈니스 로직.
  */
 @Service
 @RequiredArgsConstructor
@@ -30,6 +32,37 @@ public class InvitationCardService {
     private final CharacterRepository characterRepository;
     private final InvitationBackgroundRepository invitationBackgroundRepository;
     private final ActiveUserReader activeUserReader;
+    private final UserRepository userRepository;
+
+    /**
+     * 특정 펀딩의 초대장 카드 조회 — 초대장 링크로 들어온 비회원에게 제공한다.
+     *
+     * [설계 포인트]
+     *  - 로그인 정보를 받지 않는다. 초대장은 링크를 받은 누구나 볼 수 있어야 하는 공개 정보다.
+     *  - 펀딩이 없거나 soft delete된 경우도 INVITATION_NOT_FOUND로 응답한다.
+     *    invitation 도메인이 funding 도메인의 에러 코드를 외부로 흘리지 않도록 update()와 동일한 규칙을 따른다.
+     *  - 개설자 이름은 ActiveUserReader가 아니라 UserRepository로 직접 조회한다.
+     *    ActiveUserReader는 "호출자가 활성 회원인가"를 검사해 탈퇴 시 401을 던지는데,
+     *    여기서는 제3자(개설자)의 이름이 필요할 뿐이라 개설자가 탈퇴했다고 해서
+     *    비회원 방문자에게 401을 반환하면 안 된다. 이름만 null로 내린다.
+     *  - 펀딩 유형을 제한하지 않는다. 초대장은 MY_GIFT/TOGETHER_GIFT 모두 생성된다.
+     */
+    @Transactional(readOnly = true)
+    public InvitationCardResponse getInvitationCard(Long fundingId) {
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
+                .orElseThrow(() -> new InvitationException(InvitationErrorCode.INVITATION_NOT_FOUND));
+
+        // 펀딩 생성 시 초대장도 함께 만들어지고 funding_id에 UNIQUE 제약이 있어
+        // 정상 데이터에선 여기 걸릴 수 없다. 데이터 이상을 500이 아닌 404로 드러내기 위한 방어.
+        InvitationCard card = invitationCardRepository.findByFundingId(fundingId)
+                .orElseThrow(() -> new InvitationException(InvitationErrorCode.INVITATION_NOT_FOUND));
+
+        String creatorName = userRepository.findById(funding.getUserId())
+                .map(User::getName)
+                .orElse(null);
+
+        return InvitationCardConverter.toDetailResponse(card, creatorName);
+    }
 
     /**
      * 특정 펀딩의 초대장 카드 수정 — 대표 캐릭터, 색상 테마, 제목, 본문을 갱신한다.
