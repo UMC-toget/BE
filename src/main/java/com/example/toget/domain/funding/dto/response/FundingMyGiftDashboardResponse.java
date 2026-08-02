@@ -5,29 +5,99 @@ import java.time.LocalDate;
 import java.util.List;
 
 public record FundingMyGiftDashboardResponse(
+        @Schema(description = "펀딩 ID", example = "12")
         Long fundingId,
+
+        @Schema(description = "제목", example = "OO의 생일 선물")
         String title,
+
+        @Schema(description = "받는 사람", example = "홍길동")
         String recipientName,
+
+        @Schema(description = "필요 날짜", example = "2026-08-15")
         LocalDate anniversaryDate,
+
+        @Schema(description = "시작일", example = "2026-07-01")
         LocalDate startDate,
+
+        @Schema(description = "종료일", example = "2026-07-31")
         LocalDate endDate,
+
+        @Schema(description = "준비방 메모", example = "생일을 함께 축하해주세요!")
         String introduction,
+
+        @Schema(description = "대표 이미지 URL", example = "https://cdn.toget.com/images/thumbnail.png")
         String thumbnailImageUrl,
+
+        @Schema(description = "목표 금액", example = "500000")
         Long targetAmount,
+
+        @Schema(description = "현재까지 모인 총 금액", example = "320000")
         Long collectedAmount,
+
+        @Schema(description = "달성률(%)", example = "64.0")
         Double progressRate,
+
+        @Schema(description = "참여자 수", example = "14")
         int participantCount,
+
+        @Schema(description = "진행 상태", example = "SELECTING")
         String status,
+
+        @Schema(description = "정산 계좌 정보 (미등록 시 null)")
         AccountInfo userAccount,
+
+        @Schema(description = "공개 설정")
         VisibilityInfo visibility,
+
+        @Schema(description = "선물 목록")
         List<GiftInfo> gifts
 ) {
-    public record AccountInfo(Long userAccountId, String bankName, String account, String accountOwner) {}
+    public record AccountInfo(
+            @Schema(description = "사용자 계좌 ID", example = "5")
+            Long userAccountId,
 
-    public record VisibilityInfo(
-            Boolean showProgress, Boolean showAmount, Boolean showParticipantCount,
-            Boolean showParticipantNames, Boolean showMessages
+            @Schema(description = "은행명", example = "카카오뱅크")
+            String bankName,
+
+            @Schema(description = "계좌번호", example = "3333-12-3456789")
+            String account,
+
+            @Schema(description = "예금주", example = "홍길동")
+            String accountOwner
     ) {}
 
-    public record GiftInfo(Long fundingGiftId, String giftName, Long giftPrice, String giftPurchaseUrl, String giftImageUrl) {}
+    public record VisibilityInfo(
+            @Schema(description = "진행률 공개 여부", example = "true")
+            Boolean showProgress,
+
+            @Schema(description = "모금액 공개 여부", example = "true")
+            Boolean showAmount,
+
+            @Schema(description = "참여자 수 공개 여부", example = "true")
+            Boolean showParticipantCount,
+
+            @Schema(description = "참여자 이름 공개 여부", example = "false")
+            Boolean showParticipantNames,
+
+            @Schema(description = "축하 메시지 공개 여부", example = "true")
+            Boolean showMessages
+    ) {}
+
+    public record GiftInfo(
+            @Schema(description = "펀딩 선물 ID", example = "10")
+            Long fundingGiftId,
+
+            @Schema(description = "선물 이름", example = "플레이스테이션 5")
+            String giftName,
+
+            @Schema(description = "선물 가격", example = "628000")
+            Long giftPrice,
+
+            @Schema(description = "구매처 URL", example = "https://store.playstation.com/")
+            String giftPurchaseUrl,
+
+            @Schema(description = "선물 이미지 URL", example = "https://cdn.toget.com/images/ps5.png")
+            String giftImageUrl
+    ) {}
 }
