@@ -23,7 +23,7 @@ public class ApiResponse<T> {
     private final String message;
 
     @JsonProperty("result")
-    @Schema(nullable = true, example = "null") // Swagger에 null 예시 강제 지정
+    @Schema(nullable = true)
     private final T result;
 
     // 성공 응답
