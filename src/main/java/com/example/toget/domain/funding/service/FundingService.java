@@ -16,7 +16,10 @@ import com.example.toget.domain.funding.entity.FundingVisibilitySettings;
 import com.example.toget.domain.funding.enums.*;
 import com.example.toget.domain
         .funding.exception.FundingException;
+import com.example.toget.domain.funding.exception.ContributionException;
+import com.example.toget.domain.funding.exception.code.ContributionErrorCode;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
+import com.example.toget.domain.funding.repository.ContributionBackgroundRepository;
 import com.example.toget.domain.funding.repository.FundingContributionRepository;
 import com.example.toget.domain.funding.repository.FundingGiftVoteRepository;
 import com.example.toget.domain.funding.repository.FundingMemberRepository;
@@ -60,6 +63,7 @@ public class FundingService {
     private final FundingGiftRepository fundingGiftRepository;
     private final FundingGiftVoteRepository fundingGiftVoteRepository;
     private final FundingContributionRepository fundingContributionRepository;
+    private final ContributionBackgroundRepository contributionBackgroundRepository;
     private final InvitationCardRepository invitationCardRepository;
     private final CharacterRepository characterRepository;
     private final InvitationBackgroundRepository invitationBackgroundRepository;
@@ -421,6 +425,43 @@ public class FundingService {
 
         fundingGiftVoteRepository.deleteAllByFundingMemberId(member.getId());
         fundingMemberRepository.delete(member);
+    }
+
+    /**
+     * 정산 대상으로 확정된 멤버 본인이 입금 완료를 신고 — 축하 메시지(FundingContribution)를
+     * 함께 남기며 FundingMember.settlementStatus를 UNPAID → PAID로 전환한다.
+     * amount는 정산 확정 시점에 이미 amountDue로 고정되어 있어 요청으로 받지 않고 그대로 기록하며,
+     * 신원이 이미 확인된 로그인 멤버라 isAnonymous 없이 항상 실명으로 남긴다.
+     */
+    @Transactional
+    public FundingSettlementContributionCreateResponse reportSettlementPayment(
+            Long userId, Long fundingId, FundingSettlementContributionCreateRequest request
+    ) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (funding.getFundingType() != FundingType.TOGETHER_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
+        }
+
+        FundingMember member = fundingMemberRepository.findByFundingIdAndUserId(fundingId, userId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
+
+        contributionBackgroundRepository.findById(request.backgroundId())
+                .orElseThrow(() -> new ContributionException(ContributionErrorCode.BACKGROUND_NOT_FOUND));
+
+        // amountDue 미확정이면 NOT_SETTLEMENT_TARGET, 이미 UNPAID가 아니면 INVALID_SETTLEMENT_STATUS_TRANSITION
+        member.requestPaymentConfirmation();
+
+        boolean isMessageVisible = !request.isPrivate();
+        FundingContribution contribution = FundingContribution.createForLoggedInUser(
+                fundingId, request.backgroundId(), userId, false,
+                member.getAmountDue(), request.content(), isMessageVisible
+        );
+        fundingContributionRepository.save(contribution);
+
+        return new FundingSettlementContributionCreateResponse(
+                funding.getId(), member.getId(), member.getSettlementStatus().name()
+        );
     }
 
     @Transactional(readOnly = true)
