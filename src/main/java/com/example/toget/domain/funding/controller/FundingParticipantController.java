@@ -5,7 +5,6 @@ import com.example.toget.domain.funding.dto.request.FundingContributionCreateReq
 import com.example.toget.domain.funding.dto.request.FundingSettlementContributionCreateRequest;
 import com.example.toget.domain.funding.dto.response.FundingContributionCreateResponse;
 import com.example.toget.domain.funding.dto.response.FundingContributionDetailResponse;
-import com.example.toget.domain.funding.dto.response.FundingContributionListResponse;
 import com.example.toget.domain.funding.dto.response.FundingContributionRollingPaperResponse;
 import com.example.toget.domain.funding.dto.response.FundingMemberJoinResponse;
 import com.example.toget.domain.funding.dto.response.FundingSettlementContributionCreateResponse;
@@ -61,8 +60,7 @@ public class FundingParticipantController {
     @Operation(summary = "[TOGETHER_GIFT] 함께 선물하기 나가기",
             description = """
                     로그인한 본인의 참여를 취소합니다. 토큰의 userId로 본인 멤버십만 대상으로 합니다.
-                    선물 후보 선정 중(`SELECTING`)일 때만 허용됩니다 — 이후에는 정산 대상자로 확정되었을 \
-                    수 있어 임의 이탈을 허용하면 정산 정합성이 깨집니다.
+                    선물 후보 선정 중(`SELECTING`)일 때만 허용됩니다. \
                     개설자(`CREATOR`)는 나갈 수 없습니다.
                     """)
     @DeleteMapping("/{fundingId}/members/me")
