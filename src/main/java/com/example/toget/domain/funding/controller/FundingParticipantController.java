@@ -2,11 +2,13 @@ package com.example.toget.domain.funding.controller;
 
 
 import com.example.toget.domain.funding.dto.request.FundingContributionCreateRequest;
+import com.example.toget.domain.funding.dto.request.FundingSettlementContributionCreateRequest;
 import com.example.toget.domain.funding.dto.response.FundingContributionCreateResponse;
 import com.example.toget.domain.funding.dto.response.FundingContributionDetailResponse;
 import com.example.toget.domain.funding.dto.response.FundingContributionListResponse;
 import com.example.toget.domain.funding.dto.response.FundingContributionRollingPaperResponse;
 import com.example.toget.domain.funding.dto.response.FundingMemberJoinResponse;
+import com.example.toget.domain.funding.dto.response.FundingSettlementContributionCreateResponse;
 import com.example.toget.domain.funding.exception.code.FundingSuccessCode;
 import com.example.toget.domain.funding.service.FundingContributionService;
 import com.example.toget.domain.funding.service.FundingService;
@@ -70,6 +72,27 @@ public class FundingParticipantController {
     ) {
         fundingService.leave(userId, fundingId);
         return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_MEMBER_LEAVE_OK, null);
+    }
+
+    @Operation(summary = "[TOGETHER_GIFT] 정산 참여자 입금 완료 신고",
+            description = """
+                    정산 대상으로 확정된(`amountDue`가 세팅된) 로그인 멤버 본인이 입금 완료를 신고합니다. \
+                    축하 메시지(`backgroundId`, `content`, `isPrivate`)를 함께 남기며 참여 기록으로 저장됩니다.
+
+                    `amount`는 정산 확정 시점에 이미 `amountDue`로 고정되어 있어 요청에 포함하지 않고, \
+                    익명 여부도 받지 않습니다 — 신원이 이미 확인된 멤버라 항상 실명으로 남습니다.
+
+                    처리 후 본인의 정산 입금 상태가 `UNPAID` → `PAID`로 전환됩니다.
+                    """)
+    @PostMapping("/{fundingId}/members/me/contributions")
+    public ApiResponse<FundingSettlementContributionCreateResponse> createSettlementContribution(
+            @Parameter(hidden = true) @LoginUserId Long userId,
+            @PathVariable Long fundingId,
+            @Valid @RequestBody FundingSettlementContributionCreateRequest request
+    ) {
+        FundingSettlementContributionCreateResponse result =
+                fundingService.reportSettlementPayment(userId, fundingId, request);
+        return ApiResponse.onSuccess(FundingSuccessCode.SETTLEMENT_CONTRIBUTION_CREATE_OK, result);
     }
 
     @Operation(summary = "펀딩 참여(후원) 제출",
