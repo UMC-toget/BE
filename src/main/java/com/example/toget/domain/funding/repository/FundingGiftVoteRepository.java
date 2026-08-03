@@ -14,6 +14,9 @@ public interface FundingGiftVoteRepository extends JpaRepository<FundingGiftVote
 
     List<FundingGiftVote> findAllByFundingMemberId(Long fundingMemberId);
 
+    /** 멤버가 펀딩에서 나갈 때, 남긴 투표 기록을 함께 정리한다(고아 투표 방지) */
+    void deleteAllByFundingMemberId(Long fundingMemberId);
+
     /** 목록 조회용 배치 득표수 집계 — 후보 개수와 무관하게 쿼리 1번 */
     @Query("""
         SELECT v.fundingGiftId as giftId, COUNT(v) as voteCount
