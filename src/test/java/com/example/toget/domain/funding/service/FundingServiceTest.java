@@ -3,14 +3,19 @@ package com.example.toget.domain.funding.service;
 import com.example.toget.domain.funding.dto.request.FundingContributionAmountUpdateRequest;
 import com.example.toget.domain.funding.dto.request.FundingVisibilityUpdateRequest;
 import com.example.toget.domain.funding.dto.response.FundingContributionAmountUpdateResponse;
+import com.example.toget.domain.funding.dto.response.FundingMemberJoinResponse;
 import com.example.toget.domain.funding.dto.response.FundingVisibilityUpdateResponse;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingContribution;
+import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.entity.FundingVisibilitySettings;
+import com.example.toget.domain.funding.enums.FundingRole;
 import com.example.toget.domain.funding.enums.FundingStatus;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.repository.FundingContributionRepository;
+import com.example.toget.domain.funding.repository.FundingGiftVoteRepository;
+import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
 import com.example.toget.domain.funding.repository.FundingVisibilitySettingsRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -48,6 +53,12 @@ class FundingServiceTest {
 
     @Mock
     private FundingVisibilitySettingsRepository fundingVisibilitySettingsRepository;
+
+    @Mock
+    private FundingMemberRepository fundingMemberRepository;
+
+    @Mock
+    private FundingGiftVoteRepository fundingGiftVoteRepository;
 
     @InjectMocks
     private FundingService fundingService;
@@ -345,6 +356,189 @@ class FundingServiceTest {
 
             // 유형 검증에서 막히므로 설정 행을 건드리지 않아야 한다
             verify(fundingVisibilitySettingsRepository, never()).findByFundingId(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("함께 선물하기 참여(합류)")
+    class Join {
+
+        private static final Long OWNER_ID = 1L;
+        private static final Long NEW_MEMBER_ID = 2L;
+        private static final Long FUNDING_ID = 10L;
+
+        private Funding togetherGiftFunding() {
+            Funding funding = Funding.createTogetherGift(OWNER_ID, null, "제목", "홍길동",
+                    LocalDate.now(), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "소개", "url", 100000L);
+            ReflectionTestUtils.setField(funding, "id", FUNDING_ID);
+            return funding;
+        }
+
+        @Test
+        @DisplayName("아직 참여하지 않은 회원이면 PARTICIPANT로 합류한다")
+        void join_success() {
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, NEW_MEMBER_ID))
+                    .willReturn(Optional.empty());
+            given(fundingMemberRepository.save(any(FundingMember.class))).willAnswer(invocation -> {
+                FundingMember member = invocation.getArgument(0);
+                ReflectionTestUtils.setField(member, "id", 99L);
+                return member;
+            });
+
+            FundingMemberJoinResponse result = fundingService.join(NEW_MEMBER_ID, FUNDING_ID);
+
+            assertThat(result.fundingId()).isEqualTo(FUNDING_ID);
+            assertThat(result.memberId()).isEqualTo(99L);
+
+            ArgumentCaptor<FundingMember> captor = ArgumentCaptor.forClass(FundingMember.class);
+            verify(fundingMemberRepository).save(captor.capture());
+            assertThat(captor.getValue().getRole()).isEqualTo(FundingRole.PARTICIPANT);
+            assertThat(captor.getValue().getUserId()).isEqualTo(NEW_MEMBER_ID);
+        }
+
+        @Test
+        @DisplayName("펀딩이 없으면 FUNDING_NOT_FOUND 예외가 발생한다")
+        void join_fail_fundingNotFound() {
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> fundingService.join(NEW_MEMBER_ID, FUNDING_ID))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.FUNDING_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("MY_GIFT 펀딩이면 NOT_TOGETHER_GIFT_TYPE 예외가 발생한다")
+        void join_fail_notTogetherGiftType() {
+            Funding funding = Funding.createMyGift(OWNER_ID, 5L, "제목", "홍길동",
+                    LocalDate.now(), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "소개", "url", 100000L);
+            ReflectionTestUtils.setField(funding, "id", FUNDING_ID);
+
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding));
+
+            assertThatThrownBy(() -> fundingService.join(NEW_MEMBER_ID, FUNDING_ID))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
+
+            verify(fundingMemberRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("이미 참여 중인 회원이면 ALREADY_FUNDING_MEMBER 예외가 발생한다")
+        void join_fail_alreadyMember() {
+            FundingMember existing = FundingMember.createParticipant(FUNDING_ID, NEW_MEMBER_ID);
+
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, NEW_MEMBER_ID))
+                    .willReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> fundingService.join(NEW_MEMBER_ID, FUNDING_ID))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.ALREADY_FUNDING_MEMBER);
+
+            verify(fundingMemberRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("함께 선물하기 나가기")
+    class Leave {
+
+        private static final Long OWNER_ID = 1L;
+        private static final Long PARTICIPANT_ID = 2L;
+        private static final Long FUNDING_ID = 10L;
+        private static final Long MEMBER_ID = 55L;
+
+        private Funding togetherGiftFunding() {
+            Funding funding = Funding.createTogetherGift(OWNER_ID, null, "제목", "홍길동",
+                    LocalDate.now(), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "소개", "url", 100000L);
+            ReflectionTestUtils.setField(funding, "id", FUNDING_ID);
+            return funding;
+        }
+
+        private FundingMember participantMember() {
+            FundingMember member = FundingMember.createParticipant(FUNDING_ID, PARTICIPANT_ID);
+            ReflectionTestUtils.setField(member, "id", MEMBER_ID);
+            return member;
+        }
+
+        @Test
+        @DisplayName("SELECTING 상태의 참여자는 나갈 수 있고, 남긴 투표도 함께 삭제된다")
+        void leave_success() {
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, PARTICIPANT_ID))
+                    .willReturn(Optional.of(participantMember()));
+
+            fundingService.leave(PARTICIPANT_ID, FUNDING_ID);
+
+            verify(fundingGiftVoteRepository).deleteAllByFundingMemberId(MEMBER_ID);
+            verify(fundingMemberRepository).delete(any(FundingMember.class));
+        }
+
+        @Test
+        @DisplayName("펀딩이 없으면 FUNDING_NOT_FOUND 예외가 발생한다")
+        void leave_fail_fundingNotFound() {
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> fundingService.leave(PARTICIPANT_ID, FUNDING_ID))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.FUNDING_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("본인의 멤버십이 없으면 MEMBER_NOT_FOUND 예외가 발생한다")
+        void leave_fail_memberNotFound() {
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, PARTICIPANT_ID))
+                    .willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> fundingService.leave(PARTICIPANT_ID, FUNDING_ID))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.MEMBER_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("개설자는 나갈 수 없고 CREATOR_CANNOT_LEAVE_FUNDING 예외가 발생한다")
+        void leave_fail_creatorCannotLeave() {
+            FundingMember creator = FundingMember.createCreator(FUNDING_ID, OWNER_ID);
+            ReflectionTestUtils.setField(creator, "id", MEMBER_ID);
+
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, OWNER_ID))
+                    .willReturn(Optional.of(creator));
+
+            assertThatThrownBy(() -> fundingService.leave(OWNER_ID, FUNDING_ID))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.CREATOR_CANNOT_LEAVE_FUNDING);
+
+            verify(fundingMemberRepository, never()).delete(any());
+        }
+
+        @Test
+        @DisplayName("SELECTING 상태가 아니면 INVALID_FUNDING_STATUS_FOR_LEAVE 예외가 발생한다")
+        void leave_fail_invalidStatus() {
+            Funding funding = togetherGiftFunding();
+            ReflectionTestUtils.setField(funding, "status", FundingStatus.SETTLING);
+
+            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding));
+            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, PARTICIPANT_ID))
+                    .willReturn(Optional.of(participantMember()));
+
+            assertThatThrownBy(() -> fundingService.leave(PARTICIPANT_ID, FUNDING_ID))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.INVALID_FUNDING_STATUS_FOR_LEAVE);
+
+            verify(fundingMemberRepository, never()).delete(any());
         }
     }
 }
