@@ -50,9 +50,20 @@ public class SignupService {
                 .email(claims.email())
                 .name(claims.name())
                 .nickname(request.nickname())
-                // 미설정(null)이면 소셜 프로필 이미지를 기본값으로 쓴다
-                .profileImageUrl(request.profileImageUrl() != null
-                        ? request.profileImageUrl() : claims.profileImageUrl())
+                // 사용자가 고르지 않았으면(null) 그대로 null로 저장한다.
+                //
+                // [소셜 프로필 이미지로 대체하지 않는 이유]
+                // 이 프로젝트는 profileImageUrl == null을 "기본 이미지 사용"으로 약속하고 있다
+                // (User.clearProfileImage, User.updateProfile의 빈 문자열 처리 참고).
+                // 여기서만 소셜 이미지로 채우면 "가입 때 사진을 안 고름"과 "가입 후 사진을 지움"이
+                // 같은 의사표시인데도 결과가 갈린다(소셜 사진 vs 기본 이미지).
+                //
+                // 서버는 받은 값을 그대로 저장할 뿐이고, 사진을 무엇으로 할지는 사용자가 정한다.
+                //
+                // 소셜 이미지 자체는 가입 토큰(SignupClaims.profileImageUrl)에 남겨 두었다.
+                // 다만 현재 SocialLoginResponse는 이 URL을 내려주지 않으므로, 프론트가
+                // "소셜 사진 가져오기"를 제안하려면 응답 DTO에 필드를 추가하는 작업이 따로 필요하다.
+                .profileImageUrl(request.profileImageUrl())
                 .build();
 
         try {
