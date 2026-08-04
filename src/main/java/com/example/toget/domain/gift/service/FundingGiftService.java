@@ -127,7 +127,10 @@ public class FundingGiftService {
             throw new FundingGiftException(FundingGiftErrorCode.GIFT_ALREADY_SELECTED);
         }
 
-        FundingMember member = getMemberOrThrow(fundingId, userId);
+        // 같은 멤버가 보내는 투표 추가/취소 요청을 전부 이 락으로 직렬화한다.
+        // count-check + insert가 원자적이지 않아 동시 요청 시 최대 투표 수(3표) 제한이 깨지는 것을 막는다.
+        FundingMember member = fundingMemberRepository.findByFundingIdAndUserIdForUpdate(fundingId, userId)
+                .orElseThrow(() -> new FundingGiftException(FundingGiftErrorCode.NOT_FUNDING_MEMBER));
 
         var existing = fundingGiftVoteRepository
                 .findByFundingMemberIdAndFundingGiftId(member.getId(), fundingGiftId);
