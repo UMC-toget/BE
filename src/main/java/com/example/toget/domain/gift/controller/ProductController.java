@@ -11,6 +11,7 @@ import com.example.toget.global.annotation.AdminOnly;
 import com.example.toget.global.apiPayload.ApiResponse;
 import com.example.toget.global.apiPayload.code.GeneralSuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -38,6 +39,8 @@ public class ProductController {
             @RequestParam(required = false) Long maxPrice,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
+            @Parameter(description = "정렬 조건 (LATEST: 최신순, OLDEST: 오래된순, PRICE_ASC: 가격 낮은순, "
+                    + "PRICE_DESC: 가격 높은순, WISHLIST_DESC: 위시리스트 등록 횟수 많은순)")
             @RequestParam(defaultValue = "LATEST") ProductSort sort
     ) {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, productService.getProducts(category, keyword, brand, minPrice, maxPrice, page, size, sort));

@@ -8,7 +8,8 @@ public enum ProductSort {
     LATEST,
     OLDEST,
     PRICE_ASC,
-    PRICE_DESC;
+    PRICE_DESC,
+    WISHLIST_DESC;
 
     @JsonCreator
     public static ProductSort from(String value) {
@@ -24,6 +25,9 @@ public enum ProductSort {
         }
         if ("price_desc".equals(normalized)) {
             return PRICE_DESC;
+        }
+        if ("wishlist_desc".equals(normalized)) {
+            return WISHLIST_DESC;
         }
         if ("latest".equals(normalized) || "desc".equals(normalized)) {
             return LATEST;
