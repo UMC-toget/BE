@@ -96,7 +96,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/fundings/*/contributions").permitAll()
 
                 // 공통 리소스 정보 조회는 인증 없이 가능하도록 설정.
-                // contribution-backgrounds / characters / invitation-backgrounds의 POST·PUT·DELETE는
+                // contribution-backgrounds / characters / invitation-backgrounds / banks의 POST·PUT·PATCH·DELETE는
                 // 아래 anyRequest().authenticated()로 로그인을 요구하고, 그 위에
                 // @AdminOnly + AdminOnlyInterceptor가 "관리자 계정인가"를 한 겹 더 검사한다.
                 // (JWT에 role 클레임이 없어 hasRole("ADMIN")을 쓸 수 없으므로 인터셉터 방식을 택했다.
@@ -105,6 +105,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/characters/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/invitation-backgrounds", "/api/v1/invitation-backgrounds/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/contribution-backgrounds", "/api/v1/contribution-backgrounds/**").permitAll()
+                // 은행 목록 — 계좌 등록 화면의 은행 선택지. HttpMethod.GET을 반드시 명시할 것:
+                // 생략하면 같은 경로의 PATCH(관리자 전용 아이콘 교체)까지 열린다.
+                .requestMatchers(HttpMethod.GET, "/api/v1/banks", "/api/v1/banks/**").permitAll()
 
                 // 후기/소식/마음전하기 조회 및 초대장 조회는 개설자 검증 없이 링크를 아는 누구나 조회 가능
                 .requestMatchers(HttpMethod.GET, "/api/v1/fundings/*/reviews/*").permitAll()

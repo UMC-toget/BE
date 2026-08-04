@@ -28,6 +28,9 @@ public class IndividualFundingDraftConverter {
                 .account(userAccount != null ? IndividualFundingDraftDetailResponse.AccountResponse.builder()
                         .userAccountId(userAccount.getId())
                         .bankName(userAccount.getBankName())
+                        // 아이콘·표시명은 엔티티의 널가드 메서드를 거친다 — 백필 전 레거시 행은 bank가 null이다
+                        .bankDisplayName(userAccount.getBankDisplayName())
+                        .bankIconUrl(userAccount.getBankIconUrl())
                         .bankAccount(userAccount.getAccount())
                         .accountOwner(userAccount.getAccountOwner())
                         .build() : null)

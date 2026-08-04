@@ -150,6 +150,9 @@ public class FundingConverter {
         return new FundingAccountResponse(
                 account.getId(),
                 account.getBankName().name(),
+                // 아이콘·표시명은 엔티티의 널가드 메서드를 거친다 — 백필 전 레거시 행은 bank가 null이다
+                account.getBankDisplayName(),
+                account.getBankIconUrl(),
                 account.getAccount(),
                 account.getAccountOwner()
         );
@@ -251,7 +254,10 @@ public class FundingConverter {
                 funding.getTargetAmount(), collectedAmount, progressRate, participantCount,
                 funding.getStatus().name(),
                 account == null ? null : new FundingMyGiftDashboardResponse.AccountInfo(
-                        account.getId(), account.getBankName().name(), account.getAccount(), account.getAccountOwner()
+                        account.getId(), account.getBankName().name(),
+                        // 아이콘·표시명은 엔티티의 널가드 메서드를 거친다 — 백필 전 레거시 행은 bank가 null이다
+                        account.getBankDisplayName(), account.getBankIconUrl(),
+                        account.getAccount(), account.getAccountOwner()
                 ),
                 visibility == null ? null : new FundingMyGiftDashboardResponse.VisibilityInfo(
                         visibility.getIsProgressVisible(), visibility.getIsCollectedAmountVisible(),
