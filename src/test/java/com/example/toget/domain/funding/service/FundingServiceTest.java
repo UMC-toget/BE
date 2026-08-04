@@ -388,7 +388,7 @@ class FundingServiceTest {
         @Test
         @DisplayName("아직 참여하지 않은 회원이면 PARTICIPANT로 합류한다")
         void join_success() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
             given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, NEW_MEMBER_ID))
                     .willReturn(Optional.empty());
             given(fundingMemberRepository.save(any(FundingMember.class))).willAnswer(invocation -> {
@@ -411,7 +411,7 @@ class FundingServiceTest {
         @Test
         @DisplayName("펀딩이 없으면 FUNDING_NOT_FOUND 예외가 발생한다")
         void join_fail_fundingNotFound() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.empty());
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> fundingService.join(NEW_MEMBER_ID, FUNDING_ID))
                     .isInstanceOf(FundingException.class)
@@ -427,7 +427,7 @@ class FundingServiceTest {
                     "소개", "url", 100000L);
             ReflectionTestUtils.setField(funding, "id", FUNDING_ID);
 
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding));
 
             assertThatThrownBy(() -> fundingService.join(NEW_MEMBER_ID, FUNDING_ID))
                     .isInstanceOf(FundingException.class)
@@ -442,7 +442,7 @@ class FundingServiceTest {
         void join_fail_alreadyMember() {
             FundingMember existing = FundingMember.createParticipant(FUNDING_ID, NEW_MEMBER_ID);
 
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
             given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, NEW_MEMBER_ID))
                     .willReturn(Optional.of(existing));
 
@@ -481,7 +481,7 @@ class FundingServiceTest {
         @Test
         @DisplayName("SELECTING 상태의 참여자는 나갈 수 있고, 남긴 투표도 함께 삭제된다")
         void leave_success() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
             given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, PARTICIPANT_ID))
                     .willReturn(Optional.of(participantMember()));
 
@@ -494,7 +494,7 @@ class FundingServiceTest {
         @Test
         @DisplayName("펀딩이 없으면 FUNDING_NOT_FOUND 예외가 발생한다")
         void leave_fail_fundingNotFound() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.empty());
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> fundingService.leave(PARTICIPANT_ID, FUNDING_ID))
                     .isInstanceOf(FundingException.class)
@@ -505,7 +505,7 @@ class FundingServiceTest {
         @Test
         @DisplayName("본인의 멤버십이 없으면 MEMBER_NOT_FOUND 예외가 발생한다")
         void leave_fail_memberNotFound() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
             given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, PARTICIPANT_ID))
                     .willReturn(Optional.empty());
 
@@ -521,7 +521,7 @@ class FundingServiceTest {
             FundingMember creator = FundingMember.createCreator(FUNDING_ID, OWNER_ID);
             ReflectionTestUtils.setField(creator, "id", MEMBER_ID);
 
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
             given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, OWNER_ID))
                     .willReturn(Optional.of(creator));
 
@@ -539,7 +539,7 @@ class FundingServiceTest {
             Funding funding = togetherGiftFunding();
             ReflectionTestUtils.setField(funding, "status", FundingStatus.SETTLING);
 
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding));
             given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, PARTICIPANT_ID))
                     .willReturn(Optional.of(participantMember()));
 
@@ -594,8 +594,8 @@ class FundingServiceTest {
         void reportSettlementPayment_success() {
             FundingMember member = settlementTargetMember();
 
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
-            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, PARTICIPANT_ID))
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingMemberRepository.findByFundingIdAndUserIdForUpdate(FUNDING_ID, PARTICIPANT_ID))
                     .willReturn(Optional.of(member));
             given(contributionBackgroundRepository.findById(BACKGROUND_ID))
                     .willReturn(Optional.of(background()));
@@ -619,7 +619,7 @@ class FundingServiceTest {
         @Test
         @DisplayName("펀딩이 없으면 FUNDING_NOT_FOUND 예외가 발생한다")
         void reportSettlementPayment_fail_fundingNotFound() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.empty());
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.empty());
 
             assertThatThrownBy(() ->
                     fundingService.reportSettlementPayment(PARTICIPANT_ID, FUNDING_ID, request()))
@@ -636,7 +636,7 @@ class FundingServiceTest {
                     "소개", "url", 100000L);
             ReflectionTestUtils.setField(funding, "id", FUNDING_ID);
 
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(funding));
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding));
 
             assertThatThrownBy(() ->
                     fundingService.reportSettlementPayment(PARTICIPANT_ID, FUNDING_ID, request()))
@@ -650,8 +650,8 @@ class FundingServiceTest {
         @Test
         @DisplayName("본인의 멤버십이 없으면 MEMBER_NOT_FOUND 예외가 발생한다")
         void reportSettlementPayment_fail_memberNotFound() {
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
-            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, PARTICIPANT_ID))
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingMemberRepository.findByFundingIdAndUserIdForUpdate(FUNDING_ID, PARTICIPANT_ID))
                     .willReturn(Optional.empty());
 
             assertThatThrownBy(() ->
@@ -666,8 +666,8 @@ class FundingServiceTest {
         void reportSettlementPayment_fail_backgroundNotFound() {
             FundingMember member = settlementTargetMember();
 
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
-            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, PARTICIPANT_ID))
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingMemberRepository.findByFundingIdAndUserIdForUpdate(FUNDING_ID, PARTICIPANT_ID))
                     .willReturn(Optional.of(member));
             given(contributionBackgroundRepository.findById(BACKGROUND_ID)).willReturn(Optional.empty());
 
@@ -688,8 +688,8 @@ class FundingServiceTest {
             FundingMember member = FundingMember.createParticipant(FUNDING_ID, PARTICIPANT_ID);
             ReflectionTestUtils.setField(member, "id", MEMBER_ID);
 
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
-            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, PARTICIPANT_ID))
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingMemberRepository.findByFundingIdAndUserIdForUpdate(FUNDING_ID, PARTICIPANT_ID))
                     .willReturn(Optional.of(member));
             given(contributionBackgroundRepository.findById(BACKGROUND_ID))
                     .willReturn(Optional.of(background()));
@@ -709,8 +709,8 @@ class FundingServiceTest {
             FundingMember member = settlementTargetMember();
             member.requestPaymentConfirmation(); // UNPAID -> PAID로 미리 이동시켜 재신고 상황을 재현
 
-            given(fundingRepository.findById(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
-            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, PARTICIPANT_ID))
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(togetherGiftFunding()));
+            given(fundingMemberRepository.findByFundingIdAndUserIdForUpdate(FUNDING_ID, PARTICIPANT_ID))
                     .willReturn(Optional.of(member));
             given(contributionBackgroundRepository.findById(BACKGROUND_ID))
                     .willReturn(Optional.of(background()));

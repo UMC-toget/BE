@@ -386,7 +386,7 @@ public class FundingService {
      */
     @Transactional
     public FundingMemberJoinResponse join(Long userId, Long fundingId) {
-        Funding funding = fundingRepository.findById(fundingId)
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
         if (funding.getFundingType() != FundingType.TOGETHER_GIFT) {
             throw new FundingException(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
@@ -407,7 +407,7 @@ public class FundingService {
      */
     @Transactional
     public void leave(Long userId, Long fundingId) {
-        Funding funding = fundingRepository.findById(fundingId)
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
         if (funding.getFundingType() != FundingType.TOGETHER_GIFT) {
             throw new FundingException(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
@@ -437,13 +437,13 @@ public class FundingService {
     public FundingSettlementContributionCreateResponse reportSettlementPayment(
             Long userId, Long fundingId, FundingSettlementContributionCreateRequest request
     ) {
-        Funding funding = fundingRepository.findById(fundingId)
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
         if (funding.getFundingType() != FundingType.TOGETHER_GIFT) {
             throw new FundingException(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
         }
 
-        FundingMember member = fundingMemberRepository.findByFundingIdAndUserId(fundingId, userId)
+        FundingMember member = fundingMemberRepository.findByFundingIdAndUserIdForUpdate(fundingId, userId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
 
         contributionBackgroundRepository.findById(request.backgroundId())
