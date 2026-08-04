@@ -18,6 +18,7 @@ public class WishlistConverter {
     public static WishlistItem toEntity(Long userId, WishlistCreateRequest request) {
         return WishlistItem.builder()
                 .userId(userId)
+                .productId(request.productId())
                 .name(request.name())
                 .price(request.price())
                 .purchaseUrl(request.purchaseUrl())
@@ -27,12 +28,13 @@ public class WishlistConverter {
     }
 
     public static WishlistCreateResponse toCreateResponse(WishlistItem item) {
-        return new WishlistCreateResponse(item.getId());
+        return new WishlistCreateResponse(item.getId(), item.getProductId());
     }
 
     public static WishlistItemResponse toItemResponse(WishlistItem item) {
         return new WishlistItemResponse(
                 item.getId(),
+                item.getProductId(),
                 item.getName(),
                 item.getPrice(),
                 item.getPurchaseUrl(),

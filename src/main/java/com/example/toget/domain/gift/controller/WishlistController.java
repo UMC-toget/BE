@@ -42,7 +42,11 @@ public class WishlistController {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, wishlistService.getWishlist(userId, type, page, size, sort));
     }
 
-    @Operation(summary = "위시리스트 아이템 생성", description = "현재 로그인한 사용자의 새로운 선물 위시리스트 항목을 생성합니다.")
+    @Operation(summary = "위시리스트 아이템 생성",
+            description = "현재 로그인한 사용자의 새로운 선물 위시리스트 항목을 생성합니다. "
+                    + "productId를 지정하면 해당 자체 상품의 위시리스트 등록 횟수가 1 증가합니다. "
+                    + "같은 상품이라도 GIVE와 RECEIVE는 각각 등록할 수 있으며, 이 경우 등록 횟수는 총 2 증가합니다. "
+                    + "다만 이미 등록한 유형으로 같은 상품을 다시 등록하면 409를 반환합니다.")
     @PostMapping
     public ApiResponse<WishlistCreateResponse> createWishlistItem(
             @Parameter(hidden = true) @LoginUserId Long userId,
@@ -51,7 +55,9 @@ public class WishlistController {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, wishlistService.create(userId, request));
     }
 
-    @Operation(summary = "위시리스트 아이템 수정", description = "지정한 ID의 위시리스트 항목 정보를 수정합니다.")
+    @Operation(summary = "위시리스트 아이템 수정",
+            description = "지정한 ID의 위시리스트 항목 정보를 수정합니다. "
+                    + "매핑된 상품(productId)은 수정할 수 없으며, 변경이 필요하면 삭제 후 다시 등록해야 합니다.")
     @PutMapping("/{wishlistItemId}")
     public ApiResponse<WishlistUpdateResponse> updateWishlistItem(
             @Parameter(hidden = true) @LoginUserId Long userId,

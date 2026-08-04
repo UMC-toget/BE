@@ -9,6 +9,9 @@ public record WishlistItemResponse(
     @Schema(description = "위시리스트 아이템 ID", example = "1")
     Long wishlistItemId,
 
+    @Schema(description = "매핑된 자체 상품 ID. 외부 링크 상품이면 null", example = "1", nullable = true)
+    Long productId,
+
     @Schema(description = "상품 이름", example = "맥북 프로 14")
     String name,
 
