@@ -93,7 +93,7 @@ public class FundingParticipantController {
         return ApiResponse.onSuccess(FundingSuccessCode.SETTLEMENT_CONTRIBUTION_CREATE_OK, result);
     }
 
-    @Operation(summary = "펀딩 참여(후원) 제출",
+    @Operation(summary = "[MY_GIFT] 펀딩 참여(후원) 제출",
             description = "비회원이 펀딩 참여 결제를 하거나 기여를 생성할 때 호출합니다. 마음만 보내는 경우 amount는 0으로 보냅니다.")
     @PostMapping("/{fundingId}/contributions")
     public ApiResponse<FundingContributionCreateResponse> createContribution(
