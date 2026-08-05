@@ -16,8 +16,12 @@ import com.example.toget.domain.funding.entity.FundingVisibilitySettings;
 import com.example.toget.domain.funding.enums.*;
 import com.example.toget.domain
         .funding.exception.FundingException;
+import com.example.toget.domain.funding.exception.ContributionException;
+import com.example.toget.domain.funding.exception.code.ContributionErrorCode;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
+import com.example.toget.domain.funding.repository.ContributionBackgroundRepository;
 import com.example.toget.domain.funding.repository.FundingContributionRepository;
+import com.example.toget.domain.funding.repository.FundingGiftVoteRepository;
 import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
 import com.example.toget.domain.funding.repository.FundingVisibilitySettingsRepository;
@@ -57,7 +61,9 @@ public class FundingService {
     private final FundingRepository fundingRepository;
     private final FundingMemberRepository fundingMemberRepository;
     private final FundingGiftRepository fundingGiftRepository;
+    private final FundingGiftVoteRepository fundingGiftVoteRepository;
     private final FundingContributionRepository fundingContributionRepository;
+    private final ContributionBackgroundRepository contributionBackgroundRepository;
     private final InvitationCardRepository invitationCardRepository;
     private final CharacterRepository characterRepository;
     private final InvitationBackgroundRepository invitationBackgroundRepository;
@@ -372,6 +378,90 @@ public class FundingService {
         } else {
             throw new FundingException(FundingErrorCode.INVALID_MEMBER_ROLE);
         }
+    }
+
+    /**
+     * 초대장을 통해 들어온 회원이 함께 선물하기에 참여자(PARTICIPANT)로 합류.
+     * 비회원은 FundingMember.userId가 not null이라 등록될 수 없으므로 로그인이 필수다.
+     */
+    @Transactional
+    public FundingMemberJoinResponse join(Long userId, Long fundingId) {
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (funding.getFundingType() != FundingType.TOGETHER_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
+        }
+        if (fundingMemberRepository.findByFundingIdAndUserId(fundingId, userId).isPresent()) {
+            throw new FundingException(FundingErrorCode.ALREADY_FUNDING_MEMBER);
+        }
+
+        FundingMember member = fundingMemberRepository.save(FundingMember.createParticipant(fundingId, userId));
+
+        return new FundingMemberJoinResponse(funding.getId(), member.getId());
+    }
+
+    /**
+     * 본인의 참여를 취소. SETTLING 이후에는 정산 대상자로 확정(amountDue 세팅)되었을 수 있어
+     * 정산 인원·금액 정합성이 깨지므로 SELECTING 상태에서만 허용한다.
+     * 남긴 투표 기록도 함께 삭제해 득표수 집계에 고아 데이터가 남지 않도록 한다.
+     */
+    @Transactional
+    public void leave(Long userId, Long fundingId) {
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (funding.getFundingType() != FundingType.TOGETHER_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
+        }
+
+        FundingMember member = fundingMemberRepository.findByFundingIdAndUserId(fundingId, userId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
+
+        if (member.getRole() == FundingRole.CREATOR) {
+            throw new FundingException(FundingErrorCode.CREATOR_CANNOT_LEAVE_FUNDING);
+        }
+        if (funding.getStatus() != FundingStatus.SELECTING) {
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_STATUS_FOR_LEAVE);
+        }
+
+        fundingGiftVoteRepository.deleteAllByFundingMemberId(member.getId());
+        fundingMemberRepository.delete(member);
+    }
+
+    /**
+     * 정산 대상으로 확정된 멤버 본인이 입금 완료를 신고 — 축하 메시지(FundingContribution)를
+     * 함께 남기며 FundingMember.settlementStatus를 UNPAID → PAID로 전환한다.
+     * amount는 정산 확정 시점에 이미 amountDue로 고정되어 있어 요청으로 받지 않고 그대로 기록하며,
+     * 신원이 이미 확인된 로그인 멤버라 isAnonymous 없이 항상 실명으로 남긴다.
+     */
+    @Transactional
+    public FundingSettlementContributionCreateResponse reportSettlementPayment(
+            Long userId, Long fundingId, FundingSettlementContributionCreateRequest request
+    ) {
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
+        if (funding.getFundingType() != FundingType.TOGETHER_GIFT) {
+            throw new FundingException(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
+        }
+
+        FundingMember member = fundingMemberRepository.findByFundingIdAndUserIdForUpdate(fundingId, userId)
+                .orElseThrow(() -> new FundingException(FundingErrorCode.MEMBER_NOT_FOUND));
+
+        contributionBackgroundRepository.findById(request.backgroundId())
+                .orElseThrow(() -> new ContributionException(ContributionErrorCode.BACKGROUND_NOT_FOUND));
+
+        // amountDue 미확정이면 NOT_SETTLEMENT_TARGET, 이미 UNPAID가 아니면 INVALID_SETTLEMENT_STATUS_TRANSITION
+        member.requestPaymentConfirmation();
+
+        boolean isMessageVisible = !request.isPrivate();
+        FundingContribution contribution = FundingContribution.createForLoggedInUser(
+                fundingId, request.backgroundId(), userId, false,
+                member.getAmountDue(), request.content(), isMessageVisible
+        );
+        fundingContributionRepository.save(contribution);
+
+        return new FundingSettlementContributionCreateResponse(
+                funding.getId(), member.getId(), member.getSettlementStatus().name()
+        );
     }
 
     @Transactional(readOnly = true)

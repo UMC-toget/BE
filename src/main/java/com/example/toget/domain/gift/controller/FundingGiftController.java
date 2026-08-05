@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "펀딩 - 참여자용", description = "참여자/방문자용 펀딩 참여 API")
+@Tag(name = "펀딩 - 참여자용 API", description = "참여자/방문자용 펀딩 참여 API")
 @RestController
 @RequestMapping("/api/v1/fundings")
 @RequiredArgsConstructor
