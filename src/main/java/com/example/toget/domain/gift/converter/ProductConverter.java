@@ -40,6 +40,7 @@ public class ProductConverter {
                 product.getPurchaseUrl(),
                 product.getCategory(),
                 product.getBrand(),
+                product.getWishlistCount(),
                 product.getCreatedAt(),
                 product.getUpdatedAt()
         );

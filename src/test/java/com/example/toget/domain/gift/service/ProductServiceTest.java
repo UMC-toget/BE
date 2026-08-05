@@ -13,6 +13,7 @@ import com.example.toget.domain.gift.repository.ProductRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -144,6 +146,29 @@ public class ProductServiceTest {
         assertThat(response.pageSize()).isEqualTo(10);
         assertThat(response.hasNext()).isFalse();
         assertThat(response.products().get(0).name()).isEqualTo("애플 워치 SE 2세대");
+    }
+
+    @Test
+    @DisplayName("상품 목록 조회 - WISHLIST_DESC 정렬 시 wishlistCount DESC, id DESC로 매핑")
+    public void getProducts_wishlistDesc_mapsSort() {
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+        Slice<Product> slice = new SliceImpl<>(List.of(), pageable, false);
+
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        given(productRepository.searchProducts(any(), any(), any(), any(), any(), captor.capture()))
+                .willReturn(slice);
+
+        // when
+        productService.getProducts(null, null, null, null, null, 0, 10, ProductSort.WISHLIST_DESC);
+
+        // then
+        // 정렬 프로퍼티명은 문자열이라 컴파일러가 검증해주지 않으므로 매핑 결과를 직접 확인한다
+        Sort sort = captor.getValue().getSort();
+        assertThat(sort).containsExactly(
+                Sort.Order.desc("wishlistCount"),
+                Sort.Order.desc("id")
+        );
     }
 
     @Test

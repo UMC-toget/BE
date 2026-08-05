@@ -11,4 +11,7 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItem, Long
     Slice<WishlistItem> findByUserIdOrderByIdAsc(Long userId, Pageable pageable);
     Slice<WishlistItem> findByUserIdAndTypeOrderByIdDesc(Long userId, WishlistType type, Pageable pageable);
     Slice<WishlistItem> findByUserIdAndTypeOrderByIdAsc(Long userId, WishlistType type, Pageable pageable);
+
+    /** 동일 유저·상품·타입 중복 등록 검사용. DB 유니크 제약(uk_user_product_type)과 동일한 조건. */
+    boolean existsByUserIdAndProductIdAndType(Long userId, Long productId, WishlistType type);
 }

@@ -52,6 +52,8 @@ public class ProductService {
             case OLDEST -> Sort.by(Sort.Direction.ASC, "id");
             case PRICE_ASC -> Sort.by(Sort.Direction.ASC, "price").and(Sort.by(Sort.Direction.DESC, "id"));
             case PRICE_DESC -> Sort.by(Sort.Direction.DESC, "price").and(Sort.by(Sort.Direction.DESC, "id"));
+            // 위시리스트 등록 횟수 내림차순. 동점 시 최신 상품이 앞에 오도록 id DESC로 tie-break한다.
+            case WISHLIST_DESC -> Sort.by(Sort.Direction.DESC, "wishlistCount").and(Sort.by(Sort.Direction.DESC, "id"));
             case LATEST -> Sort.by(Sort.Direction.DESC, "id");
         };
 
