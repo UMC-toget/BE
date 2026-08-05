@@ -50,8 +50,7 @@ public record FundingCreateRequest(
         @Schema(description = "썸네일 이미지 URL")
         String thumbnailImageUrl,
 
-        @Schema(description = "목표 금액. MY_GIFT는 필수 0원 이상, TOGETHER_GIFT는 미입력 시 0으로 시작", example = "100000")
-        @NotNull(message = "목표 금액은 필수입니다.")
+        @Schema(description = "목표 금액. MY_GIFT는 필수 0원 이상, TOGETHER_GIFT는 미입력(null) 시 0으로 시작", example = "100000")
         @PositiveOrZero(message = "목표 금액은 0원 이상이어야 합니다.")
         Long targetAmount,
 

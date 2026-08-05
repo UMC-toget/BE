@@ -208,6 +208,8 @@ public class FundingService {
     }
 
     private Funding createTogetherGift(Long userId, FundingCreateRequest request) {
+        // TOGETHER_GIFT는 targetAmount 미입력(null) 시 0으로 시작한다.
+        Long targetAmount = request.targetAmount() != null ? request.targetAmount() : 0L;
         return Funding.createTogetherGift(
                 userId,
                 request.userAccountId(),
@@ -218,7 +220,7 @@ public class FundingService {
                 request.endDate(),
                 request.introduction(),
                 request.thumbnailImageUrl(),
-                request.targetAmount()
+                targetAmount
         );
     }
 
