@@ -53,6 +53,13 @@ public record IndividualFundingDraftDetailResponse(
             @Schema(description = "은행 이름", example = "KAKAO_BANK")
             BankName bankName,
 
+            @Schema(description = "은행 표시명", example = "카카오뱅크")
+            String bankDisplayName,
+
+            @Schema(description = "은행 아이콘 URL — 아이콘 미확보 은행은 null이므로 fallback 처리 필요",
+                    example = "https://toget-bucket-dev.s3.ap-northeast-2.amazonaws.com/bank-icons/v1/KAKAO_BANK.svg")
+            String bankIconUrl,
+
             @Schema(description = "계좌 번호", example = "3333011234567")
             String bankAccount,
 

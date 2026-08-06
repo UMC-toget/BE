@@ -11,6 +11,13 @@ public record UserAccountResponse(
         @Schema(description = "은행 이름", example = "KAKAO_BANK")
         BankName bankName, // enum은 JSON에서 "KAKAO_BANK" 같은 이름 문자열로 직렬화된다
 
+        @Schema(description = "은행 표시명", example = "카카오뱅크")
+        String bankDisplayName,
+
+        @Schema(description = "은행 아이콘 URL — 아이콘 미확보 은행은 null이므로 fallback 처리 필요",
+                example = "https://toget-bucket-dev.s3.ap-northeast-2.amazonaws.com/bank-icons/v1/KAKAO_BANK.svg")
+        String bankIconUrl,
+
         @Schema(description = "예금주 명", example = "홍길동")
         String accountOwner,
 
