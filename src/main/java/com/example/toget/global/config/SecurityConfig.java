@@ -41,7 +41,10 @@ public class SecurityConfig {
         "/v3/api-docs/**",
 
         // 카카오/구글 소셜 로그인 및 토큰 재발급 API 허용
-        "/api/v1/auth/tokens/**"
+        "/api/v1/auth/tokens/**",
+
+        // 개발 전용 테스트 세팅 API 허용
+        "/api/dev/**"
     };
 
     @Bean
