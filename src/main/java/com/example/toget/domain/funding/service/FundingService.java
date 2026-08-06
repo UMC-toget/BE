@@ -315,7 +315,8 @@ public class FundingService {
             throw new FundingException(FundingErrorCode.ACCOUNT_NOT_REGISTERED);
         }
 
-        UserAccount account = userAccountRepository.findById(funding.getUserAccountId())
+        // 응답에 은행 아이콘이 실리므로 bank를 함께 읽는다(findWithBankById)
+        UserAccount account = userAccountRepository.findWithBankById(funding.getUserAccountId())
                 .orElseThrow(() -> new FundingException(FundingErrorCode.ACCOUNT_NOT_FOUND));
 
         return FundingConverter.toAccountResponse(account);

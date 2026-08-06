@@ -11,7 +11,9 @@ public class UserAccountConverter {
     }
 
     public static UserAccountResponse toAccountResponse(UserAccount account) {
+        // 아이콘·표시명은 엔티티의 널가드 메서드를 거친다 — 백필 전 레거시 행은 bank가 null이다
         return new UserAccountResponse(account.getId(), account.getBankName(),
+                account.getBankDisplayName(), account.getBankIconUrl(),
                 account.getAccountOwner(), account.getAccount());
     }
 

@@ -41,6 +41,15 @@ admin:
   # 이메일만 비교하면 같은 주소를 다른 소셜 계정에 등록해 우회할 수 있으므로 공급자까지 함께 검증한다
   provider: ${ADMIN_PROVIDER:GOOGLE}
 
+bank-icon:
+  # 은행 아이콘이 올라간 S3 디렉터리 URL. BankSeeder가 "base-url/{은행코드}.svg"로 조합해 banks.icon_url에 채운다.
+  # 버킷이 dev/prod로 다르고 아이콘 규격 변경 시 경로 버전(v1 → v2)도 바뀌므로 전체 URL을 하드코딩하지 않는다.
+  # 미설정 시 icon_url은 null로 남는다 — 아이콘 업로드 전에도 스키마·API 배포가 가능하도록 한 것이며,
+  # 업로드 후 이 값을 설정하고 재기동하면 비어 있던 행만 자동으로 채워진다(이미 채워진 값은 보존).
+  # 예: https://toget-bucket-dev.s3.ap-northeast-2.amazonaws.com/bank-icons/v1
+  base-url: ${BANK_ICON_BASE_URL:}
+  extension: ${BANK_ICON_EXTENSION:svg}
+
 oauth:
   google:
     token-info-uri: ${GOOGLE_TOKEN_INFO_URI:https://oauth2.googleapis.com/tokeninfo}

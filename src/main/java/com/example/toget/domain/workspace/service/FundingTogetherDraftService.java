@@ -44,9 +44,11 @@ public class FundingTogetherDraftService {
                 .orElseThrow(() -> new WorkspaceException(WorkspaceErrorCode.DRAFT_NOT_FOUND));
 
         // 3. 연동된 계좌 정보 조회 (있을 경우)
+        //    응답에 은행 아이콘이 실리므로 bank를 함께 읽는다(findWithBankById).
+        //    일반 findById를 쓰면 LAZY인 bank 때문에 은행 SELECT가 한 번 더 나간다.
         UserAccount userAccount = null;
         if (draft.getUserAccountId() != null) {
-            userAccount = userAccountRepository.findById(draft.getUserAccountId()).orElse(null);
+            userAccount = userAccountRepository.findWithBankById(draft.getUserAccountId()).orElse(null);
         }
 
         // 4. DTO 변환 및 반환

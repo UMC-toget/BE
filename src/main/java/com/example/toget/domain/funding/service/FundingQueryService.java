@@ -96,8 +96,10 @@ public class FundingQueryService {
         Long collectedAmount = fundingContributionRepository.sumAmountByFundingId(fundingId);
         int participantCount = fundingContributionRepository.countByFundingId(fundingId);
 
+        // 응답에 은행 아이콘이 실리므로 bank를 함께 읽는다(findWithBankById).
+        // 일반 findById를 쓰면 LAZY인 bank 때문에 은행 SELECT가 한 번 더 나간다.
         UserAccount account = funding.getUserAccountId() != null
-                ? userAccountRepository.findById(funding.getUserAccountId()).orElse(null)
+                ? userAccountRepository.findWithBankById(funding.getUserAccountId()).orElse(null)
                 : null;
 
         FundingVisibilitySettings visibility = fundingVisibilitySettingsRepository
