@@ -7,13 +7,11 @@ import com.example.toget.global.apiPayload.code.GeneralSuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "개발 전용 API", description = "로컬/개발 환경 전용 테스트 데이터 세팅 및 토큰 발급 API")
-@Profile({"local", "dev"})
 @RestController
 @RequestMapping("/api/dev")
 @RequiredArgsConstructor
