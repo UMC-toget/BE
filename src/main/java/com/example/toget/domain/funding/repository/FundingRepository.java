@@ -1,10 +1,15 @@
 package com.example.toget.domain.funding.repository;
 
 import com.example.toget.domain.funding.entity.Funding;
+import com.example.toget.domain.funding.enums.FundingStatus;
+import com.example.toget.domain.funding.enums.FundingType;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -15,6 +20,33 @@ public interface FundingRepository extends JpaRepository<Funding, Long> {
 
     // 단건 조회용 — soft delete된(deletedAt 기록된) 펀딩은 없는 것으로 취급한다 (deletedAt is null 컨벤션)
     Optional<Funding> findByIdAndDeletedAtIsNull(Long id);
+
+    /**
+     * 참여 종료일이 지났는데도 아직 정산 중(SETTLING)인 펀딩을 벌크 UPDATE로 한 번에 마감(ENDED) 처리한다.
+     * - endDate < date: 종료일 당일까지는 유예하고, 다음날부터 마감 대상으로 잡는다.
+     * - deletedAt is null: soft delete된 펀딩은 배치 대상에서 제외.
+     * - 엔티티를 전부 메모리로 읽어 Dirty Checking으로 1건씩 UPDATE하는 대신, JPQL 벌크 UPDATE 한 방으로 처리한다
+     *   (코드 리뷰 반영: 상태 전환 외 도메인 이벤트·연관관계 처리가 없어 벌크 UPDATE로 바꿔도 안전).
+     * - 벌크 UPDATE는 영속성 컨텍스트를 거치지 않아 @LastModifiedDate(updatedAt)가 자동 갱신되지 않으므로
+     *   updatedAt을 쿼리에서 직접 세팅한다. clearAutomatically로 같은 트랜잭션 내 1차 캐시 오염도 방지한다.
+     *
+     * @return 실제로 마감 처리된 건수
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update Funding f
+               set f.status = :newStatus, f.updatedAt = :now
+             where f.fundingType = :fundingType
+               and f.status = :currentStatus
+               and f.endDate < :date
+               and f.deletedAt is null
+            """)
+    int bulkEndExpiredFundings(
+            @Param("fundingType") FundingType fundingType,
+            @Param("currentStatus") FundingStatus currentStatus,
+            @Param("newStatus") FundingStatus newStatus,
+            @Param("date") LocalDate date,
+            @Param("now") LocalDateTime now);
 
     /**
      * 내가 개최한 펀딩 목록 페이징 조회.

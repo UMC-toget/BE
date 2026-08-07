@@ -63,10 +63,12 @@ public class Funding extends BaseEntity {
     @Column(name = "anniversary_date", nullable = false)
     private LocalDate anniversaryDate;
 
-    @Column(name = "start_date", nullable = false)
+    // MY_GIFT는 필수, TOGETHER_GIFT는 선택(기간 미설정 상태로 시작 가능) — 필수 여부는
+    // createMyGift()에서 강제하고, 여기서는 컬럼 자체를 nullable로 둔다.
+    @Column(name = "start_date")
     private LocalDate startDate;
 
-    @Column(name = "end_date", nullable = false)
+    @Column(name = "end_date")
     private LocalDate endDate;
 
     @Column(name = "introduction", columnDefinition = "TEXT")
@@ -106,8 +108,17 @@ public class Funding extends BaseEntity {
         this.status = status;
     }
 
+    /**
+     * 둘 다 null(기간 미설정)이면 통과, 하나만 null이면 불완전한 기간이라 거부,
+     * 둘 다 있으면 시작일이 종료일보다 앞서는지만 검증한다.
+     * "MY_GIFT는 둘 다 필수"라는 규칙은 이 메서드가 아니라 createMyGift()가 강제한다.
+     */
     private static void validatePeriod(LocalDate startDate, LocalDate endDate) {
-        if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
+        boolean onlyOneIsNull = (startDate == null) != (endDate == null);
+        if (onlyOneIsNull) {
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_PERIOD);
+        }
+        if (startDate != null && startDate.isAfter(endDate)) {
             throw new FundingException(FundingErrorCode.INVALID_FUNDING_PERIOD);
         }
     }
@@ -130,6 +141,9 @@ public class Funding extends BaseEntity {
                                        Long targetAmount) {
         if (userAccountId == null) {
             throw new FundingException(FundingErrorCode.ACCOUNT_REQUIRED_FOR_MY_GIFT);
+        }
+        if (startDate == null || endDate == null) {
+            throw new FundingException(FundingErrorCode.PERIOD_REQUIRED_FOR_MY_GIFT);
         }
         return Funding.builder()
                 .userId(userId)
@@ -266,8 +280,8 @@ public class Funding extends BaseEntity {
     }
 
     private boolean isExpired() {
-
-        return LocalDate.now().isAfter(this.endDate);
+        // TOGETHER_GIFT는 endDate 없이 시작할 수 있다 — 기간 미설정 상태는 만료로 취급하지 않는다.
+        return this.endDate != null && LocalDate.now().isAfter(this.endDate);
     }
 
 
