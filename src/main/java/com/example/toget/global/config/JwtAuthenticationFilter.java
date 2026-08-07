@@ -71,6 +71,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     //   두 곳에서 표현하고 있다. /auth/tokens 아래에 엔드포인트를 추가하면 두 파일을 함께 봐야 한다.
     private static final String AUTH_TOKEN_PATH_PREFIX = "/api/v1/auth/tokens/";
     private static final String LOGOUT_PATH = "/api/v1/auth/tokens/me"; // 로그아웃만은 인증 필요
+    private static final String IMAGE_PRESIGNED_URL_PATH = "/api/v1/images/presigned-url"; // 회원가입 등 비회원 이미지 업로드
 
     private final JwtProvider jwtProvider;
     private final SecurityErrorResponseWriter errorResponseWriter;
@@ -152,7 +153,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /** 잘못된 토큰을 401이 아니라 "인증 정보 없음"으로 취급해도 되는 경로인지 */
     private boolean toleratesInvalidToken(HttpServletRequest request) {
         String path = pathWithinApplication(request);
-        return path.startsWith(AUTH_TOKEN_PATH_PREFIX) && !path.equals(LOGOUT_PATH);
+        return (path.startsWith(AUTH_TOKEN_PATH_PREFIX) && !path.equals(LOGOUT_PATH))
+                || path.equals(IMAGE_PRESIGNED_URL_PATH);
     }
 
     private void authenticate(HttpServletRequest request, String token) {
