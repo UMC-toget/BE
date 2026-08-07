@@ -85,6 +85,9 @@ public class SecurityConfig {
                 // POST 하나만 열고 /users/me 등 나머지는 아래 anyRequest().authenticated()에 그대로 걸린다. (issue #61)
                 .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
 
+                // S3 Presigned URL 발급 — 회원가입 시 프로필 사진 업로드 등 비회원 상태에서도 사용 가능하도록 허용
+                .requestMatchers(HttpMethod.POST, "/api/v1/images/presigned-url").permitAll()
+
                 // Swagger 및 소셜 로그인 API 무조건 허용
                 .requestMatchers(allowAllUris).permitAll()
 

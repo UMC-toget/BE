@@ -224,4 +224,20 @@ class JwtAuthenticationFilterTest {
         verify(filterChain).doFilter(request, response);
         assertThat(response.getStatus()).isEqualTo(200);
     }
+
+    @Test
+    @DisplayName("Presigned URL 발급 요청은 유효하지 않은 토큰이 붙어 있어도 통과시킨다 — 회원가입 중 프로필 이미지 업로드 지원")
+    void toleratesInvalidTokenOnPresignedUrl() throws Exception {
+        given(jwtProvider.parse(any(), any())).willThrow(new UserException(UserErrorCode.UNAUTHORIZED));
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/images/presigned-url");
+        request.addHeader("Authorization", "Bearer expired.or.signup.token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter().doFilter(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
 }
