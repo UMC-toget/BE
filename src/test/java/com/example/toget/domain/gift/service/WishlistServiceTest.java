@@ -99,6 +99,27 @@ public class WishlistServiceTest {
     }
 
     @Test
+    @DisplayName("위시리스트 아이템 생성 성공 - 구매처 링크(purchaseUrl) null 입력 시에도 정상 생성")
+    public void create_success_withNullPurchaseUrl() {
+        // given
+        Long userId = 1L;
+        WishlistCreateRequest request = new WishlistCreateRequest(
+                null, "맥북 프로 14", 2490000L, null, "https://image.com/macbook.png", WishlistType.RECEIVE
+        );
+
+        given(wishlistItemRepository.save(any(WishlistItem.class)))
+                .willReturn(wishlistItem(10L, userId, null, WishlistType.RECEIVE));
+
+        // when
+        WishlistCreateResponse response = wishlistService.create(userId, request);
+
+        // then
+        assertThat(response.wishlistItemId()).isEqualTo(10L);
+        verify(wishlistItemRepository).save(any(WishlistItem.class));
+    }
+
+
+    @Test
     @DisplayName("위시리스트 아이템 생성 성공 - 자체 상품 매핑 시 위시리스트 등록 횟수 +1")
     public void create_withProduct_increasesWishlistCount() {
         // given
