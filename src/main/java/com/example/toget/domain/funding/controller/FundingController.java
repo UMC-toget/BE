@@ -313,7 +313,7 @@ public class FundingController {
         return ApiResponse.onSuccess(FundingSuccessCode.MY_GIFT_DASHBOARD_OK, result);
     }
 
-    @Operation(summary = "[TOGETHER_GIFT] 함께 선물하기 메인 화면 조회",
+    @Operation(summary = "[TOGETHER_GIFT] 함께 선물하기 메인 화면 조회 (⚠️ 개설자 전용 아님 — 누구나 조회 가능)",
             description = """
                 함께 선물하기 펀딩 제어실의 메인 화면 정보를 반환합니다. 응답은 하나의 스키마를 공유하되,
                 펀딩 상태(status)에 따라 채워지는 필드가 다릅니다.
@@ -322,11 +322,15 @@ public class FundingController {
                 - ENDED: 위와 동일 + messageIds(최근 축하 메시지 5개 ID)까지 채워짐
                 TOGETHER_GIFT 유형 전용입니다.
 
-                개설자/공동관리자/일반참여자/비회원 누구나 조회할 수 있습니다 — 초대장 링크를 아는 사람이면
-                누구나 볼 수 있는 화면입니다. 응답의 myRole(CREATOR/ADMIN/PARTICIPANT/null)로 조회자의
-                역할을 알 수 있으니, 프론트는 이 값을 기준으로 투표/후기작성 등 액션 버튼의 활성화 여부를
-                결정하면 됩니다. (조회는 열려 있어도 액션 API들은 각자 서버단에서 역할 검증을 계속합니다.)
-                """)
+                ⚠️ 이 컨트롤러의 다른 API와 달리 개설자/공동관리자 전용이 아닙니다. 개설자/공동관리자/일반참여자/
+                비회원 누구나 조회할 수 있습니다 — 초대장 링크를 아는 사람이면 누구나 볼 수 있는 화면입니다.
+                응답의 myRole(CREATOR/ADMIN/PARTICIPANT/null)로 조회자의 역할을 알 수 있으니, 프론트는 이 값을
+                기준으로 투표/후기작성 등 액션 버튼의 활성화 여부를 결정하면 됩니다. (조회는 열려 있어도 액션
+                API들은 각자 서버단에서 역할 검증을 계속합니다.)
+                """,
+            // 이 컨트롤러의 클래스 태그("개설자/공동관리자용 API")만으로는 이 API가 예외라는 게 드러나지
+            // 않는다. 참여자용 태그를 함께 달아 Swagger UI에서 "참여자용 API" 그룹에도 노출시킨다.
+            tags = {"펀딩 - 개설자/공동관리자용 API", "펀딩 - 참여자용 API"})
     @GetMapping("/{fundingId}/dashboards/together-gift")
     public ApiResponse<FundingTogetherGiftDashboardResponse> getTogetherGiftDashboard(
             @PathVariable Long fundingId
