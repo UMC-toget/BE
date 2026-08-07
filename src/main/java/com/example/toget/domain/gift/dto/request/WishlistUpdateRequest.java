@@ -19,8 +19,7 @@ public record WishlistUpdateRequest(
     @Min(value = 0, message = "가격은 0원 이상이어야 합니다.")
     Long price,
 
-    @Schema(description = "구매처 URL", example = "https://apple.com/kr/macbook-pro")
-    @NotBlank(message = "구매 링크는 필수입니다.")
+    @Schema(description = "구매처 URL", example = "https://apple.com/kr/macbook-pro", nullable = true)
     String purchaseUrl,
 
     @Schema(description = "상품 이미지 URL", example = "https://image.com/macbook-updated.png")
