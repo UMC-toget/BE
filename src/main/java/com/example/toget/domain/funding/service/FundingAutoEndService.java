@@ -1,12 +1,11 @@
 package com.example.toget.domain.funding.service;
 
-import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.enums.FundingStatus;
 import com.example.toget.domain.funding.enums.FundingType;
 import com.example.toget.domain.funding.repository.FundingRepository;
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.List;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,21 +32,23 @@ public class FundingAutoEndService {
     /**
      * 오늘(자정 기준) 종료일이 지났는데도 SETTLING 상태인 MY_GIFT 펀딩을 전부 ENDED로 전환한다.
      * 날짜 기준은 JVM 기본 타임존이 아니라 주입받은 {@link Clock}(KST 고정)을 따른다.
+     * <p>
+     * 엔티티를 메모리로 읽어 1건씩 Dirty Checking으로 UPDATE하지 않고, 벌크 UPDATE 쿼리 한 방으로
+     * 처리한다 — 대상이 수백~수천 건으로 늘어나도 메모리 사용량과 쿼리 수가 늘지 않는다.
      *
      * @return 실제로 마감 처리된 펀딩 건수
      */
     @Transactional
     public int autoEndExpiredMyGiftFundings() {
-        List<Funding> targets = fundingRepository
-                .findAllByFundingTypeAndStatusAndEndDateBeforeAndDeletedAtIsNull(
-                        FundingType.MY_GIFT, FundingStatus.SETTLING, LocalDate.now(clock));
+        LocalDate today = LocalDate.now(clock);
+        int updatedCount = fundingRepository.bulkEndExpiredFundings(
+                FundingType.MY_GIFT, FundingStatus.SETTLING, FundingStatus.ENDED,
+                today, LocalDateTime.now(clock));
 
-        targets.forEach(Funding::complete);
-
-        if (!targets.isEmpty()) {
-            log.info("[FundingAutoEnd] 참여 종료일 경과로 MY_GIFT {}건 자동 마감(ENDED) 처리", targets.size());
+        if (updatedCount > 0) {
+            log.info("[FundingAutoEnd] 참여 종료일 경과로 MY_GIFT {}건 자동 마감(ENDED) 처리", updatedCount);
         }
 
-        return targets.size();
+        return updatedCount;
     }
 }
