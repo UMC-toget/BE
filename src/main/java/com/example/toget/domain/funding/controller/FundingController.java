@@ -14,6 +14,7 @@ import com.example.toget.domain.gift.dto.response.FundingGiftResponse;
 import com.example.toget.domain.gift.service.FundingGiftService;
 import com.example.toget.domain.user.controller.LoginUserId;
 import com.example.toget.global.apiPayload.ApiResponse;
+import com.example.toget.global.util.AuthenticatedUserUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -320,12 +321,17 @@ public class FundingController {
                 - SETTLING/PURCHASING/DELIVERING: collectedAmount/targetAmount/confirmedGifts가 채워짐
                 - ENDED: 위와 동일 + messageIds(최근 축하 메시지 5개 ID)까지 채워짐
                 TOGETHER_GIFT 유형 전용입니다.
+
+                개설자/공동관리자/일반참여자/비회원 누구나 조회할 수 있습니다 — 초대장 링크를 아는 사람이면
+                누구나 볼 수 있는 화면입니다. 응답의 myRole(CREATOR/ADMIN/PARTICIPANT/null)로 조회자의
+                역할을 알 수 있으니, 프론트는 이 값을 기준으로 투표/후기작성 등 액션 버튼의 활성화 여부를
+                결정하면 됩니다. (조회는 열려 있어도 액션 API들은 각자 서버단에서 역할 검증을 계속합니다.)
                 """)
     @GetMapping("/{fundingId}/dashboards/together-gift")
     public ApiResponse<FundingTogetherGiftDashboardResponse> getTogetherGiftDashboard(
-            @Parameter(hidden = true) @LoginUserId Long userId,
             @PathVariable Long fundingId
     ) {
+        Long userId = AuthenticatedUserUtils.getCurrentUserIdOrNull();
         FundingTogetherGiftDashboardResponse result = fundingQueryService.getTogetherGiftDashboard(userId, fundingId);
         return ApiResponse.onSuccess(FundingSuccessCode.TOGETHER_GIFT_DASHBOARD_OK, result);
     }

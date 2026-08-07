@@ -12,6 +12,11 @@ public record FundingTogetherGiftDashboardResponse(
         @Schema(description = "진행 상태", example = "SELECTING")
         String status,
 
+        @Schema(description = "조회자의 이 펀딩 내 역할 (CREATOR/ADMIN/PARTICIPANT). "
+                + "비회원이거나 아직 합류하지 않은 회원이면 null — 프론트는 이 값으로 액션 버튼 활성화 여부를 결정한다.",
+                example = "PARTICIPANT")
+        String myRole,
+
         @Schema(description = "필요 날짜", example = "2026-08-15")
         LocalDate anniversaryDate,
 
