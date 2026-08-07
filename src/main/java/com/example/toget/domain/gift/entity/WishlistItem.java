@@ -57,7 +57,7 @@ public class WishlistItem extends BaseEntity {
     @Column(name = "price", nullable = false)
     private Long price;
 
-    @Column(name = "purchase_url", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "purchase_url", columnDefinition = "TEXT")
     private String purchaseUrl;
 
     @Column(name = "image_url", columnDefinition = "TEXT")
