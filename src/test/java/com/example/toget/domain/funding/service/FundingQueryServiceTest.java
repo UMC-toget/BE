@@ -2,14 +2,19 @@ package com.example.toget.domain.funding.service;
 
 import com.example.toget.domain.funding.dto.FundingCollectedAmount;
 import com.example.toget.domain.funding.dto.MyFundingListResponse;
+import com.example.toget.domain.funding.dto.response.FundingTogetherGiftDashboardResponse;
 import com.example.toget.domain.funding.dto.response.SharedFundingDetailResponse;
 import com.example.toget.domain.funding.entity.Funding;
+import com.example.toget.domain.funding.entity.FundingMember;
 import com.example.toget.domain.funding.entity.FundingVisibilitySettings;
 import com.example.toget.domain.funding.exception.FundingException;
 import com.example.toget.domain.funding.exception.code.FundingErrorCode;
 import com.example.toget.domain.funding.repository.FundingContributionRepository;
+import com.example.toget.domain.funding.repository.FundingGiftVoteRepository;
+import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
 import com.example.toget.domain.funding.repository.FundingVisibilitySettingsRepository;
+import com.example.toget.domain.gift.enums.FundingGiftStatus;
 import com.example.toget.domain.gift.repository.FundingGiftRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -25,6 +30,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,6 +60,15 @@ class FundingQueryServiceTest {
 
     @Mock
     private FundingGiftRepository fundingGiftRepository;
+
+    @Mock
+    private FundingMemberRepository fundingMemberRepository;
+
+    @Mock
+    private FundingGiftVoteRepository fundingGiftVoteRepository;
+
+    @Mock
+    private FundingMemberUserResolver fundingMemberUserResolver;
 
     @InjectMocks
     private FundingQueryService fundingQueryService;
@@ -269,6 +284,122 @@ class FundingQueryServiceTest {
                     .isInstanceOf(FundingException.class)
                     .extracting(e -> ((FundingException) e).getCode())
                     .isEqualTo(FundingErrorCode.NOT_MY_GIFT_TYPE);
+        }
+    }
+
+    /**
+     * TOGETHER_GIFT 상세 조회 — issue #101: 개설자/공동관리자/일반참여자/비회원 모두 조회는 열려 있고,
+     * 응답의 myRole로만 구분된다.
+     *
+     * [설계 포인트]
+     *  - 조회자의 role 판단(myRole)만 검증 대상으로 좁히고, 상태별 필드 채움 로직(SELECTING 분기)은
+     *    이 테스트의 관심사가 아니므로 후보 선물 없음으로 고정해 최소한으로만 스텁한다.
+     */
+    @Nested
+    @DisplayName("함께 선물하기 상세 조회 — myRole")
+    class GetTogetherGiftDashboard {
+
+        private static final Long FUNDING_ID = 30L;
+        private static final Long CREATOR_ID = 1L;
+
+        private Funding togetherGiftFundingWithId(Long id) {
+            Funding funding = Funding.createTogetherGift(CREATOR_ID, null, "길동이의 생일 펀딩", "홍길동",
+                    LocalDate.of(2026, 8, 14), null, null, "소개글", "https://image.com/thumb.png", 1_000_000L);
+            ReflectionTestUtils.setField(funding, "id", id);
+            return funding;
+        }
+
+        /** myRole 판단과 무관한 조회(멤버 요약, SELECTING 분기 후보 선물)는 빈 값으로 고정 스텁 */
+        private void stubRoleIndependentQueries() {
+            given(fundingMemberRepository.findTopMembersOrderByRole(eq(FUNDING_ID), any(Pageable.class)))
+                    .willReturn(List.of());
+            given(fundingMemberUserResolver.resolve(anyList())).willReturn(Map.of());
+            given(fundingGiftRepository.findAllByFundingIdAndStatus(FUNDING_ID, FundingGiftStatus.CANDIDATE))
+                    .willReturn(List.of());
+        }
+
+        @Test
+        @DisplayName("개설자가 조회하면 myRole=CREATOR")
+        void creatorSeesOwnRole() {
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID))
+                    .willReturn(Optional.of(togetherGiftFundingWithId(FUNDING_ID)));
+            stubRoleIndependentQueries();
+            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, CREATOR_ID))
+                    .willReturn(Optional.of(FundingMember.createCreator(FUNDING_ID, CREATOR_ID)));
+
+            FundingTogetherGiftDashboardResponse result =
+                    fundingQueryService.getTogetherGiftDashboard(CREATOR_ID, FUNDING_ID);
+
+            assertThat(result.myRole()).isEqualTo("CREATOR");
+        }
+
+        @Test
+        @DisplayName("일반 참여자가 조회하면 myRole=PARTICIPANT")
+        void participantSeesOwnRole() {
+            Long participantId = 7L;
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID))
+                    .willReturn(Optional.of(togetherGiftFundingWithId(FUNDING_ID)));
+            stubRoleIndependentQueries();
+            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, participantId))
+                    .willReturn(Optional.of(FundingMember.createParticipant(FUNDING_ID, participantId)));
+
+            FundingTogetherGiftDashboardResponse result =
+                    fundingQueryService.getTogetherGiftDashboard(participantId, FUNDING_ID);
+
+            assertThat(result.myRole()).isEqualTo("PARTICIPANT");
+        }
+
+        @Test
+        @DisplayName("비회원(userId=null)이 조회하면 myRole=null이고 멤버 조회 자체를 하지 않는다")
+        void guestSeesNullRole() {
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID))
+                    .willReturn(Optional.of(togetherGiftFundingWithId(FUNDING_ID)));
+            stubRoleIndependentQueries();
+
+            FundingTogetherGiftDashboardResponse result =
+                    fundingQueryService.getTogetherGiftDashboard(null, FUNDING_ID);
+
+            assertThat(result.myRole()).isNull();
+            verify(fundingMemberRepository, never()).findByFundingIdAndUserId(any(), any());
+        }
+
+        @Test
+        @DisplayName("로그인했지만 아직 합류하지 않은 회원이 조회하면 myRole=null")
+        void loggedInNonMemberSeesNullRole() {
+            Long strangerId = 99L;
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID))
+                    .willReturn(Optional.of(togetherGiftFundingWithId(FUNDING_ID)));
+            stubRoleIndependentQueries();
+            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, strangerId))
+                    .willReturn(Optional.empty());
+
+            FundingTogetherGiftDashboardResponse result =
+                    fundingQueryService.getTogetherGiftDashboard(strangerId, FUNDING_ID);
+
+            assertThat(result.myRole()).isNull();
+        }
+
+        @Test
+        @DisplayName("펀딩이 없거나 삭제됐으면 FUNDING_NOT_FOUND 예외가 발생한다")
+        void fundingNotFound() {
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> fundingQueryService.getTogetherGiftDashboard(CREATOR_ID, FUNDING_ID))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.FUNDING_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("MY_GIFT 펀딩이면 NOT_TOGETHER_GIFT_TYPE 예외가 발생한다")
+        void notTogetherGiftType() {
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID))
+                    .willReturn(Optional.of(fundingWithId(FUNDING_ID)));
+
+            assertThatThrownBy(() -> fundingQueryService.getTogetherGiftDashboard(CREATOR_ID, FUNDING_ID))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
         }
     }
 
