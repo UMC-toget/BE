@@ -1,6 +1,10 @@
 package com.example.toget.domain.funding.repository;
 
 import com.example.toget.domain.funding.entity.Funding;
+import com.example.toget.domain.funding.enums.FundingStatus;
+import com.example.toget.domain.funding.enums.FundingType;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -15,6 +19,14 @@ public interface FundingRepository extends JpaRepository<Funding, Long> {
 
     // 단건 조회용 — soft delete된(deletedAt 기록된) 펀딩은 없는 것으로 취급한다 (deletedAt is null 컨벤션)
     Optional<Funding> findByIdAndDeletedAtIsNull(Long id);
+
+    /**
+     * 참여 종료일이 지났는데도 아직 정산 중(SETTLING)인 MY_GIFT 펀딩 자동 마감 배치 대상 조회.
+     * - endDate < date: 종료일 당일까지는 유예하고, 다음날부터 마감 대상으로 잡는다.
+     * - deletedAt is null: soft delete된 펀딩은 배치 대상에서 제외.
+     */
+    List<Funding> findAllByFundingTypeAndStatusAndEndDateBeforeAndDeletedAtIsNull(
+            FundingType fundingType, FundingStatus status, LocalDate date);
 
     /**
      * 내가 개최한 펀딩 목록 페이징 조회.
