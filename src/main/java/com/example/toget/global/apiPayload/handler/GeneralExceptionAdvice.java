@@ -45,14 +45,33 @@ public class GeneralExceptionAdvice {
                 .body(ApiResponse.onFailure(errorCode, null));
     }
 
-    // DB 유니크 제약 위반 등 데이터 충돌 — 동시 중복 요청(예: 소셜 로그인 동시 첫 가입)을 500이 아닌 409로 응답
+    // DB 유니크 제약 위반 등 데이터 충돌 — 동시 중복 요청(예: 소셜 로그인 동시 첫 가입)만 409로 응답하고, 그 외 무결성 제약 실패(FK/NULL 등)는 500 응답
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(
             DataIntegrityViolationException e
     ) {
-        BaseErrorCode code = GeneralErrorCode.CONFLICT;
+        if (isUniqueConstraintViolation(e)) {
+            log.warn("DataIntegrityViolationException (Unique Constraint): ", e);
+            BaseErrorCode code = GeneralErrorCode.CONFLICT;
+            return ResponseEntity.status(code.getStatus())
+                    .body(ApiResponse.onFailure(code, null));
+        }
+
+        log.error("DataIntegrityViolationException (Data Integrity Error): ", e);
+        BaseErrorCode code = GeneralErrorCode.INTERNAL_SERVER_ERROR;
         return ResponseEntity.status(code.getStatus())
                 .body(ApiResponse.onFailure(code, null));
+    }
+
+    private boolean isUniqueConstraintViolation(DataIntegrityViolationException e) {
+        Throwable cause = e.getRootCause() != null ? e.getRootCause() : e.getCause();
+        String message = (cause != null && cause.getMessage() != null)
+                ? cause.getMessage().toLowerCase()
+                : (e.getMessage() != null ? e.getMessage().toLowerCase() : "");
+
+        return message.contains("duplicate")
+                || message.contains("uk_")
+                || message.contains("unique");
     }
 
     // 그 외의 정의되지 않은 모든 예외 처리
