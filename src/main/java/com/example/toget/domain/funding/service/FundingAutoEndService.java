@@ -4,6 +4,7 @@ import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.enums.FundingStatus;
 import com.example.toget.domain.funding.enums.FundingType;
 import com.example.toget.domain.funding.repository.FundingRepository;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -27,9 +28,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class FundingAutoEndService {
 
     private final FundingRepository fundingRepository;
+    private final Clock clock;
 
     /**
      * 오늘(자정 기준) 종료일이 지났는데도 SETTLING 상태인 MY_GIFT 펀딩을 전부 ENDED로 전환한다.
+     * 날짜 기준은 JVM 기본 타임존이 아니라 주입받은 {@link Clock}(KST 고정)을 따른다.
      *
      * @return 실제로 마감 처리된 펀딩 건수
      */
@@ -37,7 +40,7 @@ public class FundingAutoEndService {
     public int autoEndExpiredMyGiftFundings() {
         List<Funding> targets = fundingRepository
                 .findAllByFundingTypeAndStatusAndEndDateBeforeAndDeletedAtIsNull(
-                        FundingType.MY_GIFT, FundingStatus.SETTLING, LocalDate.now());
+                        FundingType.MY_GIFT, FundingStatus.SETTLING, LocalDate.now(clock));
 
         targets.forEach(Funding::complete);
 

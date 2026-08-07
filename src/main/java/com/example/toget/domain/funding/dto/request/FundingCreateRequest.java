@@ -36,12 +36,10 @@ public record FundingCreateRequest(
         @NotNull(message = "기념일은 필수입니다.")
         LocalDate anniversaryDate,
 
-        @Schema(description = "시작일", example = "2026-07-01")
-        @NotNull(message = "시작일은 필수입니다.")
+        @Schema(description = "시작일. MY_GIFT는 필수, TOGETHER_GIFT는 선택(미입력 시 기간 미설정)", example = "2026-07-01")
         LocalDate startDate,
 
-        @Schema(description = "종료일", example = "2026-07-31")
-        @NotNull(message = "종료일은 필수입니다.")
+        @Schema(description = "종료일. MY_GIFT는 필수, TOGETHER_GIFT는 선택(미입력 시 기간 미설정)", example = "2026-07-31")
         LocalDate endDate,
 
         @Schema(description = "소개글", example = "생일 축하해 주셔서 감사합니다!")

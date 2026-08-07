@@ -28,6 +28,7 @@ public enum FundingErrorCode implements BaseErrorCode {
     REVIEW_CONTENT_REQUIRED(HttpStatus.BAD_REQUEST, "FUNDING400_17", "후기 내용은 필수입니다."),
     REVIEW_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "FUNDING400_18", "제목은 필수입니다."),
     MAX_SETTLEMENT_MEMBER_EXCEEDED(HttpStatus.BAD_REQUEST, "FUNDING400_17", "정산 참여자는 개설자를 포함해 최대 50명까지 가능합니다."),
+    PERIOD_REQUIRED_FOR_MY_GIFT(HttpStatus.BAD_REQUEST, "FUNDING400_19", "내 선물 만들기는 시작일과 종료일이 필수입니다."),
 
     FUNDING_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_1", "해당 펀딩을 찾을 수 없습니다."),
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "FUNDING404_2", "정산 계좌를 찾을 수 없습니다."),
