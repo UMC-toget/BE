@@ -11,6 +11,7 @@ import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingReview;
 import com.example.toget.domain.funding.entity.FundingReviewImage;
 import com.example.toget.domain.funding.enums.FundingReviewType;
+import com.example.toget.domain.funding.enums.FundingStatus;
 import com.example.toget.domain.funding.enums.FundingType;
 import com.example.toget.domain.funding.exception.ContributionException;
 import com.example.toget.domain.funding.exception.FundingException;
@@ -44,6 +45,7 @@ public class FundingReviewService {
             Long userId, Long fundingId, FundingReviewCreateRequest request
     ) {
         Funding funding = validateOwnerAndType(userId, fundingId, FundingType.MY_GIFT);
+        requireEnded(funding);
         validateNotAlreadyExists(fundingId, FundingReviewType.REVIEW);
 
         contributionBackgroundRepository.findById(request.backgroundId())
@@ -64,7 +66,8 @@ public class FundingReviewService {
     public FundingReviewCreateResponse createNews(
             Long userId, Long fundingId, FundingReviewTitledCreateRequest request
     ) {
-        validateOwnerAndType(userId, fundingId, FundingType.TOGETHER_GIFT);
+        Funding funding = validateOwnerAndType(userId, fundingId, FundingType.TOGETHER_GIFT);
+        requireEnded(funding);
         validateNotAlreadyExists(fundingId, FundingReviewType.NEWS);
 
         FundingReview review = FundingReview.createNews(
@@ -82,7 +85,8 @@ public class FundingReviewService {
     public FundingReviewCreateResponse createHeartfelt(
             Long userId, Long fundingId, FundingReviewTitledCreateRequest request
     ) {
-        validateOwnerAndType(userId, fundingId, FundingType.TOGETHER_GIFT);
+        Funding funding = validateOwnerAndType(userId, fundingId, FundingType.TOGETHER_GIFT);
+        requireEnded(funding);
         validateNotAlreadyExists(fundingId, FundingReviewType.HEARTFELT);
 
         FundingReview review = FundingReview.createHeartfelt(
@@ -174,6 +178,17 @@ public class FundingReviewService {
             );
         }
         return funding;
+    }
+
+    /**
+     * 후기(REVIEW)/전달 소식(NEWS)/마음전하기(HEARTFELT) 모두 펀딩이 종료(ENDED)된 뒤에만
+     * 작성할 수 있다 — 정산·구매·전달이 끝나기도 전에 게시물부터 남기는 건 말이 안 되기 때문이다.
+     * (PM 확인 완료 — issue #105)
+     */
+    private void requireEnded(Funding funding) {
+        if (funding.getStatus() != FundingStatus.ENDED) {
+            throw new FundingException(FundingErrorCode.INVALID_FUNDING_STATUS_FOR_REVIEW);
+        }
     }
 
     private void validateNotAlreadyExists(Long fundingId, FundingReviewType type) {

@@ -100,6 +100,7 @@ class FundingReviewServiceTest {
             Funding funding = Funding.createMyGift(userId, 5L, "제목", "홍길동",
                     LocalDate.now(), LocalDate.now(), LocalDate.now().plusDays(30),
                     "소개", "url", 100000L);
+            funding.complete(); // 후기는 ENDED 상태에서만 작성 가능 — 이 검증을 통과시켜야 아래를 재현할 수 있음
             ReflectionTestUtils.setField(funding, "id", fundingId);
 
             given(fundingRepository.findById(fundingId)).willReturn(Optional.of(funding));
@@ -114,6 +115,28 @@ class FundingReviewServiceTest {
                     .isInstanceOf(FundingException.class)
                     .extracting(e -> ((FundingException) e).getCode())
                     .isEqualTo(FundingErrorCode.REVIEW_ALREADY_EXISTS);
+        }
+
+        @Test
+        @DisplayName("ENDED 상태가 아니면 INVALID_FUNDING_STATUS_FOR_REVIEW 예외가 발생한다")
+        void createReview_fail_notEnded() {
+            Long userId = 1L;
+            Long fundingId = 10L;
+            Funding funding = Funding.createMyGift(userId, 5L, "제목", "홍길동",
+                    LocalDate.now(), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "소개", "url", 100000L); // MY_GIFT는 SETTLING으로 시작, 아직 ENDED 아님
+            ReflectionTestUtils.setField(funding, "id", fundingId);
+
+            given(fundingRepository.findById(fundingId)).willReturn(Optional.of(funding));
+
+            FundingReviewCreateRequest request = new FundingReviewCreateRequest(
+                    "내용", 1L, null, null, null, 2L, 3L
+            );
+
+            assertThatThrownBy(() -> fundingReviewService.createReview(userId, fundingId, request))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.INVALID_FUNDING_STATUS_FOR_REVIEW);
         }
 
         @Test
@@ -164,6 +187,77 @@ class FundingReviewServiceTest {
                     .isInstanceOf(FundingException.class)
                     .extracting(e -> ((FundingException) e).getCode())
                     .isEqualTo(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
+        }
+
+        @Test
+        @DisplayName("ENDED 상태가 아니면 INVALID_FUNDING_STATUS_FOR_REVIEW 예외가 발생한다")
+        void createNews_fail_notEnded() {
+            Long userId = 1L;
+            Long fundingId = 10L;
+            Funding funding = Funding.createTogetherGift(userId, null, "제목", "홍길동",
+                    LocalDate.now(), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "소개", "url", 0L); // TOGETHER_GIFT는 SELECTING으로 시작, 아직 ENDED 아님
+            ReflectionTestUtils.setField(funding, "id", fundingId);
+
+            given(fundingRepository.findById(fundingId)).willReturn(Optional.of(funding));
+
+            FundingReviewTitledCreateRequest request = new FundingReviewTitledCreateRequest(
+                    "제목", "내용", null, null, null, 2L, 3L
+            );
+
+            assertThatThrownBy(() -> fundingReviewService.createNews(userId, fundingId, request))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.INVALID_FUNDING_STATUS_FOR_REVIEW);
+        }
+    }
+
+    @Nested
+    @DisplayName("마음 전하기 작성")
+    class CreateHeartfelt {
+
+        @Test
+        @DisplayName("MY_GIFT 펀딩에 요청하면 NOT_TOGETHER_GIFT_TYPE 예외가 발생한다")
+        void createHeartfelt_fail_notTogetherGiftType() {
+            Long userId = 1L;
+            Long fundingId = 10L;
+            Funding funding = Funding.createMyGift(userId, 5L, "제목", "홍길동",
+                    LocalDate.now(), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "소개", "url", 100000L);
+            ReflectionTestUtils.setField(funding, "id", fundingId);
+
+            given(fundingRepository.findById(fundingId)).willReturn(Optional.of(funding));
+
+            FundingReviewTitledCreateRequest request = new FundingReviewTitledCreateRequest(
+                    "제목", "내용", null, null, null, 2L, 3L
+            );
+
+            assertThatThrownBy(() -> fundingReviewService.createHeartfelt(userId, fundingId, request))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
+        }
+
+        @Test
+        @DisplayName("ENDED 상태가 아니면 INVALID_FUNDING_STATUS_FOR_REVIEW 예외가 발생한다")
+        void createHeartfelt_fail_notEnded() {
+            Long userId = 1L;
+            Long fundingId = 10L;
+            Funding funding = Funding.createTogetherGift(userId, null, "제목", "홍길동",
+                    LocalDate.now(), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "소개", "url", 0L); // TOGETHER_GIFT는 SELECTING으로 시작, 아직 ENDED 아님
+            ReflectionTestUtils.setField(funding, "id", fundingId);
+
+            given(fundingRepository.findById(fundingId)).willReturn(Optional.of(funding));
+
+            FundingReviewTitledCreateRequest request = new FundingReviewTitledCreateRequest(
+                    "제목", "내용", null, null, null, 2L, 3L
+            );
+
+            assertThatThrownBy(() -> fundingReviewService.createHeartfelt(userId, fundingId, request))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.INVALID_FUNDING_STATUS_FOR_REVIEW);
         }
     }
 

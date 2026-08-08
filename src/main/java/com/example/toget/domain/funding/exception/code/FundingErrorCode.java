@@ -58,7 +58,10 @@ public enum FundingErrorCode implements BaseErrorCode {
     INVALID_FUNDING_STATUS_FOR_SETTLEMENT(HttpStatus.CONFLICT, "FUNDING409_11", "SELECTING 상태에서만 확정할 수 있습니다."),
     ALREADY_FUNDING_MEMBER(HttpStatus.CONFLICT, "FUNDING409_12", "이미 참여 중인 펀딩입니다."),
     CREATOR_CANNOT_LEAVE_FUNDING(HttpStatus.CONFLICT, "FUNDING409_13", "개설자는 펀딩에서 나갈 수 없습니다."),
-    INVALID_FUNDING_STATUS_FOR_LEAVE(HttpStatus.CONFLICT, "FUNDING409_14", "선물 후보 선정 중(SELECTING)일 때만 나갈 수 있습니다.");
+    INVALID_FUNDING_STATUS_FOR_LEAVE(HttpStatus.CONFLICT, "FUNDING409_14", "선물 후보 선정 중(SELECTING)일 때만 나갈 수 있습니다."),
+    // 후기(REVIEW)/전달 소식(NEWS)/마음전하기(HEARTFELT) 공통 — 정산·구매·전달이 끝나기도 전에
+    // 게시물부터 남기는 건 말이 안 되므로 셋 다 ENDED 이후로 제한한다.
+    INVALID_FUNDING_STATUS_FOR_REVIEW(HttpStatus.CONFLICT, "FUNDING409_15", "펀딩이 종료(ENDED)된 이후에만 작성할 수 있습니다.");
 
     private final HttpStatus status;
     private final String code;

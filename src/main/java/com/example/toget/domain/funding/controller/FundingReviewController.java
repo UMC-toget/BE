@@ -30,7 +30,11 @@ public class FundingReviewController {
     private final FundingGiftService fundingGiftService;
 
     @Operation(summary = "[MY_GIFT] 선물 후기 작성",
-            description = "개설자가 선물 후기를 작성합니다. 펀딩당 1개만 작성 가능합니다.")
+            description = """
+                개설자가 선물 후기를 작성합니다. 펀딩당 1개만 작성 가능합니다.
+
+                펀딩이 종료(ENDED)된 이후에만 작성할 수 있습니다. ENDED가 아니면 409(INVALID_FUNDING_STATUS_FOR_REVIEW)가 반환됩니다.
+                """)
     @PostMapping("/{fundingId}/reviews")
     public ApiResponse<FundingReviewCreateResponse> createReview(
             @Parameter(hidden = true) @LoginUserId Long userId,
@@ -42,7 +46,11 @@ public class FundingReviewController {
     }
 
     @Operation(summary = "[TOGETHER_GIFT] 전달 소식 작성",
-            description = "개설자가 함께 준비한 멤버들에게 전달 소식을 작성합니다. 펀딩당 1개만 작성 가능합니다.")
+            description = """
+                개설자가 함께 준비한 멤버들에게 전달 소식을 작성합니다. 펀딩당 1개만 작성 가능합니다.
+
+                펀딩이 종료(ENDED)된 이후에만 작성할 수 있습니다. ENDED가 아니면 409(INVALID_FUNDING_STATUS_FOR_REVIEW)가 반환됩니다.
+                """)
     @PostMapping("/{fundingId}/news")
     public ApiResponse<FundingReviewCreateResponse> createNews(
             @Parameter(hidden = true) @LoginUserId Long userId,
@@ -54,7 +62,11 @@ public class FundingReviewController {
     }
 
     @Operation(summary = "[TOGETHER_GIFT] 마음 전하기 작성",
-            description = "개설자가 선물 받는 사람에게 마음을 전하는 글을 작성합니다. 펀딩당 1개만 작성 가능합니다.")
+            description = """
+                개설자가 선물 받는 사람에게 마음을 전하는 글을 작성합니다. 펀딩당 1개만 작성 가능합니다.
+
+                펀딩이 종료(ENDED)된 이후에만 작성할 수 있습니다. ENDED가 아니면 409(INVALID_FUNDING_STATUS_FOR_REVIEW)가 반환됩니다.
+                """)
     @PostMapping("/{fundingId}/heartfelt")
     public ApiResponse<FundingReviewCreateResponse> createHeartfelt(
             @Parameter(hidden = true) @LoginUserId Long userId,
