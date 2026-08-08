@@ -57,7 +57,9 @@ public class User extends BaseEntity {
     @Column(length = 50)
     private String nickname;
 
-    @Column(name = "profile_image_url", length = 512)
+    // 웹 사진 검색(issue #102)으로 고른 외부 이미지 URL은 쿼리스트링 때문에 512자를 넘길 수 있어
+    // TEXT로 확장한다. gift_image_url / wishlist.image_url과 동일한 정책.
+    @Column(name = "profile_image_url", columnDefinition = "TEXT")
     private String profileImageUrl;
 
     @Enumerated(EnumType.STRING)
