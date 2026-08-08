@@ -20,6 +20,8 @@ import com.example.toget.domain.funding.repository.ContributionBackgroundReposit
 import com.example.toget.domain.funding.repository.FundingRepository;
 import com.example.toget.domain.funding.repository.FundingReviewImageRepository;
 import com.example.toget.domain.funding.repository.FundingReviewRepository;
+import com.example.toget.domain.user.entity.User;
+import com.example.toget.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,7 @@ public class FundingReviewService {
     private final FundingReviewRepository fundingReviewRepository;
     private final FundingReviewImageRepository fundingReviewImageRepository;
     private final ContributionBackgroundRepository contributionBackgroundRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public FundingReviewCreateResponse createReview(
@@ -106,7 +109,7 @@ public class FundingReviewService {
     public FundingReviewDetailResponse getReview(Long fundingId, String typeParam) {
         FundingReviewType type = parseType(typeParam);
 
-        fundingRepository.findById(fundingId)
+        Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
 
         FundingReview review = fundingReviewRepository.findByFundingIdAndType(fundingId, type)
@@ -116,7 +119,32 @@ public class FundingReviewService {
                 .map(FundingReviewImage::getImageUrl)
                 .toList();
 
-        return FundingReviewConverter.toDetailResponse(review, images);
+        String authorName = resolveAuthorName(type, funding.getUserId());
+
+        return FundingReviewConverter.toDetailResponse(review, images, authorName);
+    }
+
+    /**
+     * 작성자 표시 이름 — REVIEW(선물 후기)/NEWS(전달 소식)만 채우고, HEARTFELT(마음전하기)는 null.
+     *
+     * REVIEW/NEWS는 개설자만 작성 가능하고(validateOwnerAndType), MY_GIFT는 funding_members를
+     * 쓰지 않아 작성자가 항상 펀딩 개설자(Funding.userId) 한 명으로 고정된다. 그래서 후기마다
+     * 작성자를 별도로 저장하지 않고 조회 시점에 조인해서 채운다.
+     * 닉네임을 우선하고, 닉네임을 설정하지 않은 회원은 이름으로 대체한다(PM 확인 완료 — issue #105).
+     */
+    private String resolveAuthorName(FundingReviewType type, Long fundingOwnerUserId) {
+        if (type == FundingReviewType.HEARTFELT) {
+            return null;
+        }
+        return userRepository.findById(fundingOwnerUserId)
+                .map(FundingReviewService::displayName)
+                .orElse(null);
+    }
+
+    private static String displayName(User user) {
+        return (user.getNickname() != null && !user.getNickname().isBlank())
+                ? user.getNickname()
+                : user.getName();
     }
 
     @Transactional(readOnly = true)

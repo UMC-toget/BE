@@ -66,7 +66,12 @@ public class FundingReviewController {
     }
 
     @Operation(summary = "게시물 조회 (후기/소식/마음전하기)",
-            description = "특정 타입의 게시물을 조회합니다. 로그인 여부와 무관하게 링크를 아는 누구나 조회할 수 있습니다.")
+            description = """
+                특정 타입의 게시물을 조회합니다. 로그인 여부와 무관하게 링크를 아는 누구나 조회할 수 있습니다.
+
+                응답의 authorName(작성자 표시 이름)은 REVIEW(선물 후기)/NEWS(전달 소식)만 채워지고,
+                HEARTFELT(마음전하기)는 null입니다. 개설자의 닉네임을 우선 쓰고, 닉네임 미설정 시 이름으로 대체합니다.
+                """)
     @GetMapping("/{fundingId}/reviews/{type}")
     public ApiResponse<FundingReviewDetailResponse> getReview(
             @PathVariable Long fundingId,
