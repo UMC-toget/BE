@@ -25,6 +25,10 @@ import com.example.toget.domain.funding.repository.FundingGiftVoteRepository;
 import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
 import com.example.toget.domain.funding.repository.FundingVisibilitySettingsRepository;
+import com.example.toget.domain.funding.dto.response.FundingAccountResponse;
+import com.example.toget.domain.user.entity.UserAccount;
+import com.example.toget.domain.user.repository.UserAccountRepository;
+import com.example.toget.global.enums.BankName;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -69,6 +73,9 @@ class FundingServiceTest {
 
     @Mock
     private ContributionBackgroundRepository contributionBackgroundRepository;
+
+    @Mock
+    private UserAccountRepository userAccountRepository;
 
     @InjectMocks
     private FundingService fundingService;
@@ -722,6 +729,77 @@ class FundingServiceTest {
                     .isEqualTo(FundingErrorCode.INVALID_SETTLEMENT_STATUS_TRANSITION);
 
             verify(fundingContributionRepository, never()).save(any());
+        }
+    }
+
+    /**
+     * 정산 계좌 조회 — 개설자 검증 없이 누구나(비회원 포함) 조회 가능해야 한다.
+     * shared-fundings/invitations와 같은 접근 정책이라, 회원인지 아닌지는 이 메서드 시그니처에
+     * userId 자체가 없어졌다는 사실로 이미 보장된다 — 소유자 체크가 되살아나면 컴파일이 깨진다.
+     */
+    @Nested
+    @DisplayName("정산 계좌 조회")
+    class GetAccount {
+
+        private static final Long FUNDING_ID = 20L;
+        private static final Long USER_ACCOUNT_ID = 5L;
+
+        private Funding myGiftFundingWithAccount() {
+            Funding funding = Funding.createMyGift(1L, USER_ACCOUNT_ID, "제목", "홍길동",
+                    LocalDate.now(), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "소개", "url", 100000L);
+            ReflectionTestUtils.setField(funding, "id", FUNDING_ID);
+            return funding;
+        }
+
+        private UserAccount account() {
+            return UserAccount.builder()
+                    .userId(1L)
+                    .bankName(BankName.KB)
+                    .accountOwner("홍길동")
+                    .account("110-123-456789")
+                    .build();
+        }
+
+        @Test
+        @DisplayName("개설자가 아니어도(비회원 포함) 계좌 정보를 조회할 수 있다")
+        void getAccount_success_evenForNonOwner() {
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID))
+                    .willReturn(Optional.of(myGiftFundingWithAccount()));
+            given(userAccountRepository.findWithBankById(USER_ACCOUNT_ID))
+                    .willReturn(Optional.of(account()));
+
+            FundingAccountResponse result = fundingService.getAccount(FUNDING_ID);
+
+            assertThat(result.account()).isEqualTo("110-123-456789");
+            assertThat(result.accountOwner()).isEqualTo("홍길동");
+            assertThat(result.bankName()).isEqualTo("KB");
+        }
+
+        @Test
+        @DisplayName("펀딩이 없거나 삭제됐으면 FUNDING_NOT_FOUND 예외가 발생한다")
+        void getAccount_fail_fundingNotFound() {
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> fundingService.getAccount(FUNDING_ID))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.FUNDING_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("계좌가 아직 등록되지 않았으면 ACCOUNT_NOT_REGISTERED 예외가 발생한다")
+        void getAccount_fail_accountNotRegistered() {
+            Funding funding = Funding.createTogetherGift(1L, null, "제목", "홍길동",
+                    LocalDate.now(), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "소개", "url", 100000L); // TOGETHER_GIFT는 계좌 없이도 생성 가능
+            ReflectionTestUtils.setField(funding, "id", FUNDING_ID);
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID)).willReturn(Optional.of(funding));
+
+            assertThatThrownBy(() -> fundingService.getAccount(FUNDING_ID))
+                    .isInstanceOf(FundingException.class)
+                    .extracting(e -> ((FundingException) e).getCode())
+                    .isEqualTo(FundingErrorCode.ACCOUNT_NOT_REGISTERED);
         }
     }
 }

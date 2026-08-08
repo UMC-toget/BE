@@ -142,14 +142,18 @@ public class FundingController {
         return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_VISIBILITY_UPDATE_OK, result);
     }
 
-    @Operation(summary = "선물 준비 페이지 정산 계좌 조회",
-            description = "정산금이 입금될 계좌 정보를 조회합니다.")
+    @Operation(summary = "선물 준비 페이지 정산 계좌 조회 (⚠️ 개설자 전용 아님 — 누구나 조회 가능)",
+            description = """
+                정산금이 입금될 계좌 정보를 조회합니다.
+
+                개설자 전용이 아닙니다. 비회원 참여자도 입금을 위해 계좌 정보를 알아야 하므로,
+                shared-fundings/invitations와 마찬가지로 로그인 여부와 무관하게 조회할 수 있습니다.
+                """)
     @GetMapping("/{fundingId}/account")
     public ApiResponse<FundingAccountResponse> getAccount(
-            @Parameter(hidden = true) @LoginUserId Long userId,
             @PathVariable Long fundingId
     ) {
-        FundingAccountResponse result = fundingService.getAccount(userId, fundingId);
+        FundingAccountResponse result = fundingService.getAccount(fundingId);
         return ApiResponse.onSuccess(FundingSuccessCode.FUNDING_ACCOUNT_GET_OK, result);
     }
 
