@@ -14,7 +14,8 @@ public record UserProfileUpdateRequest(
         String nickname,
 
         @Schema(description = "변경할 프로필 이미지 URL", example = "https://toget.com/images/new_profile.png")
-        @Size(max = 512, message = "프로필 이미지 URL은 512자 이하여야 합니다.")
+        // 컬럼이 TEXT로 확장됐지만(issue #102) 무제한 입력을 받을 이유는 없어 상한은 유지한다.
+        @Size(max = 2048, message = "프로필 이미지 URL은 2048자 이하여야 합니다.")
         String profileImageUrl
 ) {
 }

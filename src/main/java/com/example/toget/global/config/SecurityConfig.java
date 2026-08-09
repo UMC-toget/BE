@@ -88,6 +88,17 @@ public class SecurityConfig {
                 // S3 Presigned URL 발급 — 회원가입 시 프로필 사진 업로드 등 비회원 상태에서도 사용 가능하도록 허용
                 .requestMatchers(HttpMethod.POST, "/api/v1/images/presigned-url").permitAll()
 
+                // 웹 사진 검색 프록시 — 회원가입 중 프로필 설정, 게스트 기여 플로우에서도 사진을 골라야 하므로 허용.
+                // /api/v1/images/** 같은 와일드카드가 아니라 GET + 정확한 경로만 열어
+                // 이 도메인에 이후 추가될 API가 자동으로 개방되지 않게 한다. (issue #102)
+                .requestMatchers(HttpMethod.GET, "/api/v1/images/search").permitAll()
+
+                // 이미지 가져오기(외부 URL → S3 재업로드) — 검색 결과 선택 직후 호출되므로
+                // 위 검색 API와 같은 인증 범위를 가져야 한다. 정확한 경로 + POST만 개방.
+                // 서버가 사용자가 준 URL로 요청을 보내는 구조라 SSRF 방어는
+                // ExternalImageImportService에서 수행한다. (issue #102)
+                .requestMatchers(HttpMethod.POST, "/api/v1/images/imports").permitAll()
+
                 // Swagger 및 소셜 로그인 API 무조건 허용
                 .requestMatchers(allowAllUris).permitAll()
 
