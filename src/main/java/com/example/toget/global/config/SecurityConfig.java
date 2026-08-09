@@ -132,6 +132,9 @@ public class SecurityConfig {
                 // 초대장 카드 조회 — GET만 허용. 같은 경로의 PUT(초대장 수정)은 개설자 전용이므로
                 // HttpMethod를 지정하지 않으면 수정 API까지 열리니 주의.
                 .requestMatchers(HttpMethod.GET, "/api/v1/fundings/*/invitations").permitAll()
+                // 정산 계좌 조회 — 비회원 참여자도 입금을 위해 계좌 정보를 알아야 하므로 개설자 검증 없이
+                // 개방한다. GET만 허용 — 같은 경로의 PATCH(계좌 변경)는 개설자 전용이라 그대로 인증이 필요하다.
+                .requestMatchers(HttpMethod.GET, "/api/v1/fundings/*/account").permitAll()
                 // TOGETHER_GIFT 상세 조회 — 개설자/공동관리자/일반참여자/비회원 모두 조회만 가능하고
                 // (액션 버튼 활성화 여부는 응답의 myRole로 프론트가 판단), 액션 API들은 이 매처에 걸리지
                 // 않으므로 계속 인증·역할 검증을 받는다. (issue #101)

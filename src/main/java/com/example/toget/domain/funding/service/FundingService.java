@@ -306,13 +306,19 @@ public class FundingService {
         return FundingConverter.toVisibilityUpdateResponse(settings);
     }
 
+    /**
+     * 정산 계좌 조회 — 개설자뿐 아니라 비회원 참여자도 조회할 수 있다.
+     *
+     * [설계 포인트]
+     *  - 계좌번호는 참여자가 실제로 입금할 대상이라, 로그인 여부와 무관하게 참여 흐름의 마지막
+     *    단계에서 반드시 필요하다. shared-fundings/invitations와 같은 이유로 소유자 검증을 하지 않는다.
+     *  - soft delete된 펀딩은 없는 것으로 취급한다. 외부에 공개되는 API라 삭제된 펀딩의 링크가
+     *    계속 유효하면 안 된다 (getSharedFundingDetail과 동일한 이유).
+     */
     @Transactional(readOnly = true)
-    public FundingAccountResponse getAccount(Long userId, Long fundingId) {
-        Funding funding = fundingRepository.findById(fundingId)
+    public FundingAccountResponse getAccount(Long fundingId) {
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
-        if (!funding.isOwnedBy(userId)) {
-            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
-        }
         if (funding.getUserAccountId() == null) {
             throw new FundingException(FundingErrorCode.ACCOUNT_NOT_REGISTERED);
         }

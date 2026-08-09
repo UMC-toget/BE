@@ -11,9 +11,11 @@ public class FundingReviewConverter {
     private FundingReviewConverter() {
     }
 
-    public static FundingReviewDetailResponse toDetailResponse(FundingReview review, List<String> images) {
+    public static FundingReviewDetailResponse toDetailResponse(
+            FundingReview review, List<String> images, String authorName
+    ) {
         return new FundingReviewDetailResponse(
-                review.getId(), review.getType().name(), review.getTitle(),
+                review.getId(), review.getType().name(), authorName, review.getTitle(),
                 review.getContent(), review.getBackgroundId(), images, review.getCreatedAt()
         );
     }

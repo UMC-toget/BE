@@ -12,6 +12,11 @@ public record FundingReviewDetailResponse(
         @Schema(description = "후기 유형", example = "TOGETHER_GIFT")
         String type,
 
+        @Schema(description = "작성자 표시 이름 — 닉네임 우선, 닉네임 미설정 시 이름으로 대체. "
+                + "REVIEW/NEWS만 값이 있고, HEARTFELT(마음전하기)는 null입니다.",
+                example = "김방장")
+        String authorName,
+
         @Schema(description = "후기 제목", example = "다들 고마워요!")
         String title,
 
