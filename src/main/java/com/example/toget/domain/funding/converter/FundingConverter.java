@@ -273,14 +273,14 @@ public class FundingConverter {
     }
 
     public static FundingTogetherGiftDashboardResponse toTogetherGiftDashboardResponse(
-            Funding funding, List<FundingTogetherGiftDashboardResponse.MemberSummary> members,
+            Funding funding, String myRole, List<FundingTogetherGiftDashboardResponse.MemberSummary> members,
             List<FundingTogetherGiftDashboardResponse.TopGift> topGifts,
             Long collectedAmount, Long targetAmount,
             List<FundingTogetherGiftDashboardResponse.ConfirmedGift> confirmedGifts,
             List<Long> messageIds
     ) {
         return new FundingTogetherGiftDashboardResponse(
-                funding.getId(), funding.getStatus().name(), funding.getAnniversaryDate(),
+                funding.getId(), funding.getStatus().name(), myRole, funding.getAnniversaryDate(),
                 funding.getRecipientName(), funding.getIntroduction(), funding.getThumbnailImageUrl(),
                 members, topGifts, collectedAmount, targetAmount, confirmedGifts, messageIds
         );
