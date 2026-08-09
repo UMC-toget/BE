@@ -168,8 +168,12 @@ public class ExternalImageImportService {
             HttpResponse<InputStream> response = send(current);
             int status = response.statusCode();
 
+            // 본문을 소비하지 않는 모든 분기(리다이렉트/에러)에서 스트림을 반드시 닫는다.
+            // BodyHandlers.ofInputStream()은 본문을 읽거나 닫아야 커넥션이 풀로 반납되므로,
+            // 그냥 두면 리다이렉트가 걸린 이미지 URL마다 커넥션이 하나씩 샌다.
             if (status >= 300 && status < 400) {
                 String location = response.headers().firstValue("location").orElse(null);
+                closeQuietly(response);
                 if (location == null) {
                     throw new ImageException(ImageErrorCode.IMPORT_FETCH_FAILED);
                 }
@@ -178,12 +182,25 @@ public class ExternalImageImportService {
                 continue;
             }
             if (status != 200) {
+                closeQuietly(response);
                 log.warn("이미지 가져오기 실패 — 원본 응답 {}: {}", status, current);
                 throw new ImageException(ImageErrorCode.IMPORT_FETCH_FAILED);
             }
-            return readBody(response);
+            return readBody(response); // 이후 스트림 반납 책임은 readBody의 try-with-resources
         }
         throw new ImageException(ImageErrorCode.IMPORT_FETCH_FAILED);
+    }
+
+    /**
+     * 본문을 쓰지 않고 버릴 때 호출한다. 닫기 실패는 이미 실패한 요청의 부수효과일 뿐이라
+     * 원래 에러를 덮지 않도록 삼키고 로그만 남긴다.
+     */
+    private void closeQuietly(HttpResponse<InputStream> response) {
+        try {
+            response.body().close();
+        } catch (IOException e) {
+            log.debug("이미지 가져오기 응답 스트림 close 실패", e);
+        }
     }
 
     private HttpResponse<InputStream> send(URI uri) {
@@ -205,22 +222,27 @@ public class ExternalImageImportService {
         }
     }
 
+    /**
+     * try-with-resources를 메서드 맨 앞에 두는 것이 중요하다.
+     * Content-Type·Content-Length 검사를 블록 밖에서 하면, 그 단계에서 던져진 예외는
+     * 스트림을 닫지 않은 채 빠져나가 커넥션이 샌다. (지원하지 않는 형식/용량 초과는 흔한 케이스다)
+     */
     private Downloaded readBody(HttpResponse<InputStream> response) {
-        String contentType = response.headers().firstValue("content-type")
-                .map(v -> v.split(";")[0].trim().toLowerCase(Locale.ROOT))
-                .orElse("");
-        String extension = ALLOWED_CONTENT_TYPES.get(contentType);
-        if (extension == null) {
-            throw new ImageException(ImageErrorCode.IMPORT_UNSUPPORTED_CONTENT_TYPE);
-        }
-        // Content-Length는 거짓일 수 있지만, 명백히 초과라면 본문을 읽기 전에 끊는 편이 싸다
-        response.headers().firstValueAsLong("content-length").ifPresent(length -> {
-            if (length > MAX_BYTES) {
-                throw new ImageException(ImageErrorCode.IMPORT_TOO_LARGE);
-            }
-        });
-
         try (InputStream in = response.body()) {
+            String contentType = response.headers().firstValue("content-type")
+                    .map(v -> v.split(";")[0].trim().toLowerCase(Locale.ROOT))
+                    .orElse("");
+            String extension = ALLOWED_CONTENT_TYPES.get(contentType);
+            if (extension == null) {
+                throw new ImageException(ImageErrorCode.IMPORT_UNSUPPORTED_CONTENT_TYPE);
+            }
+            // Content-Length는 거짓일 수 있지만, 명백히 초과라면 본문을 읽기 전에 끊는 편이 싸다
+            response.headers().firstValueAsLong("content-length").ifPresent(length -> {
+                if (length > MAX_BYTES) {
+                    throw new ImageException(ImageErrorCode.IMPORT_TOO_LARGE);
+                }
+            });
+
             // MAX_BYTES + 1까지만 읽어서, 한 바이트라도 넘치면 초과로 판정한다.
             // readAllBytes()를 쓰면 헤더를 속인 거대 응답에 힙이 그대로 노출된다.
             byte[] bytes = in.readNBytes((int) MAX_BYTES + 1);
