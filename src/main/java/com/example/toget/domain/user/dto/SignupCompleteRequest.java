@@ -29,7 +29,8 @@ public record SignupCompleteRequest(
 
         @Schema(description = "프로필 이미지 URL. 미설정 시 null로 보내면 기본 이미지가 사용된다.",
                 example = "https://toget.com/images/profile.png")
-        @Size(max = 512, message = "프로필 이미지 URL은 512자 이하여야 합니다.")
+        // 컬럼이 TEXT로 확장됐지만(issue #102) 무제한 입력을 받을 이유는 없어 상한은 유지한다.
+        @Size(max = 2048, message = "프로필 이미지 URL은 2048자 이하여야 합니다.")
         String profileImageUrl
 ) {
 }
