@@ -145,16 +145,28 @@ public class FundingQueryService {
     }
 
 
+    /**
+     * TOGETHER_GIFT 상세 조회 — 개설자/공동관리자/일반참여자/비회원 모두 동일하게 조회 가능하다.
+     *
+     * [설계 포인트]
+     *  - 초대장 링크를 아는 사람이면 누구나 볼 수 있는 화면이라는 점이 getSharedFundingDetail(MY_GIFT)과
+     *    같은 결이다. TOGETHER_GIFT는 애초에 공개 범위(visibility) 개념이 없어 필드 마스킹도 하지 않는다.
+     *  - 대신 응답에 myRole을 실어, 조회자가 이 펀딩에서 어떤 역할인지 프론트가 판단해 액션 버튼을
+     *    켜고 끄도록 위임한다. 멤버가 아니거나(userId가 null이거나 join하지 않음) 비회원이면 null.
+     *  - "조회는 열려 있다"는 것이지 "액션도 열려 있다"는 뜻이 아니다 — 투표/후기작성/멤버관리 등
+     *    쓰기 API는 각자의 서비스 메서드에서 역할 검증을 그대로 유지한다.
+     *  - soft delete된 펀딩은 없는 것으로 취급한다. 외부에 공개되는 API라 삭제된 펀딩의 링크가
+     *    계속 유효하면 안 된다 (getSharedFundingDetail과 동일한 이유).
+     */
     @Transactional(readOnly = true)
     public FundingTogetherGiftDashboardResponse getTogetherGiftDashboard(Long userId, Long fundingId) {
-        Funding funding = fundingRepository.findById(fundingId)
+        Funding funding = fundingRepository.findByIdAndDeletedAtIsNull(fundingId)
                 .orElseThrow(() -> new FundingException(FundingErrorCode.FUNDING_NOT_FOUND));
-        if (!funding.isOwnedBy(userId)) {
-            throw new FundingException(FundingErrorCode.NOT_FUNDING_OWNER);
-        }
         if (funding.getFundingType() != FundingType.TOGETHER_GIFT) {
             throw new FundingException(FundingErrorCode.NOT_TOGETHER_GIFT_TYPE);
         }
+
+        String myRole = resolveMyRole(userId, fundingId);
 
         List<FundingTogetherGiftDashboardResponse.MemberSummary> members = getMemberSummaries(fundingId);
 
@@ -178,8 +190,18 @@ public class FundingQueryService {
         }
 
         return FundingConverter.toTogetherGiftDashboardResponse(
-                funding, members, topGifts, collectedAmount, targetAmount, confirmedGifts, messageIds
+                funding, myRole, members, topGifts, collectedAmount, targetAmount, confirmedGifts, messageIds
         );
+    }
+
+    /** 비회원이거나(userId == null) 이 펀딩에 join하지 않은 회원이면 null */
+    private String resolveMyRole(Long userId, Long fundingId) {
+        if (userId == null) {
+            return null;
+        }
+        return fundingMemberRepository.findByFundingIdAndUserId(fundingId, userId)
+                .map(m -> m.getRole().name())
+                .orElse(null);
     }
 
     private List<FundingTogetherGiftDashboardResponse.MemberSummary> getMemberSummaries(Long fundingId) {
