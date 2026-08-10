@@ -12,6 +12,7 @@ import com.example.toget.domain.funding.exception.code.FundingSuccessCode;
 import com.example.toget.domain.funding.service.FundingContributionService;
 import com.example.toget.domain.funding.service.FundingService;
 import com.example.toget.domain.user.controller.LoginUserId;
+import com.example.toget.global.annotation.RateLimit;
 import com.example.toget.global.apiPayload.ApiResponse;
 import com.example.toget.global.util.AuthenticatedUserUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -95,6 +96,8 @@ public class FundingParticipantController {
 
     @Operation(summary = "[MY_GIFT] 펀딩 참여(후원) 제출",
             description = "비회원이 펀딩 참여 결제를 하거나 기여를 생성할 때 호출합니다. 마음만 보내는 경우 amount는 0으로 보냅니다.")
+    // 비인증 공개 API라 링크만 알면 누구나 무제한 반복 호출할 수 있었던 도배 취약점 방어 (issue #84)
+    @RateLimit(capacity = 5, refillSeconds = 60)
     @PostMapping("/{fundingId}/contributions")
     public ApiResponse<FundingContributionCreateResponse> createContribution(
             @PathVariable Long fundingId,
