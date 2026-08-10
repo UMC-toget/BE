@@ -2,12 +2,6 @@ package com.example.toget.domain.funding.service;
 
 import com.example.toget.domain.funding.converter.FundingConverter;
 import com.example.toget.domain.funding.dto.request.*;
-
-import com.example.toget.domain.funding.dto.request.FundingAccountUpdateRequest;
-import com.example.toget.domain.funding.dto.request.FundingBasicInfoUpdateRequest;
-import com.example.toget.domain.funding.dto.request.FundingContributionAmountUpdateRequest;
-import com.example.toget.domain.funding.dto.request.FundingCreateRequest;
-import com.example.toget.domain.funding.dto.request.FundingVisibilityUpdateRequest;
 import com.example.toget.domain.funding.dto.response.*;
 import com.example.toget.domain.funding.entity.Funding;
 import com.example.toget.domain.funding.entity.FundingContribution;
@@ -487,15 +481,6 @@ public class FundingService {
         List<FundingMember> settlementMembers = fundingMemberRepository
                 .findAllByFundingIdAndAmountDueIsNotNull(fundingId);
         Map<Long, User> userMap = fundingMemberUserResolver.resolve(settlementMembers);
-
-        List<FundingSettlementListResponse.SettlementInfo> settlements = settlementMembers.stream()
-                .map(m -> new FundingSettlementListResponse.SettlementInfo(
-                        m.getId(), m.getUserId(),
-                        userMap.get(m.getUserId()).getName(),
-                        userMap.get(m.getUserId()).getProfileImageUrl(),
-                        m.getAmountDue(), m.getSettlementStatus().name()
-                ))
-                .toList();
 
         return FundingConverter.toSettlementListResponse(settlementMembers, userMap);
     }
