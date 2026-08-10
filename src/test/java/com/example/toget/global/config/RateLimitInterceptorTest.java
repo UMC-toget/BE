@@ -75,24 +75,52 @@ class RateLimitInterceptorTest {
     }
 
     @Test
-    @DisplayName("X-Forwarded-For 헤더가 있으면 remoteAddr 대신 그 값을 IP로 사용한다")
-    void uses_x_forwarded_for_when_present() throws NoSuchMethodException {
+    @DisplayName("X-Forwarded-For 헤더가 있으면 remoteAddr 대신 마지막(Nginx가 추가한) 값을 IP로 사용한다")
+    void uses_last_hop_of_x_forwarded_for_when_present() throws NoSuchMethodException {
         HandlerMethod handlerMethod = handlerMethod("limited");
 
         MockHttpServletRequest requestA = new MockHttpServletRequest();
         requestA.setRemoteAddr("10.0.0.1"); // 프록시 IP는 동일
-        requestA.addHeader("X-Forwarded-For", "9.9.9.9, 10.0.0.1");
+        requestA.addHeader("X-Forwarded-For", "9.9.9.9, 1.1.1.1"); // 마지막 항목(1.1.1.1)이 실제 클라이언트
 
         MockHttpServletRequest requestB = new MockHttpServletRequest();
         requestB.setRemoteAddr("10.0.0.1"); // 프록시 IP는 동일
-        requestB.addHeader("X-Forwarded-For", "8.8.8.8, 10.0.0.1");
+        requestB.addHeader("X-Forwarded-For", "8.8.8.8, 2.2.2.2"); // 마지막 항목(2.2.2.2)이 실제 클라이언트
 
-        // 서로 다른 실제 클라이언트(X-Forwarded-For)이므로 A가 한도를 다 써도
+        // 서로 다른 실제 클라이언트(마지막 hop)이므로 A가 한도를 다 써도
         interceptor.preHandle(requestA, new MockHttpServletResponse(), handlerMethod);
         interceptor.preHandle(requestA, new MockHttpServletResponse(), handlerMethod);
 
         // B는 별도 버킷이라 여전히 통과한다
         assertThat(interceptor.preHandle(requestB, new MockHttpServletResponse(), handlerMethod)).isTrue();
+    }
+
+    @Test
+    @DisplayName("클라이언트가 X-Forwarded-For의 맨 앞 값을 조작해도 rate limit을 우회할 수 없다")
+    void spoofing_leftmost_x_forwarded_for_does_not_bypass_limit() throws NoSuchMethodException {
+        HandlerMethod handlerMethod = handlerMethod("limited");
+
+        // 같은 클라이언트(마지막 hop: 3.3.3.3)가 맨 앞 조작값만 매 요청 바꿔서 보내는 상황을 흉내낸다
+        MockHttpServletRequest first = new MockHttpServletRequest();
+        first.setRemoteAddr("10.0.0.1");
+        first.addHeader("X-Forwarded-For", "attacker-forged-1, 3.3.3.3");
+
+        MockHttpServletRequest second = new MockHttpServletRequest();
+        second.setRemoteAddr("10.0.0.1");
+        second.addHeader("X-Forwarded-For", "attacker-forged-2, 3.3.3.3");
+
+        MockHttpServletRequest third = new MockHttpServletRequest();
+        third.setRemoteAddr("10.0.0.1");
+        third.addHeader("X-Forwarded-For", "attacker-forged-3, 3.3.3.3");
+
+        // capacity = 2 → 맨 앞 값이 매번 달라도 마지막 hop이 같으므로 같은 버킷을 공유해 2번만 통과
+        interceptor.preHandle(first, new MockHttpServletResponse(), handlerMethod);
+        interceptor.preHandle(second, new MockHttpServletResponse(), handlerMethod);
+
+        assertThatThrownBy(() -> interceptor.preHandle(third, new MockHttpServletResponse(), handlerMethod))
+                .isInstanceOf(ProjectException.class)
+                .satisfies(ex -> assertThat(((ProjectException) ex).getCode())
+                        .isEqualTo(GeneralErrorCode.TOO_MANY_REQUESTS));
     }
 
     private HandlerMethod handlerMethod(String methodName) throws NoSuchMethodException {
