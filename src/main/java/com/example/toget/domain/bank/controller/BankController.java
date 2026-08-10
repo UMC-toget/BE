@@ -1,5 +1,7 @@
 package com.example.toget.domain.bank.controller;
 
+import com.example.toget.domain.bank.dto.BankDetectionRequest;
+import com.example.toget.domain.bank.dto.BankDetectionResponse;
 import com.example.toget.domain.bank.dto.BankResponse;
 import com.example.toget.domain.bank.dto.BankUpdateRequest;
 import com.example.toget.domain.bank.exception.code.BankSuccessCode;
@@ -13,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -48,6 +51,14 @@ public class BankController {
     public ApiResponse<List<BankResponse>> getBanks() {
         return ApiResponse.onSuccess(BankSuccessCode.BANK_LIST_OK, bankService.getActiveBanks());
     }
+
+    @Operation(summary = "계좌번호 기반 은행 추론",
+            description = "입력된 계좌번호(하이픈 포함/미포함)의 자릿수 및 패턴을 분석하여 추론 가능한 모든 은행 목록을 배열로 반환합니다. 추론 가능한 은행이 없으면 빈 배열([])을 반환합니다.")
+    @PostMapping("/detections")
+    public ApiResponse<List<BankDetectionResponse>> detectBank(@Valid @RequestBody BankDetectionRequest request) {
+        return ApiResponse.onSuccess(BankSuccessCode.BANK_DETECT_OK, bankService.detectBank(request));
+    }
+
 
     /** 은행 정보 수정 — 관리자 전용. 아이콘 교체를 코드 배포 없이 처리하기 위한 API */
     @AdminOnly

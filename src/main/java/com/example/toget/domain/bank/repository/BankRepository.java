@@ -18,4 +18,9 @@ public interface BankRepository extends JpaRepository<Bank, Long> {
 
     // 계좌 등록/수정 시 요청의 BankName으로 은행 행을 찾을 때 사용
     Optional<Bank> findByCode(BankName code);
+
+    // 계좌 추론 시 검출된 BankName 목록에 해당하는 은행 행들을 일괄 조회
+    List<Bank> findAllByCodeIn(java.util.Collection<BankName> codes);
 }
+
+

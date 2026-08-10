@@ -14,7 +14,8 @@ import org.springframework.http.HttpStatus;
 public enum BankSuccessCode implements BaseSuccessCode {
 
     BANK_LIST_OK(HttpStatus.OK, "BANK200_1", "은행 목록을 성공적으로 조회했습니다."),
-    BANK_UPDATE_OK(HttpStatus.OK, "BANK200_2", "은행 정보를 성공적으로 수정했습니다.");
+    BANK_UPDATE_OK(HttpStatus.OK, "BANK200_2", "은행 정보를 성공적으로 수정했습니다."),
+    BANK_DETECT_OK(HttpStatus.OK, "BANK200_3", "계좌번호로 은행을 성공적으로 추론했습니다.");
 
     private final HttpStatus status;
     private final String code;

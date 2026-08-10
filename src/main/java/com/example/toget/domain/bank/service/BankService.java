@@ -7,6 +7,10 @@ import com.example.toget.domain.bank.entity.Bank;
 import com.example.toget.domain.bank.exception.BankException;
 import com.example.toget.domain.bank.exception.code.BankErrorCode;
 import com.example.toget.domain.bank.repository.BankRepository;
+import com.example.toget.domain.bank.dto.BankDetectionRequest;
+import com.example.toget.domain.bank.dto.BankDetectionResponse;
+import com.example.toget.domain.bank.util.BankDetector;
+import com.example.toget.global.enums.BankName;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +37,23 @@ public class BankService {
                 .map(BankConverter::toResponse)
                 .toList();
     }
+
+    /** 계좌번호 기반 은행 추론 - 가능 은행 리스트 반환 */
+    @Transactional(readOnly = true)
+    public List<BankDetectionResponse> detectBank(BankDetectionRequest request) {
+        List<BankName> detectedBankNames = BankDetector.detectAll(request.accountNumber());
+        if (detectedBankNames.isEmpty()) {
+            return List.of();
+        }
+
+        java.util.Map<BankName, Bank> bankMap = bankRepository.findAllByCodeIn(detectedBankNames).stream()
+                .collect(java.util.stream.Collectors.toMap(Bank::getCode, bank -> bank));
+
+        return detectedBankNames.stream()
+                .map(code -> BankConverter.toDetectionResponse(code, bankMap.get(code)))
+                .toList();
+    }
+
 
     /** 부분 수정(PATCH) — 요청에 없는(null) 필드는 기존 값 유지. 관리자 전용 */
     @Transactional
