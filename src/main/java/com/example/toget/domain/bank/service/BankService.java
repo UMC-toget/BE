@@ -7,6 +7,10 @@ import com.example.toget.domain.bank.entity.Bank;
 import com.example.toget.domain.bank.exception.BankException;
 import com.example.toget.domain.bank.exception.code.BankErrorCode;
 import com.example.toget.domain.bank.repository.BankRepository;
+import com.example.toget.domain.bank.dto.BankDetectionRequest;
+import com.example.toget.domain.bank.dto.BankDetectionResponse;
+import com.example.toget.domain.bank.util.BankDetector;
+import com.example.toget.global.enums.BankName;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +36,18 @@ public class BankService {
         return bankRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
                 .map(BankConverter::toResponse)
                 .toList();
+    }
+
+    /** 계좌번호 기반 은행 추론 */
+    @Transactional(readOnly = true)
+    public BankDetectionResponse detectBank(BankDetectionRequest request) {
+        BankName detectedBankName = BankDetector.detect(request.accountNumber())
+                .orElseThrow(() -> new BankException(BankErrorCode.UNABLE_TO_DETECT_BANK));
+
+        Bank bank = bankRepository.findByCode(detectedBankName)
+                .orElse(null);
+
+        return BankConverter.toDetectionResponse(detectedBankName, bank);
     }
 
     /** 부분 수정(PATCH) — 요청에 없는(null) 필드는 기존 값 유지. 관리자 전용 */
