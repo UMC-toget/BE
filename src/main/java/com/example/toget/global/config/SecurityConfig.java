@@ -125,6 +125,8 @@ public class SecurityConfig {
                 // 은행 목록 — 계좌 등록 화면의 은행 선택지. HttpMethod.GET을 반드시 명시할 것:
                 // 생략하면 같은 경로의 PATCH(관리자 전용 아이콘 교체)까지 열린다.
                 .requestMatchers(HttpMethod.GET, "/api/v1/banks", "/api/v1/banks/**").permitAll()
+                // 은행 추론 — 계좌 등록 전 입력된 계좌번호로 은행을 추론하는 API.
+                .requestMatchers(HttpMethod.POST, "/api/v1/banks/detections").permitAll()
 
                 // 후기/소식/마음전하기 조회 및 초대장 조회는 개설자 검증 없이 링크를 아는 누구나 조회 가능
                 .requestMatchers(HttpMethod.GET, "/api/v1/fundings/*/reviews/*").permitAll()
