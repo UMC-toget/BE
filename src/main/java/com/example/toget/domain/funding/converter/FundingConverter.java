@@ -170,20 +170,6 @@ public class FundingConverter {
         return new FundingAccountUpdateResponse(funding.getId(), funding.getUserAccountId());
     }
 
-    public static FundingContributionListResponse toContributionListResponse(
-            Slice<FundingContribution> slice, Map<Long, User> userMap, int participantCount,
-            Long totalAmount, int page, int size
-    ) {
-        List<FundingContributionListResponse.ContributionItem> items = slice.getContent().stream()
-                .map(c -> toContributionItem(c, userMap))
-                .toList();
-
-        return new FundingContributionListResponse(
-                participantCount, totalAmount, items, page, size, slice.hasNext()
-        );
-    }
-
-
     public static FundingVisibilityUpdateResponse toVisibilityUpdateResponse(FundingVisibilitySettings settings) {
         return new FundingVisibilityUpdateResponse(
                 settings.getId(),
