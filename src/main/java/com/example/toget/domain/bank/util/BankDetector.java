@@ -38,8 +38,8 @@ public class BankDetector {
             return Optional.of(BankName.KAKAO_BANK);
         }
 
-        // 2. 토스뱅크 (TOSS_BANK) - 12자리 1000..., 1900..., 100..., 150...
-        if (len == 12 && (clean.startsWith("1000") || clean.startsWith("1900") || clean.startsWith("100") || clean.startsWith("150"))) {
+        // 2. 토스뱅크 (TOSS_BANK) - 12자리 1000..., 1900...
+        if (len == 12 && (clean.startsWith("1000") || clean.startsWith("1900"))) {
             return Optional.of(BankName.TOSS_BANK);
         }
 
