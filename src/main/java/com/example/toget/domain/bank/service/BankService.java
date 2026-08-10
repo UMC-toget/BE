@@ -45,7 +45,7 @@ public class BankService {
                 .orElseThrow(() -> new BankException(BankErrorCode.UNABLE_TO_DETECT_BANK));
 
         Bank bank = bankRepository.findByCode(detectedBankName)
-                .orElse(null);
+                .orElseThrow(() -> new BankException(BankErrorCode.BANK_NOT_FOUND));
 
         return BankConverter.toDetectionResponse(detectedBankName, bank);
     }
