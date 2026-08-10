@@ -27,8 +27,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -55,11 +57,12 @@ public class FundingQueryService {
     private final FundingGiftVoteRepository fundingGiftVoteRepository;
     private final UserAccountRepository userAccountRepository;
     private final FundingMemberUserResolver fundingMemberUserResolver;
+    private final FundingReviewRepository fundingReviewRepository;
 
 
     /**
      * 내가 개최한 펀딩 목록 페이징 조회.
-     * 쿼리는 페이지당 2번으로 고정: ① 펀딩 페이징 조회 ② 페이지 내 펀딩들의 참여금 IN 합산.
+     * 쿼리는 페이지당 3번으로 고정: ① 펀딩 페이징 조회 ② 페이지 내 펀딩들의 참여금 IN 합산 ③ 후기 작성 여부 IN 조회.
      * (펀딩별로 합산하면 N+1이라 배치 쿼리로 묶는다)
      */
     public MyFundingListResponse getMyFundings(Long userId, int page, int size) {
@@ -67,7 +70,12 @@ public class FundingQueryService {
         int safeSize = size <= 0 ? DEFAULT_PAGE_SIZE : size;  // 0 이하 크기 방어
 
         Slice<Funding> fundings = fundingRepository.findMyHostedFundings(userId, PageRequest.of(safePage, safeSize));
-        return FundingConverter.toMyFundingListResponse(fundings, collectAmountsByFundingId(fundings.getContent()));
+        List<Funding> content = fundings.getContent();
+        return FundingConverter.toMyFundingListResponse(
+                fundings,
+                collectAmountsByFundingId(content),
+                findReviewedFundingIds(content)
+        );
     }
 
     /**
@@ -80,6 +88,18 @@ public class FundingQueryService {
         }
         return fundingContributionRepository.sumAmountsByFundingIds(fundingIds).stream()
                 .collect(Collectors.toMap(FundingCollectedAmount::fundingId, FundingCollectedAmount::collectedAmount));
+    }
+
+    /**
+     * 페이지에 담긴 펀딩들 중 후기가 작성된 fundingId Set 조회
+     */
+    private Set<Long> findReviewedFundingIds(List<Funding> fundings) {
+        List<Long> fundingIds = fundings.stream().map(Funding::getId).toList();
+        if (fundingIds.isEmpty()) {
+            return Set.of();
+        }
+        List<Long> reviewedIds = fundingReviewRepository.findFundingIdsWithReviewIn(fundingIds);
+        return reviewedIds != null ? new HashSet<>(reviewedIds) : Set.of();
     }
 
     @Transactional(readOnly = true)

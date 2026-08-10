@@ -13,6 +13,7 @@ import com.example.toget.domain.funding.repository.FundingContributionRepository
 import com.example.toget.domain.funding.repository.FundingGiftVoteRepository;
 import com.example.toget.domain.funding.repository.FundingMemberRepository;
 import com.example.toget.domain.funding.repository.FundingRepository;
+import com.example.toget.domain.funding.repository.FundingReviewRepository;
 import com.example.toget.domain.funding.repository.FundingVisibilitySettingsRepository;
 import com.example.toget.domain.gift.enums.FundingGiftStatus;
 import com.example.toget.domain.gift.repository.FundingGiftRepository;
@@ -70,6 +71,9 @@ class FundingQueryServiceTest {
     @Mock
     private FundingMemberUserResolver fundingMemberUserResolver;
 
+    @Mock
+    private FundingReviewRepository fundingReviewRepository;
+
     @InjectMocks
     private FundingQueryService fundingQueryService;
 
@@ -101,6 +105,25 @@ class FundingQueryServiceTest {
     }
 
     @Test
+    @DisplayName("후기가 작성된 펀딩은 hasReview=true, 후기가 없는 펀딩은 hasReview=false로 매핑한다")
+    void mapsHasReviewPerFunding() {
+        Funding reviewedFunding = fundingWithId(12L);
+        Funding nonReviewedFunding = fundingWithId(13L);
+        given(fundingRepository.findMyHostedFundings(eq(1L), any(Pageable.class)))
+                .willReturn(new SliceImpl<>(List.of(reviewedFunding, nonReviewedFunding), Pageable.ofSize(10), false));
+        given(fundingContributionRepository.sumAmountsByFundingIds(anyList()))
+                .willReturn(List.of());
+        given(fundingReviewRepository.findFundingIdsWithReviewIn(anyList()))
+                .willReturn(List.of(12L));
+
+        MyFundingListResponse response = fundingQueryService.getMyFundings(1L, 0, 10);
+
+        assertThat(response.fundings()).hasSize(2);
+        assertThat(response.fundings().get(0).hasReview()).isTrue();
+        assertThat(response.fundings().get(1).hasReview()).isFalse();
+    }
+
+    @Test
     @DisplayName("Slice의 hasNext와 페이징 정보를 응답에 그대로 담는다")
     void mapsPagingInfo() {
         given(fundingRepository.findMyHostedFundings(eq(1L), any(Pageable.class)))
@@ -117,7 +140,7 @@ class FundingQueryServiceTest {
     }
 
     @Test
-    @DisplayName("개최한 펀딩이 없으면 빈 목록을 반환하고 합계 쿼리는 호출하지 않는다")
+    @DisplayName("개최한 펀딩이 없으면 빈 목록을 반환하고 합계/후기 쿼리는 호출하지 않는다")
     void emptyResultSkipsSumQuery() {
         given(fundingRepository.findMyHostedFundings(eq(1L), any(Pageable.class)))
                 .willReturn(new SliceImpl<>(List.of(), Pageable.ofSize(10), false));
@@ -127,6 +150,7 @@ class FundingQueryServiceTest {
         assertThat(response.fundings()).isEmpty();
         assertThat(response.hasNext()).isFalse();
         verify(fundingContributionRepository, never()).sumAmountsByFundingIds(anyList());
+        verify(fundingReviewRepository, never()).findFundingIdsWithReviewIn(anyList());
     }
 
     @Test
