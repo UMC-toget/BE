@@ -63,7 +63,10 @@ public record MyFundingListResponse(
             LocalDateTime createdAt,
 
             @Schema(description = "후기 작성 여부", example = "true")
-            boolean hasReview
+            boolean hasReview,
+
+            @Schema(description = "참여자 수(FundingMember 기준). TOGETHER_GIFT 전용 값이며 MY_GIFT는 0", example = "3")
+            int participantCount
     ) {
     }
 }

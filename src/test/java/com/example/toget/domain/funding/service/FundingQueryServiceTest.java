@@ -1,6 +1,7 @@
 package com.example.toget.domain.funding.service;
 
 import com.example.toget.domain.funding.dto.FundingCollectedAmount;
+import com.example.toget.domain.funding.dto.FundingMemberCount;
 import com.example.toget.domain.funding.dto.MyFundingListResponse;
 import com.example.toget.domain.funding.dto.response.FundingTogetherGiftDashboardResponse;
 import com.example.toget.domain.funding.dto.response.SharedFundingDetailResponse;
@@ -124,6 +125,25 @@ class FundingQueryServiceTest {
     }
 
     @Test
+    @DisplayName("참여자가 있는 펀딩은 참여자 수를, 없는 펀딩은 0을 participantCount로 매핑한다")
+    void mapsParticipantCountPerFunding() {
+        Funding withMembers = fundingWithId(12L);
+        Funding noMembers = fundingWithId(13L);
+        given(fundingRepository.findMyHostedFundings(eq(1L), any(Pageable.class)))
+                .willReturn(new SliceImpl<>(List.of(withMembers, noMembers), Pageable.ofSize(10), false));
+        given(fundingContributionRepository.sumAmountsByFundingIds(anyList()))
+                .willReturn(List.of());
+        given(fundingMemberRepository.countMembersByFundingIds(anyList()))
+                .willReturn(List.of(new FundingMemberCount(12L, 3L)));
+
+        MyFundingListResponse response = fundingQueryService.getMyFundings(1L, 0, 10);
+
+        assertThat(response.fundings()).hasSize(2);
+        assertThat(response.fundings().get(0).participantCount()).isEqualTo(3);
+        assertThat(response.fundings().get(1).participantCount()).isZero();
+    }
+
+    @Test
     @DisplayName("Slice의 hasNext와 페이징 정보를 응답에 그대로 담는다")
     void mapsPagingInfo() {
         given(fundingRepository.findMyHostedFundings(eq(1L), any(Pageable.class)))
@@ -151,6 +171,7 @@ class FundingQueryServiceTest {
         assertThat(response.hasNext()).isFalse();
         verify(fundingContributionRepository, never()).sumAmountsByFundingIds(anyList());
         verify(fundingReviewRepository, never()).findFundingIdsWithReviewIn(anyList());
+        verify(fundingMemberRepository, never()).countMembersByFundingIds(anyList());
     }
 
     @Test

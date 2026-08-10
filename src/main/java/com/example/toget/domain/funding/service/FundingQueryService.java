@@ -2,6 +2,7 @@ package com.example.toget.domain.funding.service;
 
 import com.example.toget.domain.funding.converter.FundingConverter;
 import com.example.toget.domain.funding.dto.FundingCollectedAmount;
+import com.example.toget.domain.funding.dto.FundingMemberCount;
 import com.example.toget.domain.funding.dto.MyFundingListResponse;
 import com.example.toget.domain.funding.dto.response.FundingMyGiftDashboardResponse;
 import com.example.toget.domain.funding.dto.response.FundingTogetherGiftDashboardResponse;
@@ -62,7 +63,8 @@ public class FundingQueryService {
 
     /**
      * 내가 개최한 펀딩 목록 페이징 조회.
-     * 쿼리는 페이지당 3번으로 고정: ① 펀딩 페이징 조회 ② 페이지 내 펀딩들의 참여금 IN 합산 ③ 후기 작성 여부 IN 조회.
+     * 쿼리는 페이지당 4번으로 고정: ① 펀딩 페이징 조회 ② 페이지 내 펀딩들의 참여금 IN 합산
+     * ③ 후기 작성 여부 IN 조회 ④ 참여자 수 IN 집계.
      * (펀딩별로 합산하면 N+1이라 배치 쿼리로 묶는다)
      */
     public MyFundingListResponse getMyFundings(Long userId, int page, int size) {
@@ -74,7 +76,8 @@ public class FundingQueryService {
         return FundingConverter.toMyFundingListResponse(
                 fundings,
                 collectAmountsByFundingId(content),
-                findReviewedFundingIds(content)
+                findReviewedFundingIds(content),
+                countParticipantsByFundingId(content)
         );
     }
 
@@ -100,6 +103,19 @@ public class FundingQueryService {
         }
         List<Long> reviewedIds = fundingReviewRepository.findFundingIdsWithReviewIn(fundingIds);
         return reviewedIds != null ? new HashSet<>(reviewedIds) : Set.of();
+    }
+
+    /**
+     * 페이지에 담긴 펀딩들의 참여자 수(FundingMember 기준)를 fundingId → count 맵으로 조회.
+     * MY_GIFT는 FundingMember row가 없어 맵에 없을 수 있으며, 이 경우 컨버터에서 0으로 처리한다.
+     */
+    private Map<Long, Integer> countParticipantsByFundingId(List<Funding> fundings) {
+        List<Long> fundingIds = fundings.stream().map(Funding::getId).toList();
+        if (fundingIds.isEmpty()) {
+            return Map.of(); // 빈 IN 절 쿼리 방지
+        }
+        return fundingMemberRepository.countMembersByFundingIds(fundingIds).stream()
+                .collect(Collectors.toMap(FundingMemberCount::fundingId, c -> c.memberCount().intValue()));
     }
 
     @Transactional(readOnly = true)

@@ -36,12 +36,14 @@ public class FundingConverter {
 
     public static MyFundingListResponse toMyFundingListResponse(Slice<Funding> fundings,
                                                                 Map<Long, Long> collectedAmounts,
-                                                                Set<Long> reviewedFundingIds) {
+                                                                Set<Long> reviewedFundingIds,
+                                                                Map<Long, Integer> participantCounts) {
         List<MyFundingSummary> items = fundings.getContent().stream()
                 .map(funding -> toMyFundingSummary(
                         funding,
                         collectedAmounts.getOrDefault(funding.getId(), 0L), // 참여금 없는 펀딩은 0
-                        reviewedFundingIds != null && reviewedFundingIds.contains(funding.getId())
+                        reviewedFundingIds != null && reviewedFundingIds.contains(funding.getId()),
+                        participantCounts.getOrDefault(funding.getId(), 0) // 참여자 없는 펀딩(MY_GIFT 등)은 0
                 ))
                 .toList();
         return new MyFundingListResponse(
@@ -52,7 +54,8 @@ public class FundingConverter {
         );
     }
 
-    private static MyFundingSummary toMyFundingSummary(Funding funding, Long collectedAmount, boolean hasReview) {
+    private static MyFundingSummary toMyFundingSummary(Funding funding, Long collectedAmount, boolean hasReview,
+                                                        int participantCount) {
         return new MyFundingSummary(
                 funding.getId(),
                 funding.getFundingType().name(),
@@ -65,7 +68,8 @@ public class FundingConverter {
                 funding.getEndDate(),
                 funding.getThumbnailImageUrl(),
                 funding.getCreatedAt(),
-                hasReview
+                hasReview,
+                participantCount
         );
     }
 
