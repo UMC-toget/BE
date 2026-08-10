@@ -53,11 +53,12 @@ public class BankController {
     }
 
     @Operation(summary = "계좌번호 기반 은행 추론",
-            description = "입력된 계좌번호(하이픈 포함/미포함)의 자릿수 및 패턴을 분석하여 어떤 은행인지 추론합니다.")
+            description = "입력된 계좌번호(하이픈 포함/미포함)의 자릿수 및 패턴을 분석하여 추론 가능한 모든 은행 목록을 배열로 반환합니다. 추론 가능한 은행이 없으면 빈 배열([])을 반환합니다.")
     @PostMapping("/detections")
-    public ApiResponse<BankDetectionResponse> detectBank(@Valid @RequestBody BankDetectionRequest request) {
+    public ApiResponse<List<BankDetectionResponse>> detectBank(@Valid @RequestBody BankDetectionRequest request) {
         return ApiResponse.onSuccess(BankSuccessCode.BANK_DETECT_OK, bankService.detectBank(request));
     }
+
 
     /** 은행 정보 수정 — 관리자 전용. 아이콘 교체를 코드 배포 없이 처리하기 위한 API */
     @AdminOnly

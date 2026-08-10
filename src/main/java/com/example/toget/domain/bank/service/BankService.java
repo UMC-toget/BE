@@ -38,17 +38,22 @@ public class BankService {
                 .toList();
     }
 
-    /** 계좌번호 기반 은행 추론 */
+    /** 계좌번호 기반 은행 추론 - 가능 은행 리스트 반환 */
     @Transactional(readOnly = true)
-    public BankDetectionResponse detectBank(BankDetectionRequest request) {
-        BankName detectedBankName = BankDetector.detect(request.accountNumber())
-                .orElseThrow(() -> new BankException(BankErrorCode.UNABLE_TO_DETECT_BANK));
+    public List<BankDetectionResponse> detectBank(BankDetectionRequest request) {
+        List<BankName> detectedBankNames = BankDetector.detectAll(request.accountNumber());
+        if (detectedBankNames.isEmpty()) {
+            return List.of();
+        }
 
-        Bank bank = bankRepository.findByCode(detectedBankName)
-                .orElseThrow(() -> new BankException(BankErrorCode.BANK_NOT_FOUND));
+        java.util.Map<BankName, Bank> bankMap = bankRepository.findAllByCodeIn(detectedBankNames).stream()
+                .collect(java.util.stream.Collectors.toMap(Bank::getCode, bank -> bank));
 
-        return BankConverter.toDetectionResponse(detectedBankName, bank);
+        return detectedBankNames.stream()
+                .map(code -> BankConverter.toDetectionResponse(code, bankMap.get(code)))
+                .toList();
     }
+
 
     /** 부분 수정(PATCH) — 요청에 없는(null) 필드는 기존 값 유지. 관리자 전용 */
     @Transactional
