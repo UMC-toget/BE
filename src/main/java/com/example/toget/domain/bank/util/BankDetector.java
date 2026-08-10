@@ -124,8 +124,9 @@ public class BankDetector {
         if (len == 12) {
             String subject2 = clean.substring(3, 5);
             Set<String> ibkSubjects = Set.of("01", "02", "03", "13", "07", "06", "04");
-            // 기업은행 12자리의 특이 점번호 및 과목 조합 (점3-과목2-일련6-검증1)
-            // 국민/하나 등과 겹치지 않는 패턴 또는 IBK fallback
+            if (ibkSubjects.contains(subject2)) {
+                return Optional.of(BankName.IBK);
+            }
         }
 
         // 10. 새마을금고 (MG_SAEMAEUL) - 13자리
