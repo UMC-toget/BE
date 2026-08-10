@@ -1,5 +1,6 @@
 package com.example.toget.domain.funding.repository;
 
+import com.example.toget.domain.funding.dto.FundingMemberCount;
 import com.example.toget.domain.funding.entity.FundingMember;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +16,17 @@ public interface FundingMemberRepository extends JpaRepository<FundingMember, Lo
 
     List<FundingMember> findAllByFundingId(Long fundingId);
     List<FundingMember> findAllByFundingIdAndAmountDueIsNotNull(Long fundingId);
+
+    /**
+     * 페이지에 담긴 펀딩들의 참여자 수를 fundingId별로 배치 집계한다 (N+1 방지).
+     */
+    @Query("""
+    SELECT new com.example.toget.domain.funding.dto.FundingMemberCount(m.fundingId, COUNT(m))
+    FROM FundingMember m
+    WHERE m.fundingId IN :fundingIds
+    GROUP BY m.fundingId
+    """)
+    List<FundingMemberCount> countMembersByFundingIds(@Param("fundingIds") List<Long> fundingIds);
 
     Optional<FundingMember> findByFundingIdAndUserId(Long fundingId, Long userId);
 
