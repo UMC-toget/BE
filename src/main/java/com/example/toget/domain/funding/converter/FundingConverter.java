@@ -280,7 +280,7 @@ public class FundingConverter {
             List<Long> messageIds
     ) {
         return new FundingTogetherGiftDashboardResponse(
-                funding.getId(), funding.getStatus().name(), myRole, funding.getAnniversaryDate(),
+                funding.getId(), funding.getTitle(), funding.getStatus().name(), myRole, funding.getAnniversaryDate(),
                 funding.getRecipientName(), funding.getIntroduction(), funding.getThumbnailImageUrl(),
                 members, topGifts, collectedAmount, targetAmount, confirmedGifts, messageIds
         );

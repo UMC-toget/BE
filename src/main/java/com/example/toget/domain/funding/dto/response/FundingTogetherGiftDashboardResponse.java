@@ -9,6 +9,9 @@ public record FundingTogetherGiftDashboardResponse(
         @Schema(description = "펀딩 ID", example = "12")
         Long fundingId,
 
+        @Schema(description = "펀딩 제목", example = "민수의 생일 선물 펀딩")
+        String fundingTitle,
+
         @Schema(description = "진행 상태", example = "SELECTING")
         String status,
 
