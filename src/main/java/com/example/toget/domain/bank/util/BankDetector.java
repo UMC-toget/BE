@@ -172,7 +172,7 @@ public class BankDetector {
         }
 
         // 17. SC제일은행 (SC)
-        if (len == 11 && clean.startsWith("10") || clean.startsWith("20") || clean.startsWith("30")) {
+        if (len == 11 && (clean.startsWith("10") || clean.startsWith("20") || clean.startsWith("30"))) {
             return Optional.of(BankName.SC);
         }
 
