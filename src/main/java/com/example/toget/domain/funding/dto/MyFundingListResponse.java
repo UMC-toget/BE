@@ -60,7 +60,10 @@ public record MyFundingListResponse(
             String thumbnailImageUrl,
 
             @Schema(description = "생성 일시", example = "2026-06-01T10:00:00")
-            LocalDateTime createdAt
+            LocalDateTime createdAt,
+
+            @Schema(description = "후기 작성 여부", example = "true")
+            boolean hasReview
     ) {
     }
 }
