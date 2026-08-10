@@ -122,15 +122,21 @@ public class FundingGiftService {
 
     @Transactional
     public FundingGiftVoteToggleResponse toggleVote(Long userId, Long fundingId, Long fundingGiftId) {
+        // 같은 멤버가 보내는 투표 추가/취소 요청을 전부 이 락으로 직렬화한다.
+        // count-check + insert가 원자적이지 않아 동시 요청 시 최대 투표 수(3표) 제한이 깨지는 것을 막는다.
+        //
+        // 반드시 이 트랜잭션의 첫 statement여야 한다 — MySQL 기본 격리 수준(REPEATABLE READ)에서는
+        // 트랜잭션의 첫 일반(non-locking) SELECT 시점에 스냅샷이 고정되고, 이후 일반 SELECT는 전부
+        // 그 스냅샷을 읽는다. 락 조회(FOR UPDATE)는 최신 커밋 데이터를 읽어오지만 스냅샷 자체를
+        // 갱신해주지는 않으므로, 락보다 먼저 다른 SELECT(예: 아래 gift 조회)가 실행되면 락을 획득한
+        // 뒤에도 투표 수 카운트가 여전히 락 대기 이전 시점의 낡은 스냅샷을 읽어 제한이 우회될 수 있다.
+        FundingMember member = fundingMemberRepository.findByFundingIdAndUserIdForUpdate(fundingId, userId)
+                .orElseThrow(() -> new FundingGiftException(FundingGiftErrorCode.NOT_FUNDING_MEMBER));
+
         FundingGift gift = getGiftOrThrow(fundingId, fundingGiftId);
         if (gift.getStatus() == FundingGiftStatus.SELECTED) {
             throw new FundingGiftException(FundingGiftErrorCode.GIFT_ALREADY_SELECTED);
         }
-
-        // 같은 멤버가 보내는 투표 추가/취소 요청을 전부 이 락으로 직렬화한다.
-        // count-check + insert가 원자적이지 않아 동시 요청 시 최대 투표 수(3표) 제한이 깨지는 것을 막는다.
-        FundingMember member = fundingMemberRepository.findByFundingIdAndUserIdForUpdate(fundingId, userId)
-                .orElseThrow(() -> new FundingGiftException(FundingGiftErrorCode.NOT_FUNDING_MEMBER));
 
         var existing = fundingGiftVoteRepository
                 .findByFundingMemberIdAndFundingGiftId(member.getId(), fundingGiftId);

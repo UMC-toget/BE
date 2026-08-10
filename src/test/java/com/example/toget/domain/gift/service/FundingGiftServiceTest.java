@@ -147,25 +147,26 @@ class FundingGiftServiceTest {
         }
 
         @Test
-        @DisplayName("이미 확정(SELECTED)된 선물이면 GIFT_ALREADY_SELECTED 예외가 발생하고 멤버 조회는 일어나지 않는다")
+        @DisplayName("이미 확정(SELECTED)된 선물이면 GIFT_ALREADY_SELECTED 예외가 발생한다")
         void toggleVote_fail_giftAlreadySelected() {
             FundingGift selectedGift = candidateGift();
             selectedGift.select();
 
+            // 멤버 락 조회가 트랜잭션의 첫 statement여야 스냅샷이 스테일해지지 않으므로,
+            // gift 상태 체크보다 항상 먼저 실행된다 (issue #83).
+            given(fundingMemberRepository.findByFundingIdAndUserIdForUpdate(FUNDING_ID, USER_ID))
+                    .willReturn(Optional.of(member()));
             given(fundingGiftRepository.findById(GIFT_ID)).willReturn(Optional.of(selectedGift));
 
             assertThatThrownBy(() -> fundingGiftService.toggleVote(USER_ID, FUNDING_ID, GIFT_ID))
                     .isInstanceOf(FundingGiftException.class)
                     .extracting(e -> ((FundingGiftException) e).getCode())
                     .isEqualTo(FundingGiftErrorCode.GIFT_ALREADY_SELECTED);
-
-            verify(fundingMemberRepository, never()).findByFundingIdAndUserIdForUpdate(any(), any());
         }
 
         @Test
-        @DisplayName("펀딩 멤버가 아니면 NOT_FUNDING_MEMBER 예외가 발생한다")
+        @DisplayName("펀딩 멤버가 아니면 NOT_FUNDING_MEMBER 예외가 발생하고 gift 조회는 일어나지 않는다")
         void toggleVote_fail_notFundingMember() {
-            given(fundingGiftRepository.findById(GIFT_ID)).willReturn(Optional.of(candidateGift()));
             given(fundingMemberRepository.findByFundingIdAndUserIdForUpdate(FUNDING_ID, USER_ID))
                     .willReturn(Optional.empty());
 
@@ -173,11 +174,15 @@ class FundingGiftServiceTest {
                     .isInstanceOf(FundingGiftException.class)
                     .extracting(e -> ((FundingGiftException) e).getCode())
                     .isEqualTo(FundingGiftErrorCode.NOT_FUNDING_MEMBER);
+
+            verify(fundingGiftRepository, never()).findById(any());
         }
 
         @Test
         @DisplayName("존재하지 않는 선물이면 FUNDING_GIFT_NOT_FOUND 예외가 발생한다")
         void toggleVote_fail_giftNotFound() {
+            given(fundingMemberRepository.findByFundingIdAndUserIdForUpdate(FUNDING_ID, USER_ID))
+                    .willReturn(Optional.of(member()));
             given(fundingGiftRepository.findById(GIFT_ID)).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> fundingGiftService.toggleVote(USER_ID, FUNDING_ID, GIFT_ID))
@@ -193,6 +198,8 @@ class FundingGiftServiceTest {
                     999L, 1L, "선물", 10000L, "url", "img", null);
             ReflectionTestUtils.setField(gift, "id", GIFT_ID);
 
+            given(fundingMemberRepository.findByFundingIdAndUserIdForUpdate(FUNDING_ID, USER_ID))
+                    .willReturn(Optional.of(member()));
             given(fundingGiftRepository.findById(GIFT_ID)).willReturn(Optional.of(gift));
 
             assertThatThrownBy(() -> fundingGiftService.toggleVote(USER_ID, FUNDING_ID, GIFT_ID))
