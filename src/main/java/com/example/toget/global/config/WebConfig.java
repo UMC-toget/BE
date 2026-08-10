@@ -23,6 +23,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     private final LoginUserIdArgumentResolver loginUserIdArgumentResolver;
     private final AdminOnlyInterceptor adminOnlyInterceptor;
+    private final RateLimitInterceptor rateLimitInterceptor;
 
     @Override
     public void addFormatters(FormatterRegistry registry) {
@@ -40,6 +41,9 @@ public class WebConfig implements WebMvcConfigurer {
         // 실제 검사 여부는 인터셉터가 @AdminOnly 유무로 판단하므로 경로는 API 전체로 넓게 잡는다.
         // (Swagger 등 비-API 경로까지 인터셉터를 태울 이유는 없어 /api/** 로 제한)
         registry.addInterceptor(adminOnlyInterceptor)
+                .addPathPatterns("/api/**");
+        // 실제 검사 여부는 인터셉터가 @RateLimit 유무로 판단하므로 경로는 API 전체로 넓게 잡는다.
+        registry.addInterceptor(rateLimitInterceptor)
                 .addPathPatterns("/api/**");
     }
 }
