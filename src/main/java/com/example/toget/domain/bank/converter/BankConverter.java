@@ -18,7 +18,7 @@ public class BankConverter {
     public static BankDetectionResponse toDetectionResponse(BankName bankName, Bank bank) {
         return BankDetectionResponse.builder()
                 .bankName(bankName)
-                .displayName(bankName.getDisplayName())
+                .displayName(bank != null ? bank.getDisplayName() : bankName.getDisplayName())
                 .iconUrl(bank != null ? bank.getIconUrl() : null)
                 .build();
     }
