@@ -265,6 +265,7 @@ public class FundingGiftService {
         return new FundingGiftPurchaseResponse(saved.getId(), fundingGiftId);
     }
 
+    @Transactional
     public List<FundingGiftResponse> updateWishGifts(
             Long userId, Long fundingId, List<FundingGiftUpsertRequest> requests
     ) {

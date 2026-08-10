@@ -13,7 +13,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/**
+/**ㅎㅑㅅ
  * 펀딩 멤버 엔티티 — funding_members 테이블 매핑. TOGETHER_GIFT 전용.
  *
  * [설계 포인트]
