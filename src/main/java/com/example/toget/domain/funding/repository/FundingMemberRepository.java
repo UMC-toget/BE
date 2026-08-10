@@ -19,9 +19,10 @@ public interface FundingMemberRepository extends JpaRepository<FundingMember, Lo
     Optional<FundingMember> findByFundingIdAndUserId(Long fundingId, Long userId);
 
     /**
-     * 입금 완료 신고처럼 "상태 확인 후 전이"가 한 트랜잭션에서 일어나는 호출 전용.
+     * "상태 확인 후 전이/추가"가 한 트랜잭션에서 일어나는 호출 전용
+     * (예: 입금 완료 신고 — settlementStatus 전이, 선물 후보 투표 토글 — 최대 투표 수 제한).
      * 동시 중복 요청(더블클릭, 재시도) 시 두 번째 트랜잭션이 첫 번째 커밋을 기다리게 해
-     * settlementStatus 전이·후원 기록이 중복 저장되는 것을 막는다.
+     * 멤버 단위 불변 조건이 깨지는 것을 막는다.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT m FROM FundingMember m WHERE m.fundingId = :fundingId AND m.userId = :userId")
