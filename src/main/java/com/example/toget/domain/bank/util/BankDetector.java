@@ -182,6 +182,26 @@ public class BankDetector {
             return Optional.of(BankName.POST_OFFICE);
         }
 
+        // 19. 한국씨티은행 (CITI)
+        if (len == 11 && (clean.startsWith("21") || clean.startsWith("22") || clean.startsWith("23") || clean.startsWith("24") || clean.startsWith("25"))) {
+            return Optional.of(BankName.CITI);
+        }
+
+        // 20. 신협 (SHINHYUP)
+        if (len == 13 && (clean.startsWith("131") || clean.startsWith("132") || clean.startsWith("135") || clean.startsWith("137"))) {
+            return Optional.of(BankName.SHINHYUP);
+        }
+
+        // 21. 전북은행 (JEONBUK)
+        if (len == 13 && (clean.startsWith("501") || clean.startsWith("502") || clean.startsWith("513") || clean.startsWith("522") || clean.startsWith("538"))) {
+            return Optional.of(BankName.JEONBUK);
+        }
+
+        // 22. 제주은행 (JEJU)
+        if (len == 12 && (clean.startsWith("010") || clean.startsWith("020") || clean.startsWith("030") || clean.startsWith("040") || clean.startsWith("050"))) {
+            return Optional.of(BankName.JEJU);
+        }
+
         // 기본 fallback: 13자리 3333 이외의 카카오뱅크 패턴
         if (len == 13 && clean.startsWith("33")) {
             return Optional.of(BankName.KAKAO_BANK);
