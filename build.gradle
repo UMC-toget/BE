@@ -30,6 +30,13 @@ dependencies {
 	// @WebMvcTest — Boot 4부터 웹 MVC 스타터가 분리된 것처럼 테스트 슬라이스도 별도 모듈로 분리됨
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+	// 실제 MySQL(REPEATABLE READ) 위에서 동시성 버그를 재현/검증하는 통합 테스트 전용 —
+	// Mockito 단위 테스트로는 트랜잭션 스냅샷/락 동작을 검증할 수 없다 (issue #83)
+	// spring-boot-testcontainers(4.1.0 관리 버전 2.0.5)는 junit-jupiter/mysql 모듈이 아직 안 나와
+	// 셋이 서로 다른 major 버전으로 꼬이므로 쓰지 않고, testcontainers 자체를 버전 고정해서 맞춘다.
+	testImplementation 'org.testcontainers:testcontainers:1.21.4'
+	testImplementation 'org.testcontainers:junit-jupiter:1.21.4'
+	testImplementation 'org.testcontainers:mysql:1.21.4'
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
