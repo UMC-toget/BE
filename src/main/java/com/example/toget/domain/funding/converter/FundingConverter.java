@@ -20,6 +20,7 @@ import org.springframework.data.domain.Slice;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Funding 엔티티 → 응답 DTO 변환 전담 클래스.
@@ -34,11 +35,13 @@ public class FundingConverter {
     }
 
     public static MyFundingListResponse toMyFundingListResponse(Slice<Funding> fundings,
-                                                                Map<Long, Long> collectedAmounts) {
+                                                                Map<Long, Long> collectedAmounts,
+                                                                Set<Long> reviewedFundingIds) {
         List<MyFundingSummary> items = fundings.getContent().stream()
                 .map(funding -> toMyFundingSummary(
                         funding,
-                        collectedAmounts.getOrDefault(funding.getId(), 0L) // 참여금 없는 펀딩은 0
+                        collectedAmounts.getOrDefault(funding.getId(), 0L), // 참여금 없는 펀딩은 0
+                        reviewedFundingIds != null && reviewedFundingIds.contains(funding.getId())
                 ))
                 .toList();
         return new MyFundingListResponse(
@@ -49,7 +52,7 @@ public class FundingConverter {
         );
     }
 
-    private static MyFundingSummary toMyFundingSummary(Funding funding, Long collectedAmount) {
+    private static MyFundingSummary toMyFundingSummary(Funding funding, Long collectedAmount, boolean hasReview) {
         return new MyFundingSummary(
                 funding.getId(),
                 funding.getFundingType().name(),
@@ -61,7 +64,8 @@ public class FundingConverter {
                 funding.getStatus().name(),
                 funding.getEndDate(),
                 funding.getThumbnailImageUrl(),
-                funding.getCreatedAt()
+                funding.getCreatedAt(),
+                hasReview
         );
     }
 
