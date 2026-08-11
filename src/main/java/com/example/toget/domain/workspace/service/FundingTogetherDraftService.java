@@ -123,17 +123,23 @@ public class FundingTogetherDraftService {
     /**
      * 함께 선물 준비 임시 저장 삭제
      * @param userId 로그인한 사용자 ID
+     * @param draftId 삭제 대상 임시 저장 ID
      */
     @Transactional
-    public void delete(Long userId) {
+    public void delete(Long userId, Long draftId) {
         // 1. 활성 사용자 여부 검증 (보안 컨벤션)
         activeUserReader.getActiveUser(userId);
 
         // 2. 삭제할 Draft 조회 (존재하지 않을 시 DRAFT404 예외 발생)
-        FundingTogetherDraft draft = fundingTogetherDraftRepository.findByUserId(userId)
+        FundingTogetherDraft draft = fundingTogetherDraftRepository.findById(draftId)
                 .orElseThrow(() -> new WorkspaceException(WorkspaceErrorCode.DRAFT_NOT_FOUND));
 
-        // 3. Draft 삭제
+        // 3. 소유권 검증
+        if (!draft.getUserId().equals(userId)) {
+            throw new WorkspaceException(WorkspaceErrorCode.DRAFT_FORBIDDEN);
+        }
+
+        // 4. Draft 삭제
         fundingTogetherDraftRepository.delete(draft);
     }
 }
