@@ -86,7 +86,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
 
                 // S3 Presigned URL 발급 — 회원가입 시 프로필 사진 업로드 등 비회원 상태에서도 사용 가능하도록 허용
-                .requestMatchers(HttpMethod.POST, "/api/v1/images/presigned-url").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/images/upload-requests").permitAll()
 
                 // 웹 사진 검색 프록시 — 회원가입 중 프로필 설정, 게스트 기여 플로우에서도 사진을 골라야 하므로 허용.
                 // /api/v1/images/** 같은 와일드카드가 아니라 GET + 정확한 경로만 열어
