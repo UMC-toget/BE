@@ -209,5 +209,31 @@ class BankDetectorTest {
         List<BankName> bankNull = BankDetector.detectAll(null);
         assertThat(bankNull).isEmpty();
     }
+
+    @Test
+    @DisplayName("고신뢰 프리픽스 일치 계좌번호 입력 시 불필요한 저신뢰 폴백 은행들이 혼입되지 않고 정답 은행만 정밀하게 추론된다")
+    void detectPrecisionTest() {
+        // 110으로 시작하는 신한 12자리 계좌번호 -> 무조건 자릿수 매칭되던 씨티, 수협, 신협, 하나 등 저신뢰 매칭 필터링 검증
+        List<BankName> shinhanResult = BankDetector.detectAll("110123456789");
+        assertThat(shinhanResult).containsExactly(BankName.SHINHAN);
+        assertThat(shinhanResult).doesNotContain(BankName.CITI, BankName.SUHYUP, BankName.SHINHYUP, BankName.HANA, BankName.SC);
+
+        // 3333 카카오뱅크 13자리 계좌번호 -> 단일 정답 검증
+        List<BankName> kakaoResult = BankDetector.detectAll("3333011234567");
+        assertThat(kakaoResult).containsExactly(BankName.KAKAO_BANK);
+
+        // 1000 토스뱅크 12자리 계좌번호 -> 단일 정답 검증
+        List<BankName> tossResult = BankDetector.detectAll("100012345678");
+        assertThat(tossResult).containsExactly(BankName.TOSS_BANK);
+
+        // 1002 우리은행 13자리 계좌번호 -> 단일 정답 검증
+        List<BankName> wooriResult = BankDetector.detectAll("1002123456789");
+        assertThat(wooriResult).containsExactly(BankName.WOORI);
+
+        // 301 농협 13자리 계좌번호 -> 단일 정답 검증
+        List<BankName> nhResult = BankDetector.detectAll("3011234567890");
+        assertThat(nhResult).containsExactly(BankName.NH);
+    }
 }
+
 
