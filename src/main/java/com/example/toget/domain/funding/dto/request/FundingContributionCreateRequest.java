@@ -24,9 +24,9 @@ public record FundingContributionCreateRequest(
         @PositiveOrZero(message = "금액은 0원 이상이어야 합니다.")
         Long amount,
 
-        // DB 컬럼은 TEXT라 길이 제한이 없지만, 비인증 공개 API에서의 도배성 대용량 입력을 막기 위해 애플리케이션단에서 제한 (issue #84)
+        // FE 편지 작성 UI의 글자수 제한(234자, 공백 포함)과 동일하게 맞춘다 — 클라이언트 검증 우회 방어 (issue #129)
         @Schema(description = "편지 내용", example = "길동아 진심으로 생일 축하해!")
-        @Size(max = 1000, message = "편지 내용은 1000자 이하여야 합니다.")
+        @Size(max = 234, message = "편지 내용은 234자 이하여야 합니다.")
         String content,
 
         @Schema(description = "편지 비공개 여부", example = "false")
