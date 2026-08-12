@@ -230,7 +230,7 @@ class JwtAuthenticationFilterTest {
     void toleratesInvalidTokenOnPresignedUrl() throws Exception {
         given(jwtProvider.parse(any(), any())).willThrow(new UserException(UserErrorCode.UNAUTHORIZED));
 
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/images/presigned-url");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/images/upload-requests");
         request.addHeader("Authorization", "Bearer expired.or.signup.token");
         MockHttpServletResponse response = new MockHttpServletResponse();
 

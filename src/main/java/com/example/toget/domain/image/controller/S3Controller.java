@@ -29,7 +29,7 @@ public class S3Controller {
     private final ExternalImageImportService externalImageImportService;
 
     @Operation(summary = "S3 Presigned URL 발급", description = "이미지 Direct Upload를 위한 AWS S3 Presigned PUT URL 및 최종 이미지 URL을 발급받습니다.")
-    @PostMapping("/presigned-url")
+    @PostMapping("/upload-requests")
     public ApiResponse<PresignedUrlResponse> getPresignedUrl(@Valid @RequestBody PresignedUrlRequest request) {
         PresignedUrlResponse response = s3PresignedUrlService.generatePresignedUrl(request);
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, response);

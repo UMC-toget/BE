@@ -45,12 +45,14 @@ public class IndividualFundingDraftController {
 
     /**
      * 내 선물 준비 임시 저장 삭제
-     * JWT 토큰에서 로그인한 회원 ID를 파싱하므로 URL 상에 ID를 노출하지 않음
      */
     @Operation(summary = "내 선물 준비 임시 저장 삭제", description = "저장된 내 선물 준비 임시 저장 데이터를 영구 삭제합니다.")
-    @DeleteMapping
-    public ApiResponse<Void> delete(@LoginUserId Long userId) {
-        individualFundingDraftService.delete(userId);
+    @DeleteMapping("/{draftId}")
+    public ApiResponse<Void> delete(
+            @LoginUserId Long userId,
+            @PathVariable Long draftId
+    ) {
+        individualFundingDraftService.delete(userId, draftId);
         return ApiResponse.onSuccess(WorkspaceSuccessCode.DRAFT_DELETE_OK, null);
     }
 }
