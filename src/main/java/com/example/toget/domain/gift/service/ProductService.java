@@ -7,6 +7,8 @@ import com.example.toget.domain.gift.dto.response.ProductCreateResponse;
 import com.example.toget.domain.gift.dto.response.ProductDetailResponse;
 import com.example.toget.domain.gift.dto.response.ProductListResponse;
 import com.example.toget.domain.gift.entity.Product;
+import com.example.toget.domain.gift.enums.CategoryType;
+import com.example.toget.domain.gift.enums.ProductSort;
 import com.example.toget.domain.gift.exception.ProductException;
 import com.example.toget.domain.gift.exception.code.ProductErrorCode;
 import com.example.toget.domain.gift.repository.ProductRepository;
@@ -17,8 +19,6 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.example.toget.domain.gift.enums.ProductSort;
 
 @Service
 @RequiredArgsConstructor
@@ -60,10 +60,10 @@ public class ProductService {
         Pageable pageable = PageRequest.of(safePage, safeSize, sortOrder);
 
         String formattedKeyword = (keyword != null && !keyword.isBlank()) ? keyword.trim() : null;
-        String formattedCategory = (category != null && !category.isBlank()) ? category.trim() : null;
+        CategoryType categoryEnum = (category != null && !category.isBlank()) ? CategoryType.from(category) : null;
         String formattedBrand = (brand != null && !brand.isBlank()) ? brand.trim() : null;
 
-        Slice<Product> products = productRepository.searchProducts(formattedCategory, formattedKeyword, formattedBrand, minPrice, maxPrice, pageable);
+        Slice<Product> products = productRepository.searchProducts(categoryEnum, formattedKeyword, formattedBrand, minPrice, maxPrice, pageable);
         return ProductConverter.toListResponse(products);
     }
 
@@ -78,7 +78,7 @@ public class ProductService {
                 request.description(),
                 request.imageUrl(),
                 request.purchaseUrl(),
-                request.category(),
+                request.categoryTypes(),
                 request.brand()
         );
 
