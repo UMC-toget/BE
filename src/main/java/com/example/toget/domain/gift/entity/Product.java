@@ -1,8 +1,13 @@
 package com.example.toget.domain.gift.entity;
 
+import com.example.toget.domain.gift.enums.CategoryType;
 import com.example.toget.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -32,8 +37,9 @@ public class Product extends BaseEntity {
     @Column(name = "shop_url", nullable = false, columnDefinition = "TEXT")
     private String purchaseUrl;
 
-    @Column(name = "category", length = 50)
-    private String category;
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ProductCategory> productCategories = new ArrayList<>();
 
     @Column(name = "brand", length = 50)
     private String brand;
@@ -50,13 +56,35 @@ public class Product extends BaseEntity {
     @Builder.Default
     private Long wishlistCount = 0L;
 
-    public void update(String name, Long price, String description, String imageUrl, String purchaseUrl, String category, String brand) {
+    public void updateCategories(List<CategoryType> categoryTypes) {
+        if (this.productCategories == null) {
+            this.productCategories = new ArrayList<>();
+        } else {
+            this.productCategories.clear();
+        }
+        if (categoryTypes != null) {
+            for (CategoryType categoryType : categoryTypes) {
+                this.productCategories.add(new ProductCategory(this, categoryType));
+            }
+        }
+    }
+
+    public List<CategoryType> getCategoryTypes() {
+        if (productCategories == null) {
+            return Collections.emptyList();
+        }
+        return productCategories.stream()
+                .map(ProductCategory::getCategoryType)
+                .toList();
+    }
+
+    public void update(String name, Long price, String description, String imageUrl, String purchaseUrl, List<CategoryType> categoryTypes, String brand) {
         this.name = name;
         this.price = price;
         this.description = description;
         this.imageUrl = imageUrl;
         this.purchaseUrl = purchaseUrl;
-        this.category = category;
+        updateCategories(categoryTypes);
         this.brand = brand;
     }
 
