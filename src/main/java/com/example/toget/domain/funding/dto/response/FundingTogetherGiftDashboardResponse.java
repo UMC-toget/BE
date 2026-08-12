@@ -23,6 +23,12 @@ public record FundingTogetherGiftDashboardResponse(
         @Schema(description = "필요 날짜", example = "2026-08-15")
         LocalDate anniversaryDate,
 
+        @Schema(description = "준비 시작일 — 수정 화면 prefill용", example = "2026-08-01")
+        LocalDate startDate,
+
+        @Schema(description = "준비 종료일 — 수정 화면 prefill용", example = "2026-08-14")
+        LocalDate endDate,
+
         @Schema(description = "받는 사람", example = "홍길동")
         String recipientName,
 
