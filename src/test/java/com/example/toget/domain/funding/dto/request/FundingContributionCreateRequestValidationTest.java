@@ -68,9 +68,9 @@ class FundingContributionCreateRequestValidationTest {
     }
 
     @Test
-    @DisplayName("content가 1000자를 초과하면 위반된다")
+    @DisplayName("content가 234자를 초과하면 위반된다")
     void content_exceeds_max_length() {
-        String tooLong = "가".repeat(1001);
+        String tooLong = "가".repeat(235);
         FundingContributionCreateRequest request = new FundingContributionCreateRequest(
                 "테스트", 1L, false, 0L, tooLong, false
         );
@@ -82,11 +82,11 @@ class FundingContributionCreateRequestValidationTest {
     }
 
     @Test
-    @DisplayName("content가 정확히 1000자면 위반되지 않는다")
+    @DisplayName("content가 정확히 234자면 위반되지 않는다 — FE 편지 작성 UI 글자수 제한과 동일 (issue #129)")
     void content_at_max_length_is_valid() {
-        String exactly1000 = "가".repeat(1000);
+        String exactly234 = "가".repeat(234);
         FundingContributionCreateRequest request = new FundingContributionCreateRequest(
-                "테스트", 1L, false, 0L, exactly1000, false
+                "테스트", 1L, false, 0L, exactly234, false
         );
 
         Set<ConstraintViolation<FundingContributionCreateRequest>> violations = validator.validate(request);
