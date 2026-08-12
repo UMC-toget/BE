@@ -15,15 +15,17 @@ public class ProductConverter {
     }
 
     public static Product toEntity(ProductCreateRequest request) {
-        return Product.builder()
+        Product product = Product.builder()
                 .name(request.name())
                 .price(request.price())
                 .description(request.description())
                 .imageUrl(request.imageUrl())
                 .purchaseUrl(request.purchaseUrl())
-                .category(request.category())
                 .brand(request.brand())
                 .build();
+
+        product.updateCategories(request.categoryTypes());
+        return product;
     }
 
     public static ProductCreateResponse toCreateResponse(Product product) {
@@ -38,7 +40,7 @@ public class ProductConverter {
                 product.getDescription(),
                 product.getImageUrl(),
                 product.getPurchaseUrl(),
-                product.getCategory(),
+                product.getCategoryTypes(),
                 product.getBrand(),
                 product.getWishlistCount(),
                 product.getCreatedAt(),

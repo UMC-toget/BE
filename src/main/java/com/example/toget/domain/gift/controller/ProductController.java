@@ -52,7 +52,7 @@ public class ProductController {
     }
 
     @AdminOnly
-    @Operation(summary = "[관리자 전용] 상품 등록", description = "새로운 자체 상품을 등록합니다.")
+    @Operation(summary = "[관리자 전용] 상품 등록", description = "새로운 자체 상품을 등록합니다. (1개 이상의 다중 카테고리 지정 가능)")
     @PostMapping
     public ApiResponse<ProductCreateResponse> createProduct(
             @Valid @RequestBody ProductCreateRequest request
@@ -61,7 +61,7 @@ public class ProductController {
     }
 
     @AdminOnly
-    @Operation(summary = "[관리자 전용] 상품 수정", description = "지정한 ID의 상품 정보를 수정합니다.")
+    @Operation(summary = "[관리자 전용] 상품 수정", description = "지정한 ID의 상품 정보를 수정합니다. (1개 이상의 다중 카테고리 지정 가능)")
     @PutMapping("/{productId}")
     public ApiResponse<ProductDetailResponse> updateProduct(
             @PathVariable Long productId,
