@@ -97,7 +97,7 @@ class FundingControllerSecurityTest {
 
     private FundingTogetherGiftDashboardResponse dummyResponse() {
         return new FundingTogetherGiftDashboardResponse(
-                1L, "펀딩 제목", "SELECTING", null, null, null, null, null,
+                1L, "펀딩 제목", "SELECTING", null, null, null, null, null, null, null,
                 List.of(), List.of(), null, null, null, null
         );
     }

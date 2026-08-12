@@ -349,7 +349,8 @@ class FundingQueryServiceTest {
 
         private Funding togetherGiftFundingWithId(Long id) {
             Funding funding = Funding.createTogetherGift(CREATOR_ID, null, "길동이의 생일 펀딩", "홍길동",
-                    LocalDate.of(2026, 8, 14), null, null, "소개글", "https://image.com/thumb.png", 1_000_000L);
+                    LocalDate.of(2026, 8, 14), LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 13),
+                    "소개글", "https://image.com/thumb.png", 1_000_000L);
             ReflectionTestUtils.setField(funding, "id", id);
             return funding;
         }
@@ -376,6 +377,22 @@ class FundingQueryServiceTest {
                     fundingQueryService.getTogetherGiftDashboard(CREATOR_ID, FUNDING_ID);
 
             assertThat(result.myRole()).isEqualTo("CREATOR");
+        }
+
+        @Test
+        @DisplayName("준비 기간(startDate/endDate)이 응답에 그대로 내려간다 — 수정 화면 prefill용 (issue #125)")
+        void includesPreparationPeriod() {
+            given(fundingRepository.findByIdAndDeletedAtIsNull(FUNDING_ID))
+                    .willReturn(Optional.of(togetherGiftFundingWithId(FUNDING_ID)));
+            stubRoleIndependentQueries();
+            given(fundingMemberRepository.findByFundingIdAndUserId(FUNDING_ID, CREATOR_ID))
+                    .willReturn(Optional.of(FundingMember.createCreator(FUNDING_ID, CREATOR_ID)));
+
+            FundingTogetherGiftDashboardResponse result =
+                    fundingQueryService.getTogetherGiftDashboard(CREATOR_ID, FUNDING_ID);
+
+            assertThat(result.startDate()).isEqualTo(LocalDate.of(2026, 8, 1));
+            assertThat(result.endDate()).isEqualTo(LocalDate.of(2026, 8, 13));
         }
 
         @Test

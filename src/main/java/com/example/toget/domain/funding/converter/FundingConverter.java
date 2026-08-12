@@ -275,6 +275,7 @@ public class FundingConverter {
     ) {
         return new FundingTogetherGiftDashboardResponse(
                 funding.getId(), funding.getTitle(), funding.getStatus().name(), myRole, funding.getAnniversaryDate(),
+                funding.getStartDate(), funding.getEndDate(),
                 funding.getRecipientName(), funding.getIntroduction(), funding.getThumbnailImageUrl(),
                 members, topGifts, collectedAmount, targetAmount, confirmedGifts, messageIds
         );
