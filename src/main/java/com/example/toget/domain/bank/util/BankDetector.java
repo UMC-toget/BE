@@ -2,35 +2,72 @@ package com.example.toget.domain.bank.util;
 
 import com.example.toget.global.enums.BankName;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 
 /**
- * CMS 계좌번호 체계(2026.05.08 기준) 및 주요 은행별 과목코드/자릿수/프리픽스 패턴 기반
- * 계좌번호 은행 추론 엔진.
+ * KFTC(금융결제원) CMS 계좌번호 체계 데이터(korean-bank-detector) 및 주요 22개 은행별
+ * 과목코드/자릿수/프리픽스 패턴 기반 계좌번호 은행 추론 엔진.
  */
 public class BankDetector {
 
-    /**
-     * 계좌번호 추론 규칙의 신뢰도 수준.
-     */
     public enum Confidence {
-        /** 자릿수 + 프리픽스/과목코드 정밀 일치 (우선적용) */
         HIGH,
-        /** 자릿수 중심 범용 매칭 (하위 범주 Fallback) */
         LOW
     }
 
-    /**
-     * 은행 추론 규칙 데이터 구조.
-     */
-    private record DetectionRule(BankName bankName, Confidence confidence, Predicate<String> matcher) {}
+    public record YCodeRange(int from, int to) {
+        public boolean contains(int val) {
+            return val >= from && val <= to;
+        }
+    }
 
-    private static final List<DetectionRule> RULES = createRules();
+    public record YCodeSpec(List<String> exactCodes, List<YCodeRange> ranges) {
+        public static YCodeSpec of(String... codes) {
+            return new YCodeSpec(List.of(codes), List.of());
+        }
+
+        public static YCodeSpec of(List<String> codes, List<YCodeRange> ranges) {
+            return new YCodeSpec(codes, ranges);
+        }
+
+        public boolean matches(String slice) {
+            if (exactCodes != null && exactCodes.contains(slice)) {
+                return true;
+            }
+            if (ranges != null && !ranges.isEmpty()) {
+                try {
+                    int val = Integer.parseInt(slice);
+                    for (YCodeRange range : ranges) {
+                        if (range.contains(val)) {
+                            return true;
+                        }
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+            return false;
+        }
+    }
+
+    public record PatternSpec(
+            List<String> templates,
+            YCodeSpec yCodes,
+            List<Predicate<String>> additionalRules
+    ) {
+        public PatternSpec(List<String> templates, YCodeSpec yCodes) {
+            this(templates, yCodes, List.of());
+        }
+    }
+
+    private record InstitutionRule(
+            BankName bankName,
+            Confidence defaultConfidence,
+            List<PatternSpec> patterns
+    ) {}
+
+    private record MatchResult(BankName bankName, int score, Confidence confidence) {}
+
+    private static final List<InstitutionRule> RULES = createRules();
 
     private BankDetector() {
         // 유틸리티 클래스 인스턴스화 방지
@@ -50,7 +87,7 @@ public class BankDetector {
     /**
      * 입력받은 계좌번호(하이픈 포함/미포함)를 분석하여 해당하는 모든 가용 BankName enum 목록을 추론합니다.
      * <p>
-     * 고신뢰(HIGH) 매칭 결과가 1개 이상 존재할 경우 저신뢰(LOW) 결과는 자동으로 제외하여 추론 정확도를 유지합니다.
+     * korean-bank-detector KFTC 패턴 기반 점수(Score) 계산 후 내림차순 정렬하여 반환합니다.
      *
      * @param rawAccountNumber 계좌번호 문자열
      * @return 추론된 BankName 목록 (추론 불가능 시 빈 리스트)
@@ -68,145 +105,273 @@ public class BankDetector {
             return List.of();
         }
 
-        Set<BankName> highCandidates = new LinkedHashSet<>();
-        Set<BankName> lowCandidates = new LinkedHashSet<>();
+        List<MatchResult> matches = new ArrayList<>();
 
-        for (DetectionRule rule : RULES) {
-            if (rule.matcher().test(clean)) {
-                if (rule.confidence() == Confidence.HIGH) {
-                    highCandidates.add(rule.bankName());
-                } else {
-                    lowCandidates.add(rule.bankName());
+        for (InstitutionRule rule : RULES) {
+            int maxInstScore = 0;
+            for (PatternSpec pattern : rule.patterns()) {
+                int score = scorePattern(pattern, clean);
+                if (score > maxInstScore) {
+                    maxInstScore = score;
+                }
+            }
+
+            if (maxInstScore > 0) {
+                matches.add(new MatchResult(rule.bankName(), maxInstScore, rule.defaultConfidence()));
+            }
+        }
+
+        if (matches.isEmpty()) {
+            return List.of();
+        }
+
+        // 점수 내림차순 정렬 (동점 시 선언 순서 보존)
+        matches.sort((a, b) -> Integer.compare(b.score(), a.score()));
+
+        // 중복 제거하면서 리스트 변환 (LinkedHashSet)
+        Set<BankName> result = new LinkedHashSet<>();
+        for (MatchResult m : matches) {
+            result.add(m.bankName());
+        }
+
+        return new ArrayList<>(result);
+    }
+
+    private static boolean literalDigitsMatch(String strippedTemplate, String normalized) {
+        for (int i = 0; i < strippedTemplate.length() && i < normalized.length(); i++) {
+            char ch = strippedTemplate.charAt(i);
+            if (ch >= '0' && ch <= '9') {
+                if (normalized.charAt(i) != ch) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static int scorePattern(PatternSpec pattern, String normalized) {
+        int maxScore = 0;
+
+        for (String template : pattern.templates()) {
+            int patternScore = 0;
+            String stripped = template.replace("-", "").toUpperCase();
+
+            // 1. 고정 숫자 위치 매칭 검증
+            if (!literalDigitsMatch(stripped, normalized)) {
+                continue;
+            }
+
+            // 2. Y-code 과목코드 매칭 검증
+            int yStart = stripped.indexOf('Y');
+            if (yStart >= 0) {
+                int yEnd = yStart;
+                while (yEnd < stripped.length() && stripped.charAt(yEnd) == 'Y') {
+                    yEnd++;
+                }
+
+                if (pattern.yCodes() != null) {
+                    if (normalized.length() >= yEnd) {
+                        String slice = normalized.substring(yStart, yEnd);
+                        if (pattern.yCodes().matches(slice)) {
+                            patternScore += 1;
+                        } else {
+                            continue; // Y-code 불일치 시 0점 처리
+                        }
+                    } else {
+                        continue;
+                    }
+                }
+            }
+
+            // 3. 자릿수 일치 검증
+            if (stripped.length() == normalized.length()) {
+                patternScore += 1;
+            }
+
+            if (patternScore > maxScore) {
+                maxScore = patternScore;
+            }
+        }
+
+        // 4. 추가 규칙 검증 (기본 점수가 1점 이상일 때 적용)
+        int finalScore = maxScore;
+        if (maxScore > 0 && pattern.additionalRules() != null && !pattern.additionalRules().isEmpty()) {
+            for (Predicate<String> rule : pattern.additionalRules()) {
+                if (rule.test(normalized)) {
+                    finalScore += 1;
                 }
             }
         }
 
-        if (!highCandidates.isEmpty()) {
-            return new ArrayList<>(highCandidates);
-        }
-        return new ArrayList<>(lowCandidates);
+        return finalScore;
     }
 
     /**
-     * 22개 은행에 대한 계좌번호 패턴 검증 규칙 테이블을 생성합니다.
+     * 22개 전체 지원 은행에 대한 KFTC CMS 검증 패턴 테이블 생성.
      */
-    private static List<DetectionRule> createRules() {
-        List<DetectionRule> rules = new ArrayList<>();
+    private static List<InstitutionRule> createRules() {
+        List<InstitutionRule> rules = new ArrayList<>();
 
-        // 1. 카카오뱅크 (KAKAO_BANK) - 13자리 3333... 또는 33...
-        rules.add(new DetectionRule(BankName.KAKAO_BANK, Confidence.HIGH,
-                clean -> clean.length() == 13 && (clean.startsWith("3333") || clean.startsWith("33"))));
+        // 1. 카카오뱅크 (KAKAO_BANK) - 090
+        rules.add(new InstitutionRule(BankName.KAKAO_BANK, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("TYYY-ZZ-ZZZZZZZ"), YCodeSpec.of("333", "388", "355", "310"), List.of(n -> n.startsWith("3"))),
+                new PatternSpec(List.of("TYYY-ZZ-ZZZZZZZ"), YCodeSpec.of("777", "979"), List.of(n -> n.startsWith("7"))),
+                new PatternSpec(List.of("TYYY-ZZ-ZZZZZZZ"), YCodeSpec.of("101"), List.of(n -> n.startsWith("9"))),
+                new PatternSpec(List.of("3333-ZZ-ZZZZZZZ", "33ZZ-ZZ-ZZZZZZZ"), null, List.of(n -> n.length() == 13 && n.startsWith("33")))
+        )));
 
-        // 2. 토스뱅크 (TOSS_BANK) - 12자리 1000..., 1900..., 17..., 19...
-        rules.add(new DetectionRule(BankName.TOSS_BANK, Confidence.HIGH,
-                clean -> clean.length() == 12 && (clean.startsWith("1000") || clean.startsWith("1900") || clean.startsWith("17") || clean.startsWith("19"))));
+        // 2. 토스뱅크 (TOSS_BANK) - 092
+        rules.add(new InstitutionRule(BankName.TOSS_BANK, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("YYYZ-ZZZZ-ZZZC"), YCodeSpec.of("100", "106", "300", "150", "700"), List.of(n -> n.length() >= 4 && (n.charAt(3) == '8' || n.charAt(3) == '0'))),
+                new PatternSpec(List.of("17ZZ-ZZZZ-ZZZZ", "19ZZ-ZZZZ-ZZZZ"), null, List.of(n -> n.startsWith("17") || n.startsWith("19"))),
+                new PatternSpec(List.of("1000-ZZZZ-ZZZZ", "1900-ZZZZ-ZZZZ"), null, List.of(n -> n.length() == 12 && (n.startsWith("1000") || n.startsWith("1900"))))
+        )));
 
-        // 3. 케이뱅크 (K_BANK) - 10자리(9로 시작), 12자리, 13자리(휴대폰 010), 14자리(70/79/90/7/9 등)
-        rules.add(new DetectionRule(BankName.K_BANK, Confidence.HIGH, clean -> clean.length() == 10 && clean.startsWith("9")));
-        rules.add(new DetectionRule(BankName.K_BANK, Confidence.LOW, clean -> clean.length() == 12));
-        rules.add(new DetectionRule(BankName.K_BANK, Confidence.HIGH, clean -> clean.length() == 13 && clean.startsWith("010")));
-        rules.add(new DetectionRule(BankName.K_BANK, Confidence.HIGH, clean -> clean.length() == 14 && (clean.startsWith("70") || clean.startsWith("79") || clean.startsWith("90") || clean.startsWith("7") || clean.startsWith("9"))));
+        // 3. 케이뱅크 (K_BANK) - 089
+        rules.add(new InstitutionRule(BankName.K_BANK, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("YYY-YNN-NNZZZZ"), YCodeSpec.of("1002", "1005")),
+                new PatternSpec(List.of("9ZZ-ZZZ-ZZZZ"), null, List.of(n -> n.length() == 10 && n.startsWith("9"))),
+                new PatternSpec(List.of("010-ZZZZ-ZZZZZ"), null, List.of(n -> n.length() == 13 && n.startsWith("010"))),
+                new PatternSpec(List.of("70ZZ-ZZZZ-ZZZZZ", "79ZZ-ZZZZ-ZZZZZ", "90ZZ-ZZZZ-ZZZZZ"), null, List.of(n -> n.length() == 14 && (n.startsWith("70") || n.startsWith("79") || n.startsWith("90"))))
+        )));
 
-        // 4. 우리은행 (WOORI) - 13자리 1002..., 1005... / 11자리(상업) / 12자리(평화) / 14자리(한일)
-        rules.add(new DetectionRule(BankName.WOORI, Confidence.HIGH, clean -> clean.length() == 13 && (clean.startsWith("1002") || clean.startsWith("1005") || clean.startsWith("1006") || clean.startsWith("1007") || clean.startsWith("1004") || clean.startsWith("1003"))));
-        rules.add(new DetectionRule(BankName.WOORI, Confidence.LOW, clean -> clean.length() == 11 && Set.of("05", "06", "07", "08", "02", "01", "04").contains(clean.substring(3, 5))));
-        rules.add(new DetectionRule(BankName.WOORI, Confidence.LOW, clean -> clean.length() == 12 && Set.of("01", "21", "24", "05", "04", "25", "09").contains(clean.substring(3, 5))));
-        rules.add(new DetectionRule(BankName.WOORI, Confidence.LOW, clean -> clean.length() == 14 && Set.of("01", "15", "02", "12", "04", "03", "13").contains(clean.substring(8, 10))));
+        // 4. 신한은행 (SHINHAN) - 088
+        rules.add(new InstitutionRule(BankName.SHINHAN, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("YYY-ZZZ-ZZZZZC"), YCodeSpec.of(
+                        List.of("160", "161", "180", "298", "268", "269"),
+                        List.of(new YCodeRange(100, 109), new YCodeRange(110, 139), new YCodeRange(140, 149), new YCodeRange(150, 154), new YCodeRange(155, 159))
+                )),
+                new PatternSpec(List.of("YYY-TTT-ZZZZZZZC"), YCodeSpec.of("560", "561", "562")),
+                new PatternSpec(List.of("XXX-YY-ZZZZZC"), YCodeSpec.of("01", "02", "03", "04", "05", "06", "07", "08", "09", "11", "12", "13", "61", "99")),
+                new PatternSpec(List.of("XXX-YY-ZZZZZZZC"), YCodeSpec.of("01", "02", "03", "04", "05", "06", "07", "08", "09", "61", "81", "82")),
+                new PatternSpec(List.of("XXX-YYY-ZZZZZZZC"), YCodeSpec.of("901"))
+        )));
 
-        // 5. IBK기업은행 (IBK) - 10, 11, 12, 14자리
-        rules.add(new DetectionRule(BankName.IBK, Confidence.LOW, clean -> clean.length() == 10 || clean.length() == 11));
-        rules.add(new DetectionRule(BankName.IBK, Confidence.LOW, clean -> clean.length() == 12 && Set.of("01", "02", "03", "13", "07", "06", "04").contains(clean.substring(3, 5))));
-        rules.add(new DetectionRule(BankName.IBK, Confidence.LOW, clean -> clean.length() == 14 && Set.of("01", "02", "03", "13", "07", "06", "04").contains(clean.substring(6, 8))));
+        // 5. KB국민은행 (KB) - 004
+        rules.add(new InstitutionRule(BankName.KB, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("XXXX-YY-ZZZZZC", "XXXX-YY-ZZZZZZZC"), YCodeSpec.of("01", "02", "06", "07", "18", "25", "37", "90")),
+                new PatternSpec(List.of("XXX-YY-ZZZZ-ZZC", "XXXXYY-ZZ-ZZZZZC"), YCodeSpec.of("01", "02", "04", "05", "07", "24", "25", "26", "92"), List.of(n -> n.startsWith("0"))),
+                new PatternSpec(List.of("0ZZ-ZZZ-ZZZZ"), null, List.of(n -> n.length() == 10 && n.startsWith("0"))),
+                new PatternSpec(List.of("92ZZ-YY-ZZZZZZZZ"), YCodeSpec.of("92"), List.of(n -> n.length() == 14))
+        )));
 
-        // 6. iM뱅크 (IM_BANK - 구 대구은행) - 7~11자리, 12, 13, 14자리
-        rules.add(new DetectionRule(BankName.IM_BANK, Confidence.LOW, clean -> clean.length() >= 7 && clean.length() <= 11));
-        rules.add(new DetectionRule(BankName.IM_BANK, Confidence.LOW, clean -> clean.length() == 12 && Set.of("05", "08", "07", "02", "01", "04").contains(clean.substring(3, 5))));
-        rules.add(new DetectionRule(BankName.IM_BANK, Confidence.HIGH, clean -> clean.length() == 13 && (clean.startsWith("91") || clean.startsWith("92") || clean.startsWith("93") || clean.startsWith("94") || clean.startsWith("96"))));
-        rules.add(new DetectionRule(BankName.IM_BANK, Confidence.LOW, clean -> clean.length() == 14));
+        // 6. 우리은행 (WOORI) - 020
+        rules.add(new InstitutionRule(BankName.WOORI, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("SYYY-CZZ-ZZZZZZ"), YCodeSpec.of("002", "003", "004", "005", "006", "007"), List.of(n -> n.startsWith("1"))),
+                new PatternSpec(List.of("XXX-BBBBBC-YY-ZZC"), YCodeSpec.of("18", "92")),
+                new PatternSpec(List.of("XXX-YY-ZZZZZC"), YCodeSpec.of("002", "003", "004", "005", "006", "007")),
+                new PatternSpec(List.of("XXX-BBBBBB-YY-ZZC"), YCodeSpec.of("01", "02", "03", "04", "12", "13", "15")),
+                new PatternSpec(List.of("XXX-YY-ZZZZZZC"), YCodeSpec.of("01", "04", "05", "09", "21", "24", "25"))
+        )));
 
-        // 7. 광주은행 (GWANGJU) - 12, 13자리
-        rules.add(new DetectionRule(BankName.GWANGJU, Confidence.HIGH, clean -> clean.length() == 12 && (clean.startsWith("107") || clean.startsWith("108") || clean.startsWith("109") || clean.startsWith("121") || clean.startsWith("123") || clean.startsWith("124") || clean.startsWith("122") || clean.startsWith("103") || clean.startsWith("101") || clean.startsWith("127"))));
-        rules.add(new DetectionRule(BankName.GWANGJU, Confidence.HIGH, clean -> clean.length() == 13 && Set.of("107", "109", "121", "103", "101", "127").contains(clean.substring(1, 4))));
+        // 7. 하나은행 (HANA) - 081
+        rules.add(new InstitutionRule(BankName.HANA, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("XXX-YY-ZZZZZ-C"), YCodeSpec.of("11", "13", "15", "18", "19", "22", "23", "24", "26", "29", "33", "38", "39", "70", "73", "74", "75", "77")),
+                new PatternSpec(List.of("YYY-ZZZZZZ-ZZC"), YCodeSpec.of(
+                        List.of("600", "601", "610", "611", "620", "621", "630", "631", "700", "703", "704", "705", "707", "810", "811", "814", "815", "817", "818"),
+                        List.of(new YCodeRange(710, 716))
+                )),
+                new PatternSpec(List.of("XXX-ZZZZZZ-ZZCYY"), YCodeSpec.of("01", "02", "04", "05", "07", "08", "32", "37", "60", "94"))
+        )));
 
-        // 8. SC제일은행 (SC) - 11, 14자리
-        rules.add(new DetectionRule(BankName.SC, Confidence.HIGH, clean -> clean.length() == 11 && (clean.startsWith("10") || clean.startsWith("20") || clean.startsWith("30") || clean.startsWith("15"))));
-        rules.add(new DetectionRule(BankName.SC, Confidence.LOW, clean -> clean.length() == 14));
+        // 8. NH농협은행 (NH) - 011 / 012
+        rules.add(new InstitutionRule(BankName.NH, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("XXX-YY-ZZZZZC", "XXXX-YY-ZZZZZC"), YCodeSpec.of("01", "02", "04", "05", "06", "10", "12", "14", "17", "21", "24", "28", "31", "34", "43", "45", "46", "47", "49", "51", "52", "55", "56", "59", "79", "80", "81", "86", "87", "88")),
+                new PatternSpec(List.of("YYY-ZZZZ-ZZZZ-CT"), YCodeSpec.of("028", "031", "043", "046", "079", "081", "086", "087", "088", "301", "302", "304", "305", "306", "310", "312", "314", "317", "321", "324", "334", "345", "347", "349", "351", "352", "354", "355", "356", "359", "360", "380", "384", "394", "398")),
+                new PatternSpec(List.of("XXXXXX-YY-ZZZZZC", "YYY-ZZZZ-ZZZZ-ZZC"), YCodeSpec.of("64", "65", "66", "67", "790", "791", "792"))
+        )));
 
-        // 9. 한국씨티은행 (CITI) - 10, 11, 12, 13자리
-        rules.add(new DetectionRule(BankName.CITI, Confidence.LOW, clean -> clean.length() == 10 || clean.length() == 12 || clean.length() == 13));
-        rules.add(new DetectionRule(BankName.CITI, Confidence.HIGH, clean -> clean.length() == 11 && (clean.startsWith("21") || clean.startsWith("22") || clean.startsWith("23") || clean.startsWith("24") || clean.startsWith("25"))));
+        // 9. IBK기업은행 (IBK) - 003
+        rules.add(new InstitutionRule(BankName.IBK, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("BBBBBBBB-ZZ", "AAA-BBBBBBBB"), null, List.of(n -> n.length() == 10 || n.length() == 11)),
+                new PatternSpec(List.of("XXX-YY-ZZZZZZC", "XXX-BBBBBB-YY-ZZC"), YCodeSpec.of("01", "02", "03", "04", "06", "07", "13"))
+        )));
 
-        // 10. KDB산업은행 (KDB) - 11, 14자리
-        rules.add(new DetectionRule(BankName.KDB, Confidence.HIGH, clean -> clean.length() == 11 && (clean.startsWith("013") || clean.startsWith("020") || clean.startsWith("019") || clean.startsWith("011") || clean.startsWith("022"))));
-        rules.add(new DetectionRule(BankName.KDB, Confidence.LOW, clean -> clean.length() == 11 && Set.of("13","20","19","11","22").contains(clean.substring(3, 5))));
-        rules.add(new DetectionRule(BankName.KDB, Confidence.HIGH, clean -> clean.length() == 14 && (clean.startsWith("013") || clean.startsWith("020") || clean.startsWith("019") || clean.startsWith("011") || clean.startsWith("022") || clean.startsWith("010"))));
+        // 10. SC제일은행 (SC) - 023
+        rules.add(new InstitutionRule(BankName.SC, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("XXX-YY-ZZZZZC"), YCodeSpec.of("10", "20", "30", "85")),
+                new PatternSpec(List.of("XXX-YY-ZZZZZZZZC"), YCodeSpec.of("15", "16"))
+        )));
 
-        // 11. 우체국 (POST_OFFICE) - 12, 13, 14자리
-        rules.add(new DetectionRule(BankName.POST_OFFICE, Confidence.HIGH, clean -> clean.length() == 12 && (clean.startsWith("530") || clean.startsWith("190") || (clean.startsWith("100") && !clean.startsWith("1000")) || clean.startsWith("120"))));
-        rules.add(new DetectionRule(BankName.POST_OFFICE, Confidence.LOW, clean -> clean.length() == 12 && clean.startsWith("110")));
-        rules.add(new DetectionRule(BankName.POST_OFFICE, Confidence.HIGH, clean -> clean.length() == 13 && (clean.startsWith("8") || clean.startsWith("9"))));
-        rules.add(new DetectionRule(BankName.POST_OFFICE, Confidence.LOW, clean -> clean.length() == 14));
+        // 11. 한국씨티은행 (CITI) - 027
+        rules.add(new InstitutionRule(BankName.CITI, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("XXX-ZZZZZ-YYC-ZZ"), YCodeSpec.of("01", "03", "05", "06", "07", "11", "13", "15", "21", "23", "24", "25", "26", "27", "29", "31", "33", "41", "42", "43", "51", "53", "55", "63", "71", "81", "99")),
+                new PatternSpec(List.of("XX-YY-ZZZZZC", "Y-ZZZZZZ-ZZC"), YCodeSpec.of(
+                        List.of("00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "20", "21", "30", "32", "33", "34", "35", "40", "41", "42", "46", "48", "59", "63", "64", "70", "71", "80", "81", "99"),
+                        List.of(new YCodeRange(10, 19), new YCodeRange(36, 38), new YCodeRange(43, 45), new YCodeRange(50, 58), new YCodeRange(60, 69), new YCodeRange(72, 78), new YCodeRange(83, 88), new YCodeRange(91, 96))
+                )),
+                new PatternSpec(List.of("T-BBBBBB-CYY-ZZ"), YCodeSpec.of("18", "24", "25", "41"))
+        )));
 
-        // 12. 신한은행 (SHINHAN) - 11, 12, 13, 14자리
-        rules.add(new DetectionRule(BankName.SHINHAN, Confidence.LOW, clean -> clean.length() == 11 && Set.of("01","09","61","04","05","06","08","02","07","03","99").contains(clean.substring(3, 5))));
-        rules.add(new DetectionRule(BankName.SHINHAN, Confidence.HIGH, clean -> {
-            if (clean.length() != 12 || clean.startsWith("1000")) return false;
-            int p3 = Integer.parseInt(clean.substring(0, 3));
-            return (p3 >= 100 && p3 <= 139) || (p3 >= 140 && p3 <= 161);
-        }));
+        // 12. 아이엠뱅크 (IM_BANK - 구 대구은행) - 031
+        rules.add(new InstitutionRule(BankName.IM_BANK, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("YY-ZZZZZZZZZZZ", "XXX-YY-ZZZZZZC", "YYY-ZZ-ZZZZZZC", "XXX-YY-ZZZZZZ-ZZZ"), YCodeSpec.of(
+                        List.of("01", "02", "04", "05", "06", "08", "13", "14", "19", "20", "21", "25", "27", "28", "96", "501", "502", "504", "505", "508", "519", "520", "521", "524", "525", "527", "528", "937"),
+                        List.of(new YCodeRange(91, 94))
+                ))
+        )));
 
-        rules.add(new DetectionRule(BankName.SHINHAN, Confidence.HIGH, clean -> clean.length() == 13 && (clean.startsWith("81") || clean.startsWith("82"))));
-        rules.add(new DetectionRule(BankName.SHINHAN, Confidence.HIGH, clean -> clean.length() == 14 && (clean.startsWith("560") || clean.startsWith("561") || clean.startsWith("562") || clean.startsWith("901"))));
+        // 13. 부산은행 (BUSAN) - 032
+        rules.add(new InstitutionRule(BankName.BUSAN, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("XXX-YYY-ZZZZZC", "ZYYY-ZZZ-ZZZZZZC"), YCodeSpec.of("101", "103", "107", "108", "109", "121", "122", "123", "124", "127", "716"))
+        )));
 
-        // 13. KB국민은행 (KB) - 10, 11, 12, 14자리
-        rules.add(new DetectionRule(BankName.KB, Confidence.HIGH, clean -> clean.length() == 10 && clean.startsWith("0")));
-        rules.add(new DetectionRule(BankName.KB, Confidence.HIGH, clean -> clean.length() == 11 && (clean.startsWith("0") || clean.startsWith("9"))));
-        rules.add(new DetectionRule(BankName.KB, Confidence.LOW, clean -> clean.length() == 12 && Set.of("01", "02", "03", "13", "07", "06", "04", "21", "24", "05", "25", "26", "18").contains(clean.substring(3, 5))));
-        rules.add(new DetectionRule(BankName.KB, Confidence.HIGH, clean -> clean.length() == 14 && (clean.substring(4, 6).equals("92") || clean.substring(0, 2).equals("92") || clean.substring(4, 6).equals("01") || clean.substring(4, 6).equals("02") || clean.substring(4, 6).equals("25") || clean.substring(4, 6).equals("37") || clean.substring(4, 6).equals("90"))));
+        // 14. 새마을금고 (MG_SAEMAEUL) - 045
+        rules.add(new InstitutionRule(BankName.MG_SAEMAEUL, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("XXXX-YY-ZZZZZZ-C"), YCodeSpec.of("09", "10", "13", "37")),
+                new PatternSpec(List.of("XXXX-YYY-ZZZZZZ-C"), YCodeSpec.of(List.of(), List.of(new YCodeRange(801, 810), new YCodeRange(851, 860)))),
+                new PatternSpec(List.of("9YYY-ZZZZ-ZZZZ-C"), YCodeSpec.of(
+                        List.of("002", "003", "004", "005", "072", "090", "091", "092", "093", "200", "202", "205", "212"),
+                        List.of(new YCodeRange(207, 210))
+                ), List.of(n -> n.startsWith("9")))
+        )));
 
-        // 14. NH농협은행 (NH) - 11, 12, 13, 14자리
-        rules.add(new DetectionRule(BankName.NH, Confidence.LOW, clean -> (clean.length() == 11 || clean.length() == 12) && Set.of("01","02","12","06","05","17").contains(clean.substring(3, 5))));
-        rules.add(new DetectionRule(BankName.NH, Confidence.HIGH, clean -> clean.length() == 13 && Set.of("301", "302", "312", "306", "305", "317", "351", "352", "356", "355").contains(clean.substring(0, 3))));
-        rules.add(new DetectionRule(BankName.NH, Confidence.HIGH, clean -> clean.length() == 14 && (clean.startsWith("790") || clean.startsWith("791") || clean.startsWith("792") || clean.startsWith("64") || clean.startsWith("65") || clean.startsWith("51") || clean.startsWith("52") || clean.startsWith("56") || clean.startsWith("55") || clean.startsWith("66") || clean.startsWith("67"))));
+        // 15. 수협은행 (SUHYUP) - 007
+        rules.add(new InstitutionRule(BankName.SUHYUP, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("XXX-YY-ZZZZZ-C"), YCodeSpec.of("01", "02", "06", "08")),
+                new PatternSpec(List.of("YYYZ-ZZZZ-ZZZC"), YCodeSpec.of("101", "102", "103", "106", "108", "113", "114", "201", "202", "206", "208", "209"), List.of(n -> n.startsWith("0") && n.length() == 12)),
+                new PatternSpec(List.of("XXX-YY-ZZZZZZZZ-C"), YCodeSpec.of("40"))
+        )));
 
-        // 15. 하나은행 (HANA) - 11, 12, 14자리
-        rules.add(new DetectionRule(BankName.HANA, Confidence.HIGH, clean -> clean.length() == 12 && Set.of("611", "620", "600", "601", "630", "621", "631", "610").contains(clean.substring(0, 3))));
-        rules.add(new DetectionRule(BankName.HANA, Confidence.LOW, clean -> clean.length() == 11 && Set.of("13", "33", "18", "38", "19", "39", "26", "11", "22").contains(clean.substring(3, 5))));
-        rules.add(new DetectionRule(BankName.HANA, Confidence.LOW, clean -> clean.length() == 14));
+        // 16. KDB산업은행 (KDB) - 002
+        rules.add(new InstitutionRule(BankName.KDB, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("XXX-YY-ZZZZZC"), YCodeSpec.of("11", "13", "19", "20", "22")),
+                new PatternSpec(List.of("YYY-ZZZZZZZC-XXX"), YCodeSpec.of("011", "013", "019", "020", "022"))
+        )));
 
-        // 16. 새마을금고 (MG_SAEMAEUL) - 13자리
-        rules.add(new DetectionRule(BankName.MG_SAEMAEUL, Confidence.HIGH, clean -> clean.length() == 13 && (clean.startsWith("9") || clean.startsWith("09") || (clean.startsWith("10") && !clean.startsWith("100")) || clean.startsWith("13") || clean.startsWith("002") || clean.startsWith("003") || clean.startsWith("004") || clean.startsWith("005"))));
+        // --- 6개 보존 은행 (우체국, 신협, 광주, 전북, 경남, 제주) ---
 
+        // 17. 우체국 (POST_OFFICE) - 071
+        rules.add(new InstitutionRule(BankName.POST_OFFICE, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("YYY-ZZ-ZZZZZZC", "YYY-ZZZZZZZZC"), YCodeSpec.of("100", "110", "120", "190", "530")),
+                new PatternSpec(List.of("YYY-ZZZZ-ZZZZZ"), YCodeSpec.of("8", "9"), List.of(n -> n.length() == 13 && (n.startsWith("8") || n.startsWith("9"))))
+        )));
 
-        // 17. 수협은행 (SUHYUP) - 11, 12, 14자리
-        rules.add(new DetectionRule(BankName.SUHYUP, Confidence.HIGH, clean -> clean.length() == 11 && !Set.of("43", "44", "45", "47", "49", "59", "61", "62", "63", "64", "66", "67", "68", "74", "75", "78", "81", "82", "83", "84", "85", "93").contains(clean.substring(3, 5))));
-        rules.add(new DetectionRule(BankName.SUHYUP, Confidence.LOW, clean -> clean.length() == 12 || clean.length() == 14));
+        // 18. 신협 (SHINHYUP) - 048
+        rules.add(new InstitutionRule(BankName.SHINHYUP, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("XXX-YYY-ZZZZZZC"), YCodeSpec.of("12", "13", "131", "132", "135", "137"))
+        )));
 
+        // 19. 광주은행 (GWANGJU) - 034
+        rules.add(new InstitutionRule(BankName.GWANGJU, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("YYY-ZZ-ZZZZZZC", "YYY-ZZZ-ZZZZZZC"), YCodeSpec.of("101", "103", "107", "108", "109", "121", "122", "123", "124", "127"))
+        )));
 
-        // 18. 부산은행 (BUSAN) - 12, 13자리
-        rules.add(new DetectionRule(BankName.BUSAN, Confidence.LOW, clean -> clean.length() == 12 && Set.of("01","02","12","03","09","13").contains(clean.substring(3, 5))));
-        rules.add(new DetectionRule(BankName.BUSAN, Confidence.HIGH, clean -> clean.length() == 13 && (clean.startsWith("101") || clean.startsWith("102") || clean.startsWith("112") || clean.startsWith("103") || clean.startsWith("109") || clean.startsWith("113"))));
+        // 20. 전북은행 (JEONBUK) - 037
+        rules.add(new InstitutionRule(BankName.JEONBUK, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("XXX-YY-ZZZZZZC", "YYY-ZZ-ZZZZZZZC"), YCodeSpec.of("01", "02", "03", "11", "12", "13", "15", "21", "22", "23", "35", "36", "37", "011", "012", "013", "021", "023", "501", "502", "513", "522", "538"))
+        )));
 
-        // 19. 경남은행 (GYEONGNAM) - 12, 13자리
-        rules.add(new DetectionRule(BankName.GYEONGNAM, Confidence.LOW, clean -> clean.length() == 12 && Set.of("07","09","21","22","03","01","35").contains(clean.substring(3, 5))));
-        rules.add(new DetectionRule(BankName.GYEONGNAM, Confidence.HIGH, clean -> clean.length() == 13 && (clean.startsWith("207") || clean.startsWith("209") || clean.startsWith("221") || clean.startsWith("222") || clean.startsWith("203") || clean.startsWith("201") || clean.startsWith("235"))));
+        // 21. 경남은행 (GYEONGNAM) - 039
+        rules.add(new InstitutionRule(BankName.GYEONGNAM, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("XXX-YY-ZZZZZZC", "YYY-ZZ-ZZZZZZZC"), YCodeSpec.of("01", "03", "07", "09", "21", "22", "35", "201", "203", "207", "209", "221", "222", "235"))
+        )));
 
-        // 20. 신협 (SHINHYUP) - 10, 11, 12, 13, 14자리
-        rules.add(new DetectionRule(BankName.SHINHYUP, Confidence.LOW, clean -> clean.length() == 10 || clean.length() == 11 || clean.length() == 12 || clean.length() == 14));
-        rules.add(new DetectionRule(BankName.SHINHYUP, Confidence.HIGH, clean -> clean.length() == 13 && (clean.startsWith("131") || clean.startsWith("132") || clean.startsWith("135") || clean.startsWith("137") || clean.startsWith("12") || clean.startsWith("13"))));
-
-        // 21. 전북은행 (JEONBUK) - 12, 13자리
-        rules.add(new DetectionRule(BankName.JEONBUK, Confidence.LOW, clean -> clean.length() == 12 && Set.of("02","13","15","21","22","35","37","03","12","01","11","23","36").contains(clean.substring(3, 5))));
-        rules.add(new DetectionRule(BankName.JEONBUK, Confidence.HIGH, clean -> clean.length() == 13 && (clean.startsWith("501") || clean.startsWith("502") || clean.startsWith("513") || clean.startsWith("522") || clean.startsWith("538") || clean.startsWith("013") || clean.startsWith("021") || clean.startsWith("012") || clean.startsWith("011") || clean.startsWith("023"))));
-
-        // 22. 제주은행 (JEJU) - 10, 12자리
-        rules.add(new DetectionRule(BankName.JEJU, Confidence.LOW, clean -> clean.length() == 10));
-        rules.add(new DetectionRule(BankName.JEJU, Confidence.HIGH, clean -> clean.length() == 12 && (clean.startsWith("010") || clean.startsWith("020") || clean.startsWith("030") || clean.startsWith("040") || clean.startsWith("050") || clean.startsWith("700") || clean.startsWith("770") || clean.startsWith("769") || clean.startsWith("711") || clean.startsWith("712") || clean.startsWith("713") || clean.startsWith("714") || clean.startsWith("707"))));
-
+        // 22. 제주은행 (JEJU) - 035
+        rules.add(new InstitutionRule(BankName.JEJU, Confidence.HIGH, List.of(
+                new PatternSpec(List.of("YYY-ZZ-ZZZZZZC", "YYY-ZZ-ZZZZZC"), YCodeSpec.of("010", "020", "030", "040", "050", "700", "707", "711", "712", "713", "714", "769", "770"))
+        )));
 
         return rules;
     }
 }
-
-
-
