@@ -1,5 +1,6 @@
 package com.example.toget.domain.gift.service;
 
+import com.example.toget.domain.gift.enums.CategoryType;
 import com.example.toget.domain.gift.enums.ProductSort;
 import com.example.toget.domain.gift.dto.request.ProductCreateRequest;
 import com.example.toget.domain.gift.dto.request.ProductUpdateRequest;
@@ -17,8 +18,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -34,7 +33,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,7 +51,7 @@ public class ProductServiceTest {
         // given
         ProductCreateRequest request = new ProductCreateRequest(
                 "애플 워치 SE 2세대", 329000L, "스마트 워치", "https://example.com/image.jpg",
-                "https://example.com/shop/1", "전자기기", "Apple"
+                "https://example.com/shop/1", List.of(CategoryType.BIRTHDAY, CategoryType.GRADUATION), "Apple"
         );
 
         Product savedProduct = Product.builder()
@@ -62,9 +60,9 @@ public class ProductServiceTest {
                 .description(request.description())
                 .imageUrl(request.imageUrl())
                 .purchaseUrl(request.purchaseUrl())
-                .category(request.category())
                 .brand(request.brand())
                 .build();
+        savedProduct.updateCategories(request.categoryTypes());
         ReflectionTestUtils.setField(savedProduct, "id", 1L);
 
         given(productRepository.save(any(Product.class))).willReturn(savedProduct);
@@ -88,9 +86,9 @@ public class ProductServiceTest {
                 .description("스마트 워치")
                 .imageUrl("https://example.com/image.jpg")
                 .purchaseUrl("https://example.com/shop/1")
-                .category("전자기기")
                 .brand("Apple")
                 .build();
+        product.updateCategories(List.of(CategoryType.BIRTHDAY));
         ReflectionTestUtils.setField(product, "id", productId);
 
         given(productRepository.findByIdAndDeletedAtIsNull(productId)).willReturn(Optional.of(product));
@@ -103,6 +101,7 @@ public class ProductServiceTest {
         assertThat(response.name()).isEqualTo("애플 워치 SE 2세대");
         assertThat(response.price()).isEqualTo(329000L);
         assertThat(response.brand()).isEqualTo("Apple");
+        assertThat(response.categoryTypes()).containsExactly(CategoryType.BIRTHDAY);
     }
 
     @Test
@@ -127,18 +126,18 @@ public class ProductServiceTest {
                 .name("애플 워치 SE 2세대")
                 .price(329000L)
                 .purchaseUrl("https://example.com/shop/1")
-                .category("전자기기")
                 .brand("Apple")
                 .build();
+        product.updateCategories(List.of(CategoryType.BIRTHDAY));
         ReflectionTestUtils.setField(product, "id", 1L);
 
         Pageable pageable = PageRequest.of(0, 10, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id"));
         Slice<Product> slice = new SliceImpl<>(List.of(product), pageable, false);
 
-        given(productRepository.searchProducts(eq("전자기기"), eq("워치"), eq("Apple"), eq(100000L), eq(500000L), any(Pageable.class))).willReturn(slice);
+        given(productRepository.searchProducts(eq(CategoryType.BIRTHDAY), eq("워치"), eq("Apple"), eq(100000L), eq(500000L), any(Pageable.class))).willReturn(slice);
 
         // when
-        ProductListResponse response = productService.getProducts("전자기기", "워치", "Apple", 100000L, 500000L, 0, 10, ProductSort.LATEST);
+        ProductListResponse response = productService.getProducts("BIRTHDAY", "워치", "Apple", 100000L, 500000L, 0, 10, ProductSort.LATEST);
 
         // then
         assertThat(response.products()).hasSize(1);
@@ -146,6 +145,7 @@ public class ProductServiceTest {
         assertThat(response.pageSize()).isEqualTo(10);
         assertThat(response.hasNext()).isFalse();
         assertThat(response.products().get(0).name()).isEqualTo("애플 워치 SE 2세대");
+        assertThat(response.products().get(0).categoryTypes()).containsExactly(CategoryType.BIRTHDAY);
     }
 
     @Test
@@ -163,7 +163,6 @@ public class ProductServiceTest {
         productService.getProducts(null, null, null, null, null, 0, 10, ProductSort.WISHLIST_DESC);
 
         // then
-        // 정렬 프로퍼티명은 문자열이라 컴파일러가 검증해주지 않으므로 매핑 결과를 직접 확인한다
         Sort sort = captor.getValue().getSort();
         assertThat(sort).containsExactly(
                 Sort.Order.desc("wishlistCount"),
@@ -180,9 +179,9 @@ public class ProductServiceTest {
                 .name("애플 워치 SE 2세대")
                 .price(329000L)
                 .purchaseUrl("https://example.com/shop/1")
-                .category("전자기기")
                 .brand("Apple")
                 .build();
+        product.updateCategories(List.of(CategoryType.BIRTHDAY));
         ReflectionTestUtils.setField(product, "id", productId);
 
         given(productRepository.findByIdAndDeletedAtIsNull(productId)).willReturn(Optional.of(product));
@@ -190,7 +189,7 @@ public class ProductServiceTest {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "애플 워치 SE 2세대 (수정)", 359000L, "스마트 워치 신형",
                 "https://example.com/image2.jpg", "https://example.com/shop/1",
-                "전자기기", "Apple"
+                List.of(CategoryType.BIRTHDAY, CategoryType.HOUSEWARMING), "Apple"
         );
 
         // when
@@ -200,6 +199,7 @@ public class ProductServiceTest {
         assertThat(response.productId()).isEqualTo(productId);
         assertThat(response.name()).isEqualTo("애플 워치 SE 2세대 (수정)");
         assertThat(response.price()).isEqualTo(359000L);
+        assertThat(response.categoryTypes()).containsExactly(CategoryType.BIRTHDAY, CategoryType.HOUSEWARMING);
     }
 
     @Test
