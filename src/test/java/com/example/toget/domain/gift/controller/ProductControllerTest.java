@@ -31,10 +31,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = AdminProductController.class, excludeAutoConfiguration = DataWebAutoConfiguration.class)
+@WebMvcTest(controllers = ProductController.class, excludeAutoConfiguration = DataWebAutoConfiguration.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("AdminProductController 테스트")
-public class AdminProductControllerTest {
+@DisplayName("ProductController 테스트")
+public class ProductControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -52,7 +52,7 @@ public class AdminProductControllerTest {
     private ActiveUserReader activeUserReader;
 
     @Test
-    @DisplayName("[Admin] 상품 등록 성공 - 다중 카테고리 지정")
+    @DisplayName("[POST /api/v1/products] 상품 등록 성공 - 다중 카테고리 지정")
     public void createProduct_success() throws Exception {
         // given
         ProductCreateRequest request = new ProductCreateRequest(
@@ -64,7 +64,7 @@ public class AdminProductControllerTest {
                 .willReturn(new ProductCreateResponse(1L));
 
         // when & then
-        mockMvc.perform(post("/api/v1/admin/products")
+        mockMvc.perform(post("/api/v1/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -73,7 +73,7 @@ public class AdminProductControllerTest {
     }
 
     @Test
-    @DisplayName("[Admin] 상품 등록 실패 - 카테고리 미지정 (빈 리스트)")
+    @DisplayName("[POST /api/v1/products] 상품 등록 실패 - 카테고리 미지정 (빈 리스트)")
     public void createProduct_fail_emptyCategory() throws Exception {
         // given
         ProductCreateRequest request = new ProductCreateRequest(
@@ -82,14 +82,14 @@ public class AdminProductControllerTest {
         );
 
         // when & then
-        mockMvc.perform(post("/api/v1/admin/products")
+        mockMvc.perform(post("/api/v1/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("[Admin] 상품 수정 성공 - 다중 카테고리 수정")
+    @DisplayName("[PUT /api/v1/products/{productId}] 상품 수정 성공 - 다중 카테고리 수정")
     public void updateProduct_success() throws Exception {
         // given
         Long productId = 1L;
@@ -108,7 +108,7 @@ public class AdminProductControllerTest {
                 .willReturn(response);
 
         // when & then
-        mockMvc.perform(put("/api/v1/admin/products/{productId}", productId)
+        mockMvc.perform(put("/api/v1/products/{productId}", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
