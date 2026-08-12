@@ -11,6 +11,9 @@ public record InvitationBackgroundResponse(
         String name,
 
         @Schema(description = "배경 색상 HEX 코드", example = "#FFFFE0")
-        String hexCode
+        String hexCode,
+
+        @Schema(description = "원색 HEX 코드", example = "#FFD700")
+        String solidColorHex
 ) {
 }
