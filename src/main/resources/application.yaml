@@ -61,14 +61,15 @@ oauth:
     app-id: ${KAKAO_APP_ID:} # access token의 발급 앱(app_id) 검증용 — 미설정 시 카카오 로그인 불가
 
 image-search:
-  google:
-    # 구글 Custom Search JSON API — 웹 사진 검색 프록시(/api/v1/images/search)에서 사용
-    uri: ${IMAGE_SEARCH_URI:https://www.googleapis.com/customsearch/v1}
+  pexels:
+    # Pexels API — 웹 사진 검색 프록시(/api/v1/images/search)에서 사용.
+    # 구글 Custom Search JSON API는 신규 고객에게 닫혀 있고(403 PERMISSION_DENIED)
+    # 2027-01-01에 종료되어 Pexels로 교체했다.
+    uri: ${PEXELS_API_URI:https://api.pexels.com/v1/search}
     # 키를 프론트에 노출하지 않기 위한 프록시이므로 서버 환경변수로만 관리한다.
     # 미설정 시 검색 API만 503(IMAGE503_1)으로 응답하고, 나머지 기능은 정상 동작한다.
-    api-key: ${IMAGE_SEARCH_API_KEY:}
-    cx: ${IMAGE_SEARCH_CX:} # Programmable Search Engine ID ("이미지 검색" 옵션 ON 필요)
-    safe: ${IMAGE_SEARCH_SAFE:active} # 성인 콘텐츠 필터 (active | off)
+    api-key: ${PEXELS_API_KEY:}
+    locale: ${PEXELS_LOCALE:ko-KR} # 한글 검색어 정확도용 (Pexels 지원 로케일)
 
 cloud:
   aws:
