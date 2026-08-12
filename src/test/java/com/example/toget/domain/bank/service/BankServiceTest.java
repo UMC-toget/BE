@@ -1,5 +1,7 @@
 package com.example.toget.domain.bank.service;
 
+import com.example.toget.domain.bank.dto.BankDetectionRequest;
+import com.example.toget.domain.bank.dto.BankDetectionResponse;
 import com.example.toget.domain.bank.dto.BankResponse;
 import com.example.toget.domain.bank.dto.BankUpdateRequest;
 import com.example.toget.domain.bank.entity.Bank;
@@ -61,6 +63,24 @@ class BankServiceTest {
             assertThat(responses.get(0).code()).isEqualTo(BankName.KAKAO_BANK);
             assertThat(responses.get(0).displayName()).isEqualTo("카카오뱅크");
             assertThat(responses.get(0).iconUrl()).isEqualTo("https://cdn.toget.com/bank-icons/v1/KAKAO_BANK.svg");
+        }
+    }
+
+    @Nested
+    @DisplayName("계좌번호 기반 은행 추론")
+    class DetectBank {
+
+        @Test
+        @DisplayName("계좌번호 입력 시 추론된 은행들의 DTO 목록을 반환한다")
+        void returnsDetectedBankResponses() {
+            given(bankRepository.findAllByCodeIn(List.of(BankName.KAKAO_BANK)))
+                    .willReturn(List.of(kakaoBank()));
+
+            List<BankDetectionResponse> responses = bankService.detectBank(new BankDetectionRequest("3333011234567"));
+
+            assertThat(responses).hasSize(1);
+            assertThat(responses.get(0).bankName()).isEqualTo(BankName.KAKAO_BANK);
+            assertThat(responses.get(0).displayName()).isEqualTo("카카오뱅크");
         }
     }
 
