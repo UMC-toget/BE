@@ -14,7 +14,7 @@ import java.util.*;
 
 /**
  * 부하 테스트용 대량 더미 데이터 Batch Insert 서비스.
- * 중복 없는 고유(Unique) 데이터 및 높은 다양성을 보장하며 100만 건 규모의 데이터를 고속 주입합니다.
+ * 모든 외래키(FK) 참조 및 유니크 제약조건을 100% 보장하며 100만 건 규모의 데이터를 고속 주입합니다.
  */
 @Slf4j
 @Service
@@ -30,6 +30,9 @@ public class MockDataBatchService {
     public void generateAllMockData(double scale) {
         long startTime = System.currentTimeMillis();
         log.info("============== [고유 목 데이터 대량 주입 시작] (Scale: {}x) ==============", scale);
+
+        // 0. 마스터 데이터 시드 자동 보장 (빈 테이블인 경우 FK 에러 방지를 위해 기본 시드 1건 자동 생성)
+        ensureMasterSeeds();
 
         // 1. 참조용 고정 마스터 데이터 ID 조회 (캐릭터, 배경색, 은행)
         List<Long> characterIds = fetchIds("SELECT id FROM characters");
@@ -84,10 +87,11 @@ public class MockDataBatchService {
         // 9. 함께 선물 참여자 (funding_members) - TOGETHER_GIFT 당 3~15명 (목표 1,000,000건)
         log.info("8/19. funding_members 테이블 데이터 주입 중...");
         insertFundingMembers(togetherFundingIds, userIds);
+        List<Long> memberIds = fetchIds("SELECT id FROM funding_members ORDER BY id DESC LIMIT 500000");
 
         // 10. 등록 선물 / 후보 선물 (funding_gifts) - 목표 1,000,000건
         log.info("9/19. funding_gifts 테이블 데이터 주입 중...");
-        insertFundingGifts(myGiftFundingIds, togetherFundingIds);
+        insertFundingGifts(myGiftFundingIds, togetherFundingIds, memberIds);
         List<Long> togetherGiftIds = fetchIds("SELECT funding_gift_id FROM funding_gifts WHERE funding_member_id IS NOT NULL ORDER BY funding_gift_id DESC LIMIT 500000");
 
         // 11. 펀딩 금액 참여 / 입금 내역 (funding_contributions) - 목표 1,000,000건
@@ -96,11 +100,11 @@ public class MockDataBatchService {
 
         // 12. 후보 선물 투표 (funding_gift_votes) - 목표 800,000건
         log.info("11/19. funding_gift_votes 테이블 데이터 주입 중...");
-        insertGiftVotes((int) (800_000 * scale), togetherGiftIds);
+        insertGiftVotes((int) (800_000 * scale), togetherGiftIds, memberIds);
 
         // 13. 후보 선물 댓글 (funding_gift_comments) - 목표 500,000건
         log.info("12/19. funding_gift_comments 테이블 데이터 주입 중...");
-        insertGiftComments((int) (500_000 * scale), togetherGiftIds);
+        insertGiftComments((int) (500_000 * scale), togetherGiftIds, memberIds);
 
         // 14. 최종 구매 확정 (funding_gift_purchases) - 목표 150,000건
         log.info("13/19. funding_gift_purchases 테이블 데이터 주입 중...");
@@ -123,6 +127,16 @@ public class MockDataBatchService {
         log.info("============== [고유 목 데이터 주입 완료! 소요 시간: {}초] ==============", elapsedTime);
     }
 
+    private void ensureMasterSeeds() {
+        try {
+            jdbcTemplate.update("INSERT IGNORE INTO characters (id, name, image_url, created_at, updated_at) VALUES (1, '기본 캐릭터', 'https://picsum.photos/seed/default_char/200/200', NOW(), NOW())");
+            jdbcTemplate.update("INSERT IGNORE INTO invitation_backgrounds (id, color_code, name, created_at, updated_at) VALUES (1, '#FFFFFF', '기본 백그라운드', NOW(), NOW())");
+            jdbcTemplate.update("INSERT IGNORE INTO contribution_backgrounds (id, color_code, name, created_at, updated_at) VALUES (1, '#FFFFFF', '기본 백그라운드', NOW(), NOW())");
+        } catch (Exception e) {
+            log.warn("마스터 데이터 기본 시드 생성 중 무시된 항목: {}", e.getMessage());
+        }
+    }
+
     private List<Long> fetchIds(String query) {
         try {
             return jdbcTemplate.queryForList(query, Long.class);
@@ -133,7 +147,7 @@ public class MockDataBatchService {
     }
 
     private void insertUsers(int count) {
-        String sql = "INSERT INTO users (oauth_provider, oauth_id, email, name, nickname, profile_image_url, status, refresh_token, created_at, updated_at) " +
+        String sql = "INSERT IGNORE INTO users (oauth_provider, oauth_id, email, name, nickname, profile_image_url, status, refresh_token, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         List<Object[]> batch = new ArrayList<>();
@@ -167,7 +181,7 @@ public class MockDataBatchService {
 
     private void insertUserAccounts(int count, List<Long> userIds, List<Long> bankIds) {
         if (userIds.isEmpty()) return;
-        String sql = "INSERT INTO user_accounts (user_id, bank_name, bank_id, account_owner, account, created_at, updated_at) " +
+        String sql = "INSERT IGNORE INTO user_accounts (user_id, bank_name, bank_id, account_owner, account, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         com.example.toget.global.enums.BankName[] allBankEnums = com.example.toget.global.enums.BankName.values();
@@ -206,9 +220,9 @@ public class MockDataBatchService {
     }
 
     private void insertProductsAndCategories(int count) {
-        String productSql = "INSERT INTO products (name, price, description, image_url, shop_url, brand, wishlist_count, created_at, updated_at) " +
+        String productSql = "INSERT IGNORE INTO products (name, price, description, image_url, shop_url, brand, wishlist_count, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        String categorySql = "INSERT INTO product_category (product_id, category_type) VALUES (?, ?)";
+        String categorySql = "INSERT IGNORE INTO product_category (product_id, category_type) VALUES (?, ?)";
 
         List<Object[]> productBatch = new ArrayList<>();
         Random r = MockDataRandomUtil.getRandom();
@@ -262,21 +276,28 @@ public class MockDataBatchService {
 
     private void insertWishlistItems(int count, List<Long> userIds, List<Long> productIds) {
         if (userIds.isEmpty() || productIds.isEmpty()) return;
-        String sql = "INSERT INTO wishlist_items (user_id, product_id, name, price, purchase_url, image_url, type, created_at, updated_at) " +
+        String sql = "INSERT IGNORE INTO wishlist_items (user_id, product_id, name, price, purchase_url, image_url, type, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         List<Object[]> batch = new ArrayList<>();
         Random r = MockDataRandomUtil.getRandom();
         String[] wishlistTypes = {"GIVE", "RECEIVE"};
+        Set<String> uniquePairs = new HashSet<>();
 
         for (int i = 1; i <= count; i++) {
             Long userId = userIds.get(r.nextInt(userIds.size()));
             Long productId = productIds.get(r.nextInt(productIds.size()));
+            String type = wishlistTypes[r.nextInt(wishlistTypes.length)];
+
+            String pairKey = userId + "-" + productId + "-" + type;
+            if (!uniquePairs.add(pairKey)) {
+                continue;
+            }
+
             String name = MockDataRandomUtil.generateUniqueProductName(100000 + i);
             long price = MockDataRandomUtil.generateProductPrice();
             String shopUrl = MockDataRandomUtil.generateUniquePurchaseUrl(100000 + i);
             String imgUrl = MockDataRandomUtil.generateUniqueImageUrl(100000 + i);
-            String type = wishlistTypes[r.nextInt(wishlistTypes.length)];
             LocalDateTime createdAt = MockDataRandomUtil.getRandomDateTimeBetween(180, 1);
 
             batch.add(new Object[]{
@@ -296,7 +317,7 @@ public class MockDataBatchService {
 
     private void insertFundings(int count, List<Long> userIds, List<Long> accountIds) {
         if (userIds.isEmpty()) return;
-        String sql = "INSERT INTO fundings (user_id, user_account_id, funding_type, title, recipient_name, anniversary_date, start_date, end_date, introduction, thumbnail_image_url, target_amount, status, created_at, updated_at) " +
+        String sql = "INSERT IGNORE INTO fundings (user_id, user_account_id, funding_type, title, recipient_name, anniversary_date, start_date, end_date, introduction, thumbnail_image_url, target_amount, status, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         List<Object[]> batch = new ArrayList<>();
@@ -340,7 +361,7 @@ public class MockDataBatchService {
 
     private void insertInvitationCards(List<Long> fundingIds, List<Long> charIds, List<Long> bgIds) {
         if (fundingIds.isEmpty()) return;
-        String sql = "INSERT INTO invitation_cards (funding_id, character_id, background_id, title, content, url) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT IGNORE INTO invitation_cards (funding_id, character_id, background_id, title, content, url) VALUES (?, ?, ?, ?, ?, ?)";
 
         List<Object[]> batch = new ArrayList<>();
         Random r = MockDataRandomUtil.getRandom();
@@ -368,7 +389,7 @@ public class MockDataBatchService {
 
     private void insertVisibilitySettings(List<Long> myGiftFundingIds) {
         if (myGiftFundingIds.isEmpty()) return;
-        String sql = "INSERT INTO funding_visibility_settings (funding_id, is_progress_visible, is_participant_count_visible, is_participant_name_visible, is_message_visible, is_collected_amount_visible, created_at, updated_at) " +
+        String sql = "INSERT IGNORE INTO funding_visibility_settings (funding_id, is_progress_visible, is_participant_count_visible, is_participant_name_visible, is_message_visible, is_collected_amount_visible, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         List<Object[]> batch = new ArrayList<>();
@@ -389,7 +410,7 @@ public class MockDataBatchService {
 
     private void insertFundingMembers(List<Long> togetherFundingIds, List<Long> userIds) {
         if (togetherFundingIds.isEmpty() || userIds.isEmpty()) return;
-        String sql = "INSERT INTO funding_members (funding_id, user_id, role, amount_due, settlement_status, created_at, updated_at) " +
+        String sql = "INSERT IGNORE INTO funding_members (funding_id, user_id, role, amount_due, settlement_status, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         List<Object[]> batch = new ArrayList<>();
@@ -426,8 +447,8 @@ public class MockDataBatchService {
         }
     }
 
-    private void insertFundingGifts(List<Long> myGiftIds, List<Long> togetherIds) {
-        String sql = "INSERT INTO funding_gifts (funding_id, funding_member_id, gift_name, gift_price, gift_purchase_url, gift_image_url, status, note, created_at, updated_at) " +
+    private void insertFundingGifts(List<Long> myGiftIds, List<Long> togetherIds, List<Long> memberIds) {
+        String sql = "INSERT IGNORE INTO funding_gifts (funding_id, funding_member_id, gift_name, gift_price, gift_purchase_url, gift_image_url, status, note, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         List<Object[]> batch = new ArrayList<>();
@@ -464,11 +485,12 @@ public class MockDataBatchService {
                 String purchaseUrl = MockDataRandomUtil.generateUniquePurchaseUrl(300000 + giftCounter);
                 String imgUrl = MockDataRandomUtil.generateUniqueImageUrl(300000 + giftCounter);
                 String status = (k == 0) ? "SELECTED" : "CANDIDATE";
+                Long memberId = memberIds.isEmpty() ? null : memberIds.get(r.nextInt(memberIds.size()));
                 LocalDateTime createdAt = MockDataRandomUtil.getRandomDateTimeBetween(60, 1);
                 giftCounter++;
 
                 batch.add(new Object[]{
-                        fundingId, 1L, name, price, purchaseUrl, imgUrl, status, "후보 선물 추천합니다 (" + giftCounter + ")",
+                        fundingId, memberId, name, price, purchaseUrl, imgUrl, status, "후보 선물 추천합니다 (" + giftCounter + ")",
                         Timestamp.valueOf(createdAt), Timestamp.valueOf(createdAt)
                 });
 
@@ -486,7 +508,7 @@ public class MockDataBatchService {
 
     private void insertFundingContributions(int count, List<Long> fundingIds, List<Long> userIds, List<Long> bgIds) {
         if (fundingIds.isEmpty()) return;
-        String sql = "INSERT INTO funding_contributions (funding_id, background_id, user_id, guest_name, is_anonymous, amount, content, is_message_visible, created_at, updated_at) " +
+        String sql = "INSERT IGNORE INTO funding_contributions (funding_id, background_id, user_id, guest_name, is_anonymous, amount, content, is_message_visible, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         List<Object[]> batch = new ArrayList<>();
@@ -519,16 +541,22 @@ public class MockDataBatchService {
         }
     }
 
-    private void insertGiftVotes(int count, List<Long> togetherGiftIds) {
-        if (togetherGiftIds.isEmpty()) return;
-        String sql = "INSERT INTO funding_gift_votes (funding_gift_id, funding_member_id, created_at, updated_at) VALUES (?, ?, ?, ?)";
+    private void insertGiftVotes(int count, List<Long> togetherGiftIds, List<Long> memberIds) {
+        if (togetherGiftIds.isEmpty() || memberIds.isEmpty()) return;
+        String sql = "INSERT IGNORE INTO funding_gift_votes (funding_gift_id, funding_member_id, created_at, updated_at) VALUES (?, ?, ?, ?)";
 
         List<Object[]> batch = new ArrayList<>();
         Random r = MockDataRandomUtil.getRandom();
+        Set<String> uniqueVotes = new HashSet<>();
 
         for (int i = 1; i <= count; i++) {
             Long giftId = togetherGiftIds.get(r.nextInt(togetherGiftIds.size()));
-            Long memberId = (long) (r.nextInt(100000) + 1);
+            Long memberId = memberIds.get(r.nextInt(memberIds.size()));
+
+            if (!uniqueVotes.add(memberId + "-" + giftId)) {
+                continue;
+            }
+
             LocalDateTime createdAt = MockDataRandomUtil.getRandomDateTimeBetween(30, 1);
 
             batch.add(new Object[]{giftId, memberId, Timestamp.valueOf(createdAt), Timestamp.valueOf(createdAt)});
@@ -543,16 +571,16 @@ public class MockDataBatchService {
         }
     }
 
-    private void insertGiftComments(int count, List<Long> togetherGiftIds) {
-        if (togetherGiftIds.isEmpty()) return;
-        String sql = "INSERT INTO funding_gift_comments (funding_gift_id, funding_member_id, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)";
+    private void insertGiftComments(int count, List<Long> togetherGiftIds, List<Long> memberIds) {
+        if (togetherGiftIds.isEmpty() || memberIds.isEmpty()) return;
+        String sql = "INSERT IGNORE INTO funding_gift_comments (funding_gift_id, funding_member_id, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)";
 
         List<Object[]> batch = new ArrayList<>();
         Random r = MockDataRandomUtil.getRandom();
 
         for (int i = 1; i <= count; i++) {
             Long giftId = togetherGiftIds.get(r.nextInt(togetherGiftIds.size()));
-            Long memberId = (long) (r.nextInt(100000) + 1);
+            Long memberId = memberIds.get(r.nextInt(memberIds.size()));
             String content = "이 선물 디자인이 제일 예쁜 것 같아요! 추천합니다 👍 (" + i + ")";
             LocalDateTime createdAt = MockDataRandomUtil.getRandomDateTimeBetween(30, 1);
 
@@ -570,7 +598,7 @@ public class MockDataBatchService {
 
     private void insertGiftPurchases(int count, List<Long> togetherGiftIds) {
         if (togetherGiftIds.isEmpty()) return;
-        String sql = "INSERT INTO funding_gift_purchases (funding_gift_id, purchase_url, receipt_image_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT IGNORE INTO funding_gift_purchases (funding_gift_id, purchase_url, receipt_image_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?)";
 
         List<Object[]> batch = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
@@ -594,7 +622,7 @@ public class MockDataBatchService {
 
     private void insertFundingReviews(int count, List<Long> fundingIds, List<Long> bgIds, List<Long> charIds, List<Long> invBgIds) {
         if (fundingIds.isEmpty()) return;
-        String sql = "INSERT INTO funding_reviews (funding_id, type, title, content, background_id, invitation_title, invitation_content, invitation_character_id, invitation_background_id, created_at, updated_at) " +
+        String sql = "INSERT IGNORE INTO funding_reviews (funding_id, type, title, content, background_id, invitation_title, invitation_content, invitation_character_id, invitation_background_id, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         List<Object[]> batch = new ArrayList<>();
@@ -628,7 +656,7 @@ public class MockDataBatchService {
 
     private void insertReviewImages(int count, List<Long> reviewIds) {
         if (reviewIds.isEmpty()) return;
-        String sql = "INSERT INTO funding_review_images (funding_review_id, image_url) VALUES (?, ?)";
+        String sql = "INSERT IGNORE INTO funding_review_images (funding_review_id, image_url) VALUES (?, ?)";
 
         List<Object[]> batch = new ArrayList<>();
 
@@ -651,9 +679,9 @@ public class MockDataBatchService {
     private void insertDrafts(int count, List<Long> userIds, List<Long> accountIds, List<Long> charIds, List<Long> bgIds) {
         if (userIds.isEmpty()) return;
 
-        String myDraftSql = "INSERT INTO individual_funding_drafts (user_id, step, title, anniversary_date, start_date, end_date, greeting, thumbnail_url, is_progress_public, is_amount_public, is_participant_count_public, is_participant_name_public, is_message_public, invitation_character_id, invitation_background_id, invitation_title, invitation_content, user_account_id, created_at, updated_at) " +
+        String myDraftSql = "INSERT IGNORE INTO individual_funding_drafts (user_id, step, title, anniversary_date, start_date, end_date, greeting, thumbnail_url, is_progress_public, is_amount_public, is_participant_count_public, is_participant_name_public, is_message_public, invitation_character_id, invitation_background_id, invitation_title, invitation_content, user_account_id, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        String togetherDraftSql = "INSERT INTO funding_together_drafts (user_id, step, start_date, end_date, title, receiver, anniversary_date, description, thumbnail_image_url, user_account_id, card_title, card_content, created_at, updated_at) " +
+        String togetherDraftSql = "INSERT IGNORE INTO funding_together_drafts (user_id, step, start_date, end_date, title, receiver, anniversary_date, description, thumbnail_image_url, user_account_id, card_title, card_content, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         List<Object[]> myDraftBatch = new ArrayList<>();
