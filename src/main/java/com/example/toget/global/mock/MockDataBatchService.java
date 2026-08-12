@@ -170,13 +170,14 @@ public class MockDataBatchService {
         String sql = "INSERT INTO user_accounts (user_id, bank_name, bank_id, account_owner, account, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        String[] bankNames = {"KAKAO_BANK", "TOSS_BANK", "SHINHAN_BANK", "KB_BANK", "WOORI_BANK", "NH_BANK"};
+        com.example.toget.global.enums.BankName[] allBankEnums = com.example.toget.global.enums.BankName.values();
         List<Object[]> batch = new ArrayList<>();
         Random r = MockDataRandomUtil.getRandom();
 
         for (int i = 0; i < count; i++) {
             Long userId = userIds.get(i % userIds.size());
-            String bankName = bankNames[r.nextInt(bankNames.length)];
+            com.example.toget.global.enums.BankName bankEnum = allBankEnums[r.nextInt(allBankEnums.length)];
+            String bankName = bankEnum.name();
             Long bankId = bankIds.isEmpty() ? null : bankIds.get(r.nextInt(bankIds.size()));
             String owner = MockDataRandomUtil.generateName();
             String rawAccount = MockDataRandomUtil.generateUniqueAccountNo(i + 1, bankName);
@@ -211,7 +212,7 @@ public class MockDataBatchService {
 
         List<Object[]> productBatch = new ArrayList<>();
         Random r = MockDataRandomUtil.getRandom();
-        String[] categories = {"POPULAR", "BIRTHDAY", "GRADUATION", "HOUSEWARMING"};
+        String[] categories = {"BIRTHDAY", "GRADUATION", "HOUSEWARMING"};
 
         for (int i = 1; i <= count; i++) {
             String name = MockDataRandomUtil.generateUniqueProductName(i);
@@ -300,7 +301,7 @@ public class MockDataBatchService {
 
         List<Object[]> batch = new ArrayList<>();
         Random r = MockDataRandomUtil.getRandom();
-        String[] statuses = {"SELECTING", "SETTLING", "PURCHASING", "DELIVERING", "ENDED", "DELETED"};
+        String[] statuses = {"SELECTING", "SETTLING", "PURCHASING", "DELIVERING", "ENDED"};
 
         for (int i = 1; i <= count; i++) {
             Long userId = userIds.get(r.nextInt(userIds.size()));
