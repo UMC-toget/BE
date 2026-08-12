@@ -9,7 +9,8 @@ public class ContributionBackgroundConverter {
         return new ContributionBackgroundResponse(
                 background.getId(),
                 background.getName(),
-                background.getHexCode()
+                background.getHexCode(),
+                background.getSolidColorHex()
         );
     }
 }

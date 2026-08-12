@@ -37,7 +37,7 @@ import java.util.List;
          */
         @Transactional
         public ContributionBackgroundCreateResponse create(ContributionBackgroundRequest request) {
-            ContributionBackground background = ContributionBackground.create(request.name(), request.hexCode());
+            ContributionBackground background = ContributionBackground.create(request.name(), request.hexCode(), request.solidColorHex());
             ContributionBackground saved = contributionBackgroundRepository.save(background);
             return new ContributionBackgroundCreateResponse(saved.getId());
         }
@@ -49,7 +49,7 @@ import java.util.List;
         @Transactional
         public ContributionBackgroundResponse update(Long id, ContributionBackgroundRequest request) {
             ContributionBackground background = getBackgroundOrThrow(id);
-            background.update(request.name(), request.hexCode());
+            background.update(request.name(), request.hexCode(), request.solidColorHex());
             return ContributionBackgroundConverter.toResponse(background);
         }
 

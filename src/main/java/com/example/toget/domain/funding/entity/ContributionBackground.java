@@ -37,24 +37,30 @@ public class ContributionBackground extends BaseEntity {
     @Column(name = "hex_code", nullable = false, unique = true, length = 10)
     private String hexCode;
 
+    @Column(name = "solid_color_hex", nullable = false, unique = true, length = 10)
+    private String solidColorHex;
+
     @Builder
-    private ContributionBackground(String name, String hexCode) {
-        validate(name, hexCode);
+    private ContributionBackground(String name, String hexCode, String solidColorHex) {
+        validate(name, hexCode, solidColorHex);
         this.name = name;
         this.hexCode = hexCode;
+        this.solidColorHex = solidColorHex;
     }
 
-    public static ContributionBackground create(String name, String hexCode) {
+    public static ContributionBackground create(String name, String hexCode, String solidColorHex) {
         return ContributionBackground.builder()
                 .name(name)
                 .hexCode(hexCode)
+                .solidColorHex(solidColorHex)
                 .build();
     }
 
-    public void update(String name, String hexCode) {
-        validate(name, hexCode);
+    public void update(String name, String hexCode, String solidColorHex) {
+        validate(name, hexCode, solidColorHex);
         this.name = name;
         this.hexCode = hexCode;
+        this.solidColorHex = solidColorHex;
     }
 
     /** Soft delete — 삭제 시점을 기록한다. 실제 row는 남기고 FK 참조 무결성을 보존한다. */
@@ -66,11 +72,14 @@ public class ContributionBackground extends BaseEntity {
         return this.deletedAt != null;
     }
 
-    private static void validate(String name, String hexCode) {
+    private static void validate(String name, String hexCode, String solidColorHex) {
         if (name == null || name.isBlank()) {
             throw new ContributionException(ContributionErrorCode.INVALID_BACKGROUND_NAME);
         }
         if (hexCode == null || !hexCode.matches("^#[0-9A-Fa-f]{6}$")) {
+            throw new ContributionException(ContributionErrorCode.INVALID_HEX_CODE);
+        }
+        if (solidColorHex == null || !solidColorHex.matches("^#[0-9A-Fa-f]{6}$")) {
             throw new ContributionException(ContributionErrorCode.INVALID_HEX_CODE);
         }
     }
