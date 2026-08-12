@@ -11,7 +11,7 @@ public class InvitationBackgroundConverter {
     }
 
     public static InvitationBackgroundResponse toResponse(InvitationBackground background) {
-        return new InvitationBackgroundResponse(background.getId(), background.getName(), background.getHexCode());
+        return new InvitationBackgroundResponse(background.getId(), background.getName(), background.getHexCode(), background.getSolidColorHex());
     }
 
     public static InvitationBackgroundCreateResponse toCreateResponse(InvitationBackground background) {

@@ -18,6 +18,11 @@ public record InvitationBackgroundRequest(
         @Schema(description = "배경 색상 HEX 코드", example = "#FFFFE0")
         @NotBlank(message = "HEX 코드는 필수입니다.")
         @Pattern(regexp = "^#[0-9a-fA-F]{6}$", message = "HEX 코드는 #RRGGBB 형식의 7자리 문자열이어야 합니다.")
-        String hexCode
+        String hexCode,
+
+        @Schema(description = "원색 HEX 코드", example = "#FFD700")
+        @NotBlank(message = "원색 HEX 코드는 필수입니다.")
+        @Pattern(regexp = "^#[0-9a-fA-F]{6}$", message = "HEX 코드는 #RRGGBB 형식의 7자리 문자열이어야 합니다.")
+        String solidColorHex
 ) {
 }

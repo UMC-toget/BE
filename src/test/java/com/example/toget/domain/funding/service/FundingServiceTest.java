@@ -587,7 +587,7 @@ class FundingServiceTest {
         }
 
         private ContributionBackground background() {
-            ContributionBackground background = ContributionBackground.create("핑크", "#FFB6C1");
+            ContributionBackground background = ContributionBackground.create("핑크", "#FFB6C1", "#FF007F");
             ReflectionTestUtils.setField(background, "id", BACKGROUND_ID);
             return background;
         }
