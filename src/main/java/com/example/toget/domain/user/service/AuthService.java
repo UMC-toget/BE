@@ -90,15 +90,32 @@ public class AuthService {
     /**
      * Refresh Token Rotation — users.refresh_token에 저장된 jti와 대조한다.
      *
-     * [Rotation이란] 재발급할 때마다 refresh token도 새것으로 갈아끼우고 DB에는 최신 jti만 남긴다.
-     * 그래서 이미 교체된(=구버전) refresh token이 다시 들어오면 "누군가 훔쳐서 재사용 중"으로 판단할 수 있다.
-     * 재사용이 감지되면 저장된 refresh 토큰까지 무효화해 세션을 강제 만료시킨다.
-     *
-     * (noRollbackFor: 예외를 던지면 @Transactional이 기본적으로 롤백하는데,
-     *  그러면 방금 수행한 무효화(clearRefreshToken)까지 되돌아가 버리므로 UserException은 롤백 대상에서 제외)
+     * <p>[Rotation이란] 재발급할 때마다 refresh token도 새것으로 갈아끼우고 DB에는 최신 jti만 남긴다.
+     * 저장된 jti와 다른 refresh token은 이미 교체된 구버전이므로 재발급을 거부한다.
      * 만료 검증은 JWT exp 클레임(jwtProvider.parse)으로 수행한다.
+     *
+     * <p><b>[왜 불일치 시 세션을 통째로 지우지 않는가]</b>
+     * 예전에는 불일치를 "탈취 후 재사용"으로 보고 {@code clearRefreshToken()}으로 저장된 jti까지
+     * 지웠다. 하지만 jti를 하나만 보관하는 현재 구조에서는 <b>정상 사용자도 이 경로에 자주 걸린다.</b>
+     * <pre>
+     *   T0  폰에서 로그인            → DB jti = A
+     *   T1  PC에서 로그인            → DB jti = B  (폰은 여전히 A를 들고 있다)
+     *   T1+ 폰이 access token 만료로 재발급 시도(A 전송)
+     *       → A ≠ B 이므로 "재사용"으로 오판 → DB jti = null
+     *       → 멀쩡히 쓰고 있던 PC까지 다음 재발급에서 로그아웃
+     * </pre>
+     * access token 수명이 1시간이라 기기를 두 개만 써도 하루 안에 반드시 이 연쇄가 발생했다.
+     * 프론트는 재발급 실패 시 로컬 토큰까지 지우므로 복구도 불가능했다.
+     *
+     * <p>그래서 <b>구버전 토큰을 보낸 그 기기만 401로 끊고, 저장된 세션은 건드리지 않는다.</b>
+     * 실제 탈취 상황에서도 공격자는 이미 교체된 토큰으로는 재발급을 받지 못하므로
+     * fail-closed 원칙은 유지된다. 다만 "탈취 감지 시 전 세션 강제 만료"라는 방어는 포기한 것이라,
+     * 기기별 세션을 따로 관리하는 구조(refresh_tokens 테이블 분리)로 가면 그때 다시 도입할 수 있다.
+     *
+     * <p>(이전의 noRollbackFor 옵션은 무효화 결과를 커밋시키기 위한 것이었는데,
+     *  이제 예외 경로에서 엔티티를 변경하지 않으므로 롤백돼도 잃을 것이 없어 제거했다.)
      */
-    @Transactional(noRollbackFor = UserException.class)
+    @Transactional
     public TokenResponse refresh(String refreshTokenValue) {
         JwtClaims claims = jwtProvider.parse(refreshTokenValue, JwtProvider.TOKEN_TYPE_REFRESH);
         Long userId = jwtProvider.getUserId(claims);
@@ -110,8 +127,9 @@ public class AuthService {
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
 
+        // 구버전 토큰이면 이 요청만 거부한다. 저장된 jti는 그대로 두어
+        // 다른 기기/탭에서 쓰고 있는 정상 세션이 함께 끊기지 않게 한다.
         if (user.getRefreshToken() == null || !user.getRefreshToken().equals(claims.id())) {
-            user.clearRefreshToken(); // 재사용 감지 → 세션 강제 로그아웃
             throw new UserException(UserErrorCode.UNAUTHORIZED);
         }
 
