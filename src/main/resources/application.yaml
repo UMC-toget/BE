@@ -13,6 +13,13 @@ spring:
     url: ${DB_URL} # jdbc:mysql://localhost:3306/{데이터베이스명}
     username: ${DB_USER} # MySQL 유저 이름
     password: ${DB_PW} # MySQL 비밀번호
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      leak-detection-threshold: 2000 # 2초 이상 커넥션 미반납 시 누수 탐지 경고 출력
 
   jpa:
     database: mysql # 사용할 데이터베이스 유형 지정 (MySQL)
