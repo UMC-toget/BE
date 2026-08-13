@@ -14,7 +14,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("ContributionBackgroundRequest Bean Validation")
-public class ContributionBackgroundRequestValidationTest {
+class ContributionBackgroundRequestValidationTest {
 
     private static ValidatorFactory validatorFactory;
     private static Validator validator;
@@ -33,7 +33,7 @@ public class ContributionBackgroundRequestValidationTest {
     @Test
     @DisplayName("유효한 요청은 위반 사항이 없다")
     void valid_request() {
-        ContributionBackgroundRequest request = new ContributionBackgroundRequest("파스텔 핑크", "#FFB6C1", "#FF007F");
+        ContributionBackgroundRequest request = new ContributionBackgroundRequest("파스텔 핑크", "#FFB6C1");
 
         Set<ConstraintViolation<ContributionBackgroundRequest>> violations = validator.validate(request);
 
@@ -43,7 +43,7 @@ public class ContributionBackgroundRequestValidationTest {
     @Test
     @DisplayName("이름이 공백이면 위반된다")
     void blank_name() {
-        ContributionBackgroundRequest request = new ContributionBackgroundRequest("", "#FFB6C1", "#FF007F");
+        ContributionBackgroundRequest request = new ContributionBackgroundRequest("", "#FFB6C1");
 
         Set<ConstraintViolation<ContributionBackgroundRequest>> violations = validator.validate(request);
 
@@ -57,7 +57,7 @@ public class ContributionBackgroundRequestValidationTest {
     @DisplayName("이름이 50자를 초과하면 위반된다")
     void name_tooLong() {
         String longName = "가".repeat(51);
-        ContributionBackgroundRequest request = new ContributionBackgroundRequest(longName, "#FFB6C1", "#FF007F");
+        ContributionBackgroundRequest request = new ContributionBackgroundRequest(longName, "#FFB6C1");
 
         Set<ConstraintViolation<ContributionBackgroundRequest>> violations = validator.validate(request);
 
@@ -70,7 +70,7 @@ public class ContributionBackgroundRequestValidationTest {
     @DisplayName("이름이 정확히 50자면 위반되지 않는다 (경계값)")
     void name_exactlyMaxLength() {
         String name50 = "가".repeat(50);
-        ContributionBackgroundRequest request = new ContributionBackgroundRequest(name50, "#FFB6C1", "#FF007F");
+        ContributionBackgroundRequest request = new ContributionBackgroundRequest(name50, "#FFB6C1");
 
         Set<ConstraintViolation<ContributionBackgroundRequest>> violations = validator.validate(request);
 
@@ -80,24 +80,12 @@ public class ContributionBackgroundRequestValidationTest {
     @Test
     @DisplayName("HEX 코드 형식이 틀리면 위반된다")
     void invalid_hexCode() {
-        ContributionBackgroundRequest request = new ContributionBackgroundRequest("파스텔 핑크", "FFB6C1", "#FF007F");
+        ContributionBackgroundRequest request = new ContributionBackgroundRequest("파스텔 핑크", "FFB6C1");
 
         Set<ConstraintViolation<ContributionBackgroundRequest>> violations = validator.validate(request);
 
         assertThat(violations)
                 .extracting(v -> v.getPropertyPath().toString())
                 .contains("hexCode");
-    }
-
-    @Test
-    @DisplayName("원색 HEX 코드 형식이 틀리면 위반된다")
-    void invalid_solidColorHex() {
-        ContributionBackgroundRequest request = new ContributionBackgroundRequest("파스텔 핑크", "#FFB6C1", "FF007F");
-
-        Set<ConstraintViolation<ContributionBackgroundRequest>> violations = validator.validate(request);
-
-        assertThat(violations)
-                .extracting(v -> v.getPropertyPath().toString())
-                .contains("solidColorHex");
     }
 }

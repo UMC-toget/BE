@@ -157,7 +157,7 @@ class InvitationCardServiceTest {
             return InvitationCard.builder()
                     .fundingId(FUNDING_ID)
                     .character(CharacterEntity.builder().name("고양이").imageUrl("https://img/cat.png").build())
-                    .background(InvitationBackground.builder().name("핑크").hexCode("#FFB6C1").solidColorHex("#FF007F").build())
+                    .background(InvitationBackground.builder().name("핑크").hexCode("#FFB6C1").build())
                     .title("생일 초대장이 도착했어요")
                     .content("안뇽!! 내가 이번 생일에 진짜 필요한 선물을 사고 싶은데...")
                     .url("https://toget.app/i/abc")

@@ -37,22 +37,16 @@ public class InvitationBackground extends BaseEntity {
     @Column(name = "hex_code", nullable = false, length = 10)
     private String hexCode;
 
-    // 원색 hex 코드 (ex. "#FF007F"). 50% 불투명도/파스텔톤 미적용 진한 원색 Hex 코드
-    @Column(name = "solid_color_hex", nullable = false, length = 10)
-    private String solidColorHex;
-
     @Builder
-    private InvitationBackground(String name, String hexCode, String solidColorHex) {
+    private InvitationBackground(String name, String hexCode) {
         this.name = name;
         this.hexCode = hexCode;
-        this.solidColorHex = solidColorHex;
     }
 
     // 배경 색상 정보 전체 수정
-    public void update(String name, String hexCode, String solidColorHex) {
+    public void update(String name, String hexCode) {
         this.name = name;
         this.hexCode = hexCode;
-        this.solidColorHex = solidColorHex;
     }
 
     /**

@@ -12,8 +12,5 @@ public record ContributionBackgroundResponse(
         String name,
 
         @Schema(description = "배경 색상 HEX 코드", example = "#FFB6C1")
-        String hexCode,
-
-        @Schema(description = "원색 HEX 코드", example = "#FF007F")
-        String solidColorHex
+        String hexCode
 ) {}

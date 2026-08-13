@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ContributionBackgroundService")
-public class ContributionBackgroundServiceTest {
+class ContributionBackgroundServiceTest {
 
     @Mock
     private ContributionBackgroundRepository contributionBackgroundRepository;
@@ -47,7 +47,7 @@ public class ContributionBackgroundServiceTest {
         @DisplayName("데이터가 있으면 응답 목록으로 변환해 반환한다")
         void getAll_success() {
             // given
-            ContributionBackground background = ContributionBackground.create("파스텔 핑크", "#FFB6C1", "#FF007F");
+            ContributionBackground background = ContributionBackground.create("파스텔 핑크", "#FFB6C1");
             ReflectionTestUtils.setField(background, "id", 1L);
             given(contributionBackgroundRepository.findAll()).willReturn(List.of(background));
 
@@ -59,7 +59,6 @@ public class ContributionBackgroundServiceTest {
             assertThat(result.get(0).id()).isEqualTo(1L);
             assertThat(result.get(0).name()).isEqualTo("파스텔 핑크");
             assertThat(result.get(0).hexCode()).isEqualTo("#FFB6C1");
-            assertThat(result.get(0).solidColorHex()).isEqualTo("#FF007F");
         }
 
         @Test
@@ -84,8 +83,8 @@ public class ContributionBackgroundServiceTest {
         @DisplayName("유효한 요청이면 생성된 ID를 반환한다")
         void create_success() {
             // given
-            ContributionBackgroundRequest request = new ContributionBackgroundRequest("파스텔 핑크", "#FFB6C1", "#FF007F");
-            ContributionBackground saved = ContributionBackground.create("파스텔 핑크", "#FFB6C1", "#FF007F");
+            ContributionBackgroundRequest request = new ContributionBackgroundRequest("파스텔 핑크", "#FFB6C1");
+            ContributionBackground saved = ContributionBackground.create("파스텔 핑크", "#FFB6C1");
             ReflectionTestUtils.setField(saved, "id", 1L);
             given(contributionBackgroundRepository.save(any(ContributionBackground.class))).willReturn(saved);
 
@@ -107,11 +106,11 @@ public class ContributionBackgroundServiceTest {
         void update_success() {
             // given
             Long id = 1L;
-            ContributionBackground existing = ContributionBackground.create("파스텔 핑크", "#FFB6C1", "#FF007F");
+            ContributionBackground existing = ContributionBackground.create("파스텔 핑크", "#FFB6C1");
             ReflectionTestUtils.setField(existing, "id", id);
             given(contributionBackgroundRepository.findById(id)).willReturn(Optional.of(existing));
 
-            ContributionBackgroundRequest request = new ContributionBackgroundRequest("핫 핑크", "#FF69B4", "#FF0055");
+            ContributionBackgroundRequest request = new ContributionBackgroundRequest("핫 핑크", "#FF69B4");
 
             // when
             ContributionBackgroundResponse result = contributionBackgroundService.update(id, request);
@@ -119,7 +118,6 @@ public class ContributionBackgroundServiceTest {
             // then
             assertThat(result.name()).isEqualTo("핫 핑크");
             assertThat(result.hexCode()).isEqualTo("#FF69B4");
-            assertThat(result.solidColorHex()).isEqualTo("#FF0055");
         }
 
         @Test
@@ -129,7 +127,7 @@ public class ContributionBackgroundServiceTest {
             Long id = 999L;
             given(contributionBackgroundRepository.findById(id)).willReturn(Optional.empty());
 
-            ContributionBackgroundRequest request = new ContributionBackgroundRequest("핫 핑크", "#FF69B4", "#FF0055");
+            ContributionBackgroundRequest request = new ContributionBackgroundRequest("핫 핑크", "#FF69B4");
 
             // when & then
             assertThatThrownBy(() -> contributionBackgroundService.update(id, request))
@@ -148,7 +146,7 @@ public class ContributionBackgroundServiceTest {
         void delete_success() {
             // given
             Long id = 1L;
-            ContributionBackground existing = ContributionBackground.create("파스텔 핑크", "#FFB6C1", "#FF007F");
+            ContributionBackground existing = ContributionBackground.create("파스텔 핑크", "#FFB6C1");
             ReflectionTestUtils.setField(existing, "id", id);
             given(contributionBackgroundRepository.findById(id)).willReturn(Optional.of(existing));
             given(fundingContributionRepository.existsByBackgroundId(id)).willReturn(false);
@@ -166,7 +164,7 @@ public class ContributionBackgroundServiceTest {
         void delete_fail_inUse() {
             // given
             Long id = 1L;
-            ContributionBackground existing = ContributionBackground.create("파스텔 핑크", "#FFB6C1", "#FF007F");
+            ContributionBackground existing = ContributionBackground.create("파스텔 핑크", "#FFB6C1");
             ReflectionTestUtils.setField(existing, "id", id);
             given(contributionBackgroundRepository.findById(id)).willReturn(Optional.of(existing));
             given(fundingContributionRepository.existsByBackgroundId(id)).willReturn(true);

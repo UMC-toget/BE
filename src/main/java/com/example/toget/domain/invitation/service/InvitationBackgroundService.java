@@ -37,7 +37,6 @@ public class InvitationBackgroundService {
         InvitationBackground background = invitationBackgroundRepository.save(InvitationBackground.builder()
                 .name(request.name())
                 .hexCode(request.hexCode())
-                .solidColorHex(request.solidColorHex())
                 .build());
         return InvitationBackgroundConverter.toCreateResponse(background);
     }
@@ -46,7 +45,7 @@ public class InvitationBackgroundService {
     @Transactional
     public InvitationBackgroundResponse update(Long id, InvitationBackgroundRequest request) {
         InvitationBackground background = getActiveBackground(id);
-        background.update(request.name(), request.hexCode(), request.solidColorHex()); // dirty checking으로 UPDATE
+        background.update(request.name(), request.hexCode()); // dirty checking으로 UPDATE
         return InvitationBackgroundConverter.toResponse(background);
     }
 
