@@ -130,8 +130,8 @@ public class MockDataBatchService {
     private void ensureMasterSeeds() {
         try {
             jdbcTemplate.update("INSERT IGNORE INTO characters (id, name, image_url, created_at, updated_at) VALUES (1, '기본 캐릭터', 'https://picsum.photos/seed/default_char/200/200', NOW(), NOW())");
-            jdbcTemplate.update("INSERT IGNORE INTO invitation_backgrounds (id, hex_code, solid_color_hex, name, created_at, updated_at) VALUES (1, '#FFFFFF', '#000000', '기본 백그라운드', NOW(), NOW())");
-            jdbcTemplate.update("INSERT IGNORE INTO contribution_backgrounds (id, hex_code, solid_color_hex, name, created_at, updated_at) VALUES (1, '#FFFFFF', '#000000', '기본 백그라운드', NOW(), NOW())");
+            jdbcTemplate.update("INSERT IGNORE INTO invitation_backgrounds (id, hex_code, name, created_at, updated_at) VALUES (1, '#FFFFFF', '기본 백그라운드', NOW(), NOW())");
+            jdbcTemplate.update("INSERT IGNORE INTO contribution_backgrounds (id, hex_code, name, created_at, updated_at) VALUES (1, '#FFFFFF', '기본 백그라운드', NOW(), NOW())");
         } catch (Exception e) {
             log.warn("마스터 데이터 기본 시드 생성 중 무시된 항목: {}", e.getMessage());
         }
