@@ -7,6 +7,7 @@ import com.example.toget.domain.image.exception.code.ImageErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -126,9 +127,9 @@ public class WebImageSearchService {
     // ---------------------------------------------------------------- 외부 호출
 
     private JsonNode call(String query, int start, int display) {
-        JsonNode body;
+        ResponseEntity<JsonNode> response;
         try {
-            body = restClient.get()
+            response = restClient.get()
                     // 템플릿 변수는 URL 인코딩되어 치환된다 (한글 검색어도 안전)
                     .uri(searchUri + "?query={q}&display={display}&start={start}&filter={filter}",
                             query, display, start, filter)
@@ -136,7 +137,7 @@ public class WebImageSearchService {
                     .header("X-NCP-APIGW-API-KEY-ID", clientId)
                     .header("X-NCP-APIGW-API-KEY", clientSecret)
                     .retrieve()
-                    .body(JsonNode.class);
+                    .toEntity(JsonNode.class);
         } catch (HttpClientErrorException e) {
             throw new ImageException(classify4xx(e));
         } catch (RuntimeException e) {
@@ -145,7 +146,11 @@ public class WebImageSearchService {
                     e.getClass().getSimpleName(), redact(e.getMessage()));
             throw new ImageException(ImageErrorCode.SEARCH_PROVIDER_UNAVAILABLE);
         }
+        JsonNode body = response.getBody();
         if (body == null) {
+            // status는 2xx인데 파싱된 body가 없는 경우 — 예외가 안 나서 위 catch들로는 안 잡힌다
+            log.warn("네이버 이미지 검색 응답 본문 없음 (status={}, content-type={})",
+                    response.getStatusCode(), response.getHeaders().getContentType());
             throw new ImageException(ImageErrorCode.SEARCH_PROVIDER_UNAVAILABLE);
         }
         return body;
