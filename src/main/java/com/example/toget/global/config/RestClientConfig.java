@@ -30,7 +30,7 @@ public class RestClientConfig {
         return builder.requestFactory(requestFactory).build();
     }
 
-    // 구글 Custom Search(웹 사진 검색 프록시) 호출용 RestClient
+    // 네이버 검색(이미지, 웹 사진 검색 프록시) 호출용 RestClient
     // 로그인 경로와 달리 사용자가 바텀시트에서 결과를 기다리는 요청이므로 read timeout을 더 짧게 잡는다.
     // 4xx를 예외로 받아 쿼터 초과(429/403)와 그 외를 구분해야 하므로 기본 에러 핸들러를 그대로 둔다.
     @Bean

@@ -21,10 +21,10 @@ public enum ImageErrorCode implements BaseErrorCode {
     IMPORT_BLOCKED_HOST(HttpStatus.BAD_REQUEST, "IMAGE400_6", "가져올 수 없는 이미지 주소입니다."),
     IMPORT_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "IMAGE413_1", "이미지 용량이 너무 큽니다. (최대 10MB)"),
 
-    // Pexels 무료 쿼터(월 20,000건) 소진 — 프론트는 이 코드를 받으면 "직접 업로드"로 안내한다.
+    // 네이버 검색 API 일일 한도(기본 25,000건, 신청 시 상향 가능) 소진 — 프론트는 이 코드를 받으면 "직접 업로드"로 안내한다.
     SEARCH_QUOTA_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "IMAGE429_1", "웹 사진 검색 한도를 모두 사용했습니다. 직접 업로드해주세요."),
 
-    // Pexels 장애·타임아웃, 또는 키 오류 — 우리 잘못도, 요청 잘못도 아니므로 502
+    // 네이버 장애·타임아웃, 또는 Client ID/Secret 오류 — 우리 잘못도, 요청 잘못도 아니므로 502
     SEARCH_PROVIDER_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "IMAGE502_1", "이미지 검색 서비스에 일시적으로 연결할 수 없습니다."),
     // 원본 사이트가 죽었거나 핫링크를 차단한 경우 — 프론트는 "다른 이미지를 선택해주세요"로 안내
     IMPORT_FETCH_FAILED(HttpStatus.BAD_GATEWAY, "IMAGE502_2", "이미지를 가져오지 못했습니다. 다른 이미지를 선택해주세요."),
@@ -32,7 +32,7 @@ public enum ImageErrorCode implements BaseErrorCode {
     // S3 업로드 실패 — 우리 인프라 문제
     IMPORT_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "IMAGE500_1", "이미지 저장에 실패했습니다."),
 
-    // PEXELS_API_KEY 미설정 — 설정 누락 상태에서 외부 호출을 시도하지 않고 즉시 끊는다(fail-fast)
+    // NAVER_SEARCH_CLIENT_ID/SECRET 미설정 — 설정 누락 상태에서 외부 호출을 시도하지 않고 즉시 끊는다(fail-fast)
     SEARCH_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "IMAGE503_1", "이미지 검색 기능이 설정되지 않았습니다.");
 
     private final HttpStatus status;

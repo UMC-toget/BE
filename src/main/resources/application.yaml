@@ -68,15 +68,17 @@ oauth:
     app-id: ${KAKAO_APP_ID:} # access token의 발급 앱(app_id) 검증용 — 미설정 시 카카오 로그인 불가
 
 image-search:
-  pexels:
-    # Pexels API — 웹 사진 검색 프록시(/api/v1/images/search)에서 사용.
+  naver:
+    # 네이버 검색(이미지) API — 웹 사진 검색 프록시(/api/v1/images/search)에서 사용.
     # 구글 Custom Search JSON API는 신규 고객에게 닫혀 있고(403 PERMISSION_DENIED)
-    # 2027-01-01에 종료되어 Pexels로 교체했다.
-    uri: ${PEXELS_API_URI:https://api.pexels.com/v1/search}
-    # 키를 프론트에 노출하지 않기 위한 프록시이므로 서버 환경변수로만 관리한다.
+    # 2027-01-01에 종료되어 Pexels로 교체했다가, 실제 상품 사진 검색이 잘 안 되는 문제로
+    # 네이버로 다시 교체했다.
+    uri: ${NAVER_SEARCH_URI:https://naverapihub.apigw.ntruss.com/search/v1/image}
+    # Client ID/Secret을 프론트에 노출하지 않기 위한 프록시이므로 서버 환경변수로만 관리한다.
     # 미설정 시 검색 API만 503(IMAGE503_1)으로 응답하고, 나머지 기능은 정상 동작한다.
-    api-key: ${PEXELS_API_KEY:}
-    locale: ${PEXELS_LOCALE:ko-KR} # 한글 검색어 정확도용 (Pexels 지원 로케일)
+    client-id: ${NAVER_SEARCH_CLIENT_ID:}
+    client-secret: ${NAVER_SEARCH_CLIENT_SECRET:}
+    filter: ${NAVER_SEARCH_FILTER:large} # all|large|medium|small — 너무 작은 이미지를 거르는 기본값
 
 cloud:
   aws:
