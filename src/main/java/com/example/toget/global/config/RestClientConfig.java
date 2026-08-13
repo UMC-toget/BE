@@ -3,11 +3,14 @@ package com.example.toget.global.config;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.web.client.RestClient;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.List;
 
 @Configuration
 public class RestClientConfig {
@@ -40,6 +43,15 @@ public class RestClientConfig {
                 .build();
         JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
         requestFactory.setReadTimeout(Duration.ofSeconds(4));
-        return builder.requestFactory(requestFactory).build();
+
+        // NAVER API HUB(NCP)는 body가 JSON인데도 Content-Type을 text/plain으로 내려줄 때가 있다
+        // (dev에서 UnknownContentTypeException으로 확인됨). 기본 Jackson 컨버터는 application/json
+        // 계열만 처리하므로, text/plain도 JSON으로 파싱하도록 지원 미디어 타입을 넓혀둔다.
+        JacksonJsonHttpMessageConverter jsonConverter = new JacksonJsonHttpMessageConverter();
+        jsonConverter.setSupportedMediaTypes(List.of(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN));
+
+        return builder.requestFactory(requestFactory)
+                .configureMessageConverters(clientBuilder -> clientBuilder.withJsonConverter(jsonConverter))
+                .build();
     }
 }
