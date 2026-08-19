@@ -122,8 +122,9 @@ public class User extends BaseEntity {
      * <p>탈퇴 회원은 withdraw()에서 email이 null이 되므로 자연히 false가 된다.
      * (애초에 ActiveUserReader가 탈퇴 회원을 먼저 401로 차단한다)
      *
-     * <p>향후 관리자가 여러 명이 되거나 등급 구분이 필요해지면 role 컬럼 기반 판정으로
-     * 이 메서드의 내부만 교체하면 된다.
+     * <p>관리자가 여러 명인 경우의 판정은 이 메서드를 호출하는 쪽(AdminOnlyInterceptor)이
+     * 등록된 관리자 목록을 순회하며 각 항목에 대해 이 메서드를 호출하는 방식으로 처리한다
+     * (issue #154). 등급 구분이 필요해지면 role 컬럼 기반 판정으로 이 메서드의 내부만 교체하면 된다.
      */
     public boolean isAdmin(OAuthProvider adminProvider, String adminEmail) {
         if (adminProvider == null || adminEmail == null || adminEmail.isBlank()) {
