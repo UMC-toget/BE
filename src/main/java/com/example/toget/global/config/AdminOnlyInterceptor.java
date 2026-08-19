@@ -58,7 +58,9 @@ public class AdminOnlyInterceptor implements HandlerInterceptor {
         // 탈퇴 회원은 여기서 401로 걸러진다 (토큰은 유효해도 계정이 살아있는지 DB로 재확인)
         User user = activeUserReader.getActiveUser(resolveLoginUserId(request));
 
-        if (!user.isAdmin(adminProperties.provider(), adminProperties.email())) {
+        boolean isAdmin = adminProperties.accounts().stream()
+                .anyMatch(admin -> user.isAdmin(admin.provider(), admin.email()));
+        if (!isAdmin) {
             log.warn("관리자 전용 API에 비관리자 접근이 차단되었습니다. userId={}, uri={}",
                     user.getId(), request.getRequestURI());
             throw new ProjectException(GeneralErrorCode.FORBIDDEN);
