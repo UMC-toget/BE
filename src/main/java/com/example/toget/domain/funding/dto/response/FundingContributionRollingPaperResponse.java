@@ -16,6 +16,7 @@ public record FundingContributionRollingPaperResponse(
             Long amount,
             String content,
             Boolean isPrivate,
+            @Schema(description = "편지지 배경 ID (1~8)") Long backgroundId,
             LocalDateTime createdAt
     ) {}
 }
