@@ -166,6 +166,7 @@ class FundingContributionServiceTest {
 
             assertThat(result.contributions().get(0).senderName()).isEqualTo("친구");
             assertThat(result.contributions().get(0).content()).isEqualTo("축하해!");
+            assertThat(result.contributions().get(0).backgroundId()).isEqualTo(1L);
         }
 
         @Test
@@ -241,6 +242,7 @@ class FundingContributionServiceTest {
                     fundingContributionService.getContributionDetail(FUNDING_ID, CONTRIBUTION_ID, null);
 
             assertThat(result.content()).isEqualTo("축하해!");
+            assertThat(result.backgroundId()).isEqualTo(1L);
         }
     }
 }
