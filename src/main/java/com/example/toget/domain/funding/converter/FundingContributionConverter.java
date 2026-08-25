@@ -57,6 +57,7 @@ public class FundingContributionConverter {
                 c.getAmount(),
                 hideContent ? null : c.getContent(),
                 isPrivate,
+                c.getBackgroundId(),
                 c.getCreatedAt()
         );
     }
@@ -65,7 +66,7 @@ public class FundingContributionConverter {
             FundingContribution contribution, boolean isOwner, FundingVisibilitySettings visibility
     ) {
         String content = shouldHideContent(contribution, isOwner, visibility) ? null : contribution.getContent();
-        return new FundingContributionDetailResponse(contribution.getId(), content);
+        return new FundingContributionDetailResponse(contribution.getId(), content, contribution.getBackgroundId());
     }
 
     /**
