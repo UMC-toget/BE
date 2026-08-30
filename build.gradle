@@ -52,9 +52,12 @@ dependencies {
 	// Redis 없이 인메모리로 우선 방어하고, 인스턴스가 여러 대로 늘어나면 Redis 백엔드로 교체 예정.
 	implementation 'com.bucket4j:bucket4j-core:8.10.1'
 
-	// Monitoring & Metrics — Actuator / Prometheus
+	// Observability (Metrics, Tracing & Loki Logging)
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'io.micrometer:micrometer-registry-prometheus'
+	implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+	implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+	implementation 'com.github.loki4j:loki-logback-appender:1.5.2'
 }
 
 tasks.named('test') {
