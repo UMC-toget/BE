@@ -51,6 +51,10 @@ dependencies {
 	// Rate limiting — 비인증 공개 API 어뷰징 방어 (issue #84). 단일 인스턴스 배포라
 	// Redis 없이 인메모리로 우선 방어하고, 인스턴스가 여러 대로 늘어나면 Redis 백엔드로 교체 예정.
 	implementation 'com.bucket4j:bucket4j-core:8.10.1'
+
+	// Monitoring & Metrics — Actuator / Prometheus
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'io.micrometer:micrometer-registry-prometheus'
 }
 
 tasks.named('test') {
