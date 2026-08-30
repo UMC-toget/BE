@@ -25,11 +25,14 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ApiLoggingFilter apiLoggingFilter;
     private final SecurityErrorResponseWriter errorResponseWriter;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          ApiLoggingFilter apiLoggingFilter,
                           SecurityErrorResponseWriter errorResponseWriter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.apiLoggingFilter = apiLoggingFilter;
         this.errorResponseWriter = errorResponseWriter;
     }
 
@@ -39,6 +42,9 @@ public class SecurityConfig {
         "/swagger-ui/**",
         "/swagger-resources/**",
         "/v3/api-docs/**",
+
+        // Actuator 메트릭 허용
+        "/actuator/**",
 
         // 카카오/구글 소셜 로그인 및 토큰 재발급 API 허용
         "/api/v1/auth/tokens/**"
@@ -62,6 +68,7 @@ public class SecurityConfig {
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)
 
+        .addFilterBefore(apiLoggingFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
         // 시큐리티 단계에서 거부된 요청도 ApiResponse 포맷으로 응답 (기본값은 빈 본문 403)
@@ -151,6 +158,14 @@ public class SecurityConfig {
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(
             JwtAuthenticationFilter filter) {
         FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<ApiLoggingFilter> apiLoggingFilterRegistration(
+            ApiLoggingFilter filter) {
+        FilterRegistrationBean<ApiLoggingFilter> registration = new FilterRegistrationBean<>(filter);
         registration.setEnabled(false);
         return registration;
     }
