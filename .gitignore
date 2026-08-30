@@ -38,3 +38,12 @@ out/
 
 ### 민감 정보 ###
 .env
+application.yml
+application-*.yml
+application.yaml
+application-*.yaml
+
+
+### macOS ###
+.DS_Store
+**/.DS_Store

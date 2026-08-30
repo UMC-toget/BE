@@ -1,4 +1,10 @@
+server:
+  forward-headers-strategy: framework # Nginx가 전달한 프록시 헤더(X-Forwarded-*) 인식
+
 spring:
+  config:
+    import: optional:file:.env[.properties]
+
   application:
     name: "투겟"
 
@@ -7,6 +13,13 @@ spring:
     url: ${DB_URL} # jdbc:mysql://localhost:3306/{데이터베이스명}
     username: ${DB_USER} # MySQL 유저 이름
     password: ${DB_PW} # MySQL 비밀번호
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      leak-detection-threshold: 2000 # 2초 이상 커넥션 미반납 시 누수 탐지 경고 출력
 
   jpa:
     database: mysql # 사용할 데이터베이스 유형 지정 (MySQL)
@@ -17,3 +30,88 @@ spring:
     properties:
       hibernate:
         format_sql: true # 출력되는 SQL 쿼리를 보기 좋게 포맷팅
+
+jwt:
+  secret: ${JWT_SECRET} # 기본값 없음 — 미설정 시 기동 실패 (공개된 기본 키로 토큰이 서명되는 사고 방지)
+  access-token-validity-seconds: ${JWT_ACCESS_TOKEN_VALIDITY_SECONDS:3600}
+  refresh-token-validity-seconds: ${JWT_REFRESH_TOKEN_VALIDITY_SECONDS:1209600}
+  # 가입 토큰 — 소셜 인증 직후 프로필 설정 화면에서만 쓰이므로 짧게 잡는다 (기본 10분)
+  signup-token-validity-seconds: ${JWT_SIGNUP_TOKEN_VALIDITY_SECONDS:600}
+
+encryption:
+  key: ${ENCRYPTION_KEY} # 기본값 없음 — 미설정 시 기동 실패 (공개된 기본 키로 계좌번호가 암호화되는 사고 방지)
+
+admin:
+  # 관리자 계정 식별값 — users 테이블에 role 컬럼을 두지 않고 고정 관리자 계정들을 환경변수로 관리한다.
+  # 미설정(목록이 비면) 시 관리자 전용 API는 전부 403으로 차단된다 (fail-closed: 설정 누락이 전면 개방으로 이어지지 않도록)
+  # 이메일만 비교하면 같은 주소를 다른 소셜 계정에 등록해 우회할 수 있으므로 공급자까지 함께 검증한다.
+  # email이 비어 있는 항목은 AdminProperties가 자동으로 걸러내므로, 슬롯을 안 쓰는 환경에서도 안전하다.
+  accounts:
+    - email: ${ADMIN_EMAIL_1:}
+      provider: ${ADMIN_PROVIDER_1:GOOGLE}
+    - email: ${ADMIN_EMAIL_2:}
+      provider: ${ADMIN_PROVIDER_2:GOOGLE}
+    - email: ${ADMIN_EMAIL_3:}
+      provider: ${ADMIN_PROVIDER_3:GOOGLE}
+
+bank-icon:
+  # 은행 아이콘이 올라간 S3 디렉터리 URL. BankSeeder가 "base-url/{은행코드}.svg"로 조합해 banks.icon_url에 채운다.
+  # 버킷이 dev/prod로 다르고 아이콘 규격 변경 시 경로 버전(v1 → v2)도 바뀌므로 전체 URL을 하드코딩하지 않는다.
+  # 미설정 시 icon_url은 null로 남는다 — 아이콘 업로드 전에도 스키마·API 배포가 가능하도록 한 것이며,
+  # 업로드 후 이 값을 설정하고 재기동하면 비어 있던 행만 자동으로 채워진다(이미 채워진 값은 보존).
+  # 예: https://toget-bucket-dev.s3.ap-northeast-2.amazonaws.com/bank-icons/v1
+  base-url: ${BANK_ICON_BASE_URL:}
+  extension: ${BANK_ICON_EXTENSION:svg}
+
+oauth:
+  google:
+    token-info-uri: ${GOOGLE_TOKEN_INFO_URI:https://oauth2.googleapis.com/tokeninfo}
+    user-info-uri: ${GOOGLE_USER_INFO_URI:https://openidconnect.googleapis.com/v1/userinfo}
+    client-id: ${GOOGLE_CLIENT_ID:} # access token의 aud 검증용 — 미설정 시 구글 로그인 불가
+  kakao:
+    user-info-uri: ${KAKAO_USER_INFO_URI:https://kapi.kakao.com/v2/user/me}
+    token-info-uri: ${KAKAO_TOKEN_INFO_URI:https://kapi.kakao.com/v1/user/access_token_info}
+    app-id: ${KAKAO_APP_ID:} # access token의 발급 앱(app_id) 검증용 — 미설정 시 카카오 로그인 불가
+
+image-search:
+  naver:
+    # 네이버 검색(이미지) API — 웹 사진 검색 프록시(/api/v1/images/search)에서 사용.
+    # 구글 Custom Search JSON API는 신규 고객에게 닫혀 있고(403 PERMISSION_DENIED)
+    # 2027-01-01에 종료되어 Pexels로 교체했다가, 실제 상품 사진 검색이 잘 안 되는 문제로
+    # 네이버로 다시 교체했다.
+    uri: ${NAVER_SEARCH_URI:https://naverapihub.apigw.ntruss.com/search/v1/image}
+    # Client ID/Secret을 프론트에 노출하지 않기 위한 프록시이므로 서버 환경변수로만 관리한다.
+    # 미설정 시 검색 API만 503(IMAGE503_1)으로 응답하고, 나머지 기능은 정상 동작한다.
+    client-id: ${NAVER_SEARCH_CLIENT_ID:}
+    client-secret: ${NAVER_SEARCH_CLIENT_SECRET:}
+    filter: ${NAVER_SEARCH_FILTER:large} # all|large|medium|small — 너무 작은 이미지를 거르는 기본값
+
+cloud:
+  aws:
+    credentials:
+      access-key: ${AWS_ACCESS_KEY:}
+      secret-key: ${AWS_SECRET_KEY:}
+    region:
+      static: ${AWS_REGION:ap-northeast-2}
+    s3:
+      bucket: ${AWS_S3_BUCKET:toget-bucket-dev}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  file:
+    name: logs/application.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
+      file-name-pattern: "logs/archived/app-%d{yyyy-MM-dd}.%i.log.zip"
+
+

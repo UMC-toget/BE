@@ -21,8 +21,14 @@ public enum GeneralErrorCode implements BaseErrorCode {
     // 404 Not Found
     NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON404_1", "해당 리소스를 찾을 수 없습니다."),
 
+    // 409 Conflict — 동시 요청 등으로 인한 데이터 중복/충돌
+    CONFLICT(HttpStatus.CONFLICT, "COMMON409_1", "요청이 기존 데이터와 충돌했습니다. 다시 시도해주세요."),
+
     // 405 Method Not Allowed
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "COMMON405_1", "지원하지 않는 HTTP 메소드입니다."),
+
+    // 429 Too Many Requests — @RateLimit이 붙은 비인증 공개 API의 요청 빈도 제한 초과 (issue #84)
+    TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "COMMON429_1", "너무 많은 요청을 보냈습니다. 잠시 후 다시 시도해주세요."),
 
     // 500 Internal Server Error
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON500_1", "서버 내부 오류가 발생했습니다. 관리자에게 문의하세요.");

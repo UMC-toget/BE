@@ -1,0 +1,35 @@
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :compileTestJava UP-TO-DATE
+> Task :processTestResources UP-TO-DATE
+> Task :testClasses UP-TO-DATE
+
+> Task :test
+
+ContributionBackground soft delete 통합 테스트 > delete() 호출 시 실제 row는 남고 deleted_at만 채워진다 (@SQLDelete) FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:195
+        Caused by: org.springframework.beans.factory.BeanCreationException at AbstractAutowireCapableBeanFactory.java:1815
+            Caused by: java.lang.IllegalArgumentException at JpaMetamodelImpl.java:254
+
+ContributionBackground soft delete 통합 테스트 > 삭제된 배경은 findAll 목록에서도 제외된다 (@SQLRestriction) FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+ContributionBackground soft delete 통합 테스트 > 삭제된 배경은 findById로 조회되지 않는다 (@SQLRestriction) FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+3 tests completed, 3 failed
+
+> Task :test FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':test'.
+> There were failing tests. See the report at: file:///Users/choijeong-in/Desktop/%EC%9D%BC%EC%96%B4%EB%82%98%EC%BD%94%EB%94%A9%ED%95%B4%EC%95%BC%EC%A7%80/UMC_BE/BE/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 4s
+5 actionable tasks: 1 executed, 4 up-to-date
