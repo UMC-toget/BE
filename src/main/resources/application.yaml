@@ -96,3 +96,22 @@ cloud:
     s3:
       bucket: ${AWS_S3_BUCKET:toget-bucket-dev}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  file:
+    name: logs/application.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
+      file-name-pattern: "logs/archived/app-%d{yyyy-MM-dd}.%i.log.zip"
+
+
