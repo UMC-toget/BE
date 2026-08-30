@@ -62,5 +62,5 @@ jobs:
             sudo docker rm ${{ secrets.DOCKER_IMAGENAME }}-dev || true
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGENAME }}:dev
             echo "${{ secrets.DEV_ENV }}" > .env
-            sudo docker run -d --network host --name ${{ secrets.DOCKER_IMAGENAME }}-dev --env-file .env ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGENAME }}:dev
+            sudo docker run -d --name ${{ secrets.DOCKER_IMAGENAME }}-dev  -p 8081:8080 --env-file .env ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGENAME }}:dev
             rm .env
