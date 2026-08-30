@@ -7,6 +7,7 @@ import com.example.toget.domain.gift.service.FundingGiftService;
 import com.example.toget.domain.user.service.ActiveUserReader;
 import com.example.toget.domain.user.service.JwtProvider;
 import com.example.toget.global.config.AdminProperties;
+import com.example.toget.global.config.ApiLoggingFilter;
 import com.example.toget.global.config.SecurityConfig;
 import com.example.toget.global.config.SecurityErrorResponseWriter;
 import org.junit.jupiter.api.DisplayName;
@@ -45,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // 이 앱에 JPA EntityManagerFactory가 없는 슬라이스 컨텍스트에서 jpaMappingContext 빈 생성에
 // 실패시키므로 제외한다.
 @WebMvcTest(controllers = FundingController.class, excludeAutoConfiguration = DataWebAutoConfiguration.class)
-@Import({SecurityConfig.class, SecurityErrorResponseWriter.class})
+@Import({SecurityConfig.class, ApiLoggingFilter.class, SecurityErrorResponseWriter.class})
 class FundingControllerSecurityTest {
 
     @Autowired
