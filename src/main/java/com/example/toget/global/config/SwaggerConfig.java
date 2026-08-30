@@ -20,7 +20,7 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI swagger() {
-        Info info = new Info().title("투겟 (ToGet)").description("UMC 10기 프로젝트 '투겟(ToGet)'의 Swagger입니다.").version("0.0.1");
+        Info info = new Info().title("투겟 (ToGet)").description("UMC 10기 프로젝트 '투겟(ToGet)'의 Swagger입니다.").version("1.0.0");
 
         // JWT 토큰 헤더 방식
         String securityScheme = "JWT TOKEN";
